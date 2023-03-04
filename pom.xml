@@ -10,7 +10,6 @@
     <name>portunus</name>
     <packaging>pom</packaging>
 
-
     <modules>
         <module>portunus-cache</module>
     </modules>
