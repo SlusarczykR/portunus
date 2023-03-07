@@ -1,4 +1,4 @@
-package org.slusarczykr.portunus.cache;
+package org.slusarczykr.portunus.cache.jcache.impl;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-public class DefaultPCache<K, V> implements Cache<K, V> {
+public class JCacheImpl<K, V> implements Cache<K, V> {
 
     public V get(K k) {
         return null;
