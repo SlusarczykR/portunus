@@ -2,7 +2,7 @@ package org.slusarczykr.portunus.cache.config;
 
 public interface CacheConfig<K, V> {
 
-    K getKeyType();
+    Class<K> getKeyType();
 
-    V getValueType();
+    Class<V> getValueType();
 }
