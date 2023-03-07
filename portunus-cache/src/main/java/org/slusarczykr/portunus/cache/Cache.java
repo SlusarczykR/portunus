@@ -6,6 +6,10 @@ import java.util.Optional;
 
 public interface Cache<K, V> {
 
+    boolean containsKey(K key);
+
+    boolean containsValue(V value);
+
     Optional<Entry<K, V>> getEntry(K key);
 
     Collection<Entry<K, V>> getEntries(Collection<K> keys);

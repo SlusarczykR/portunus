@@ -12,6 +12,16 @@ public class DefaultCache<K, V> implements Cache<K, V> {
 
     private final ConcurrentHashMap<K, V> cache = new ConcurrentHashMap<>();
 
+    @Override
+    public boolean containsKey(K key) {
+        return cache.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(V value) {
+        return cache.containsValue(value);
+    }
+
     public Optional<Cache.Entry<K, V>> getEntry(K key) {
         return Optional.ofNullable(cache.get(key))
                 .map(it -> new Entry<>(key, it));
