@@ -20,6 +20,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.source>17</maven.compiler.source>
         <cache-api.version>1.1.1</cache-api.version>
+        <jackson.version>2.14.2</jackson.version>
         <lombok.version>1.18.26</lombok.version>
         <junit.version>5.9.2</junit.version>
     </properties>
@@ -31,7 +32,16 @@
                 <artifactId>cache-api</artifactId>
                 <version>${cache-api.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
