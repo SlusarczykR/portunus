@@ -76,12 +76,12 @@ public class DefaultCache<K, V> implements Cache<K, V> {
 
     @Override
     public void remove(K key) {
-        cache.remove(key);
+        Optional.ofNullable(cache.remove(key)).ifPresent(cacheEntryObserver::onRemove);
     }
 
     @Override
     public void removeAll(Collection<K> keys) {
-        keys.forEach(cache::remove);
+        keys.forEach(this::remove);
     }
 
     private void validate(K key, V value) {
