@@ -1,11 +1,11 @@
-package org.slusarczykr.portunus.cache.keeper;
+package org.slusarczykr.portunus.cache.manager;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.config.CacheConfig;
 
 import java.util.Collection;
 
-public interface CacheKeeper {
+public interface CacheManager {
 
     <K, V> Cache<K, V> getCache(String name);
 

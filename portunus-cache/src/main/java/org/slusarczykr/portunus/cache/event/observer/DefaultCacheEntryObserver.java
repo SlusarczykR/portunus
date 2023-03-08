@@ -2,7 +2,7 @@ package org.slusarczykr.portunus.cache.event.observer;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
-import org.slusarczykr.portunus.cache.event.CacheEventListenerKeeper;
+import org.slusarczykr.portunus.cache.event.CacheEventListenerManager;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 
 import java.util.Map;
@@ -14,7 +14,7 @@ import static org.slusarczykr.portunus.cache.event.CacheEventType.ADD;
 import static org.slusarczykr.portunus.cache.event.CacheEventType.REMOVE;
 import static org.slusarczykr.portunus.cache.event.CacheEventType.UPDATE;
 
-public class DefaultCacheEntryObserver<K, V> implements CacheEntryObserver<K, V>, CacheEventListenerKeeper {
+public class DefaultCacheEntryObserver<K, V> implements CacheEntryObserver<K, V>, CacheEventListenerManager {
 
     private static final CacheEventListener IDLE_EVENT_LISTENER = () -> {
     };

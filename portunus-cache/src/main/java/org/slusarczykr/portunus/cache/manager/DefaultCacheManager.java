@@ -1,4 +1,4 @@
-package org.slusarczykr.portunus.cache.keeper;
+package org.slusarczykr.portunus.cache.manager;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.config.CacheConfig;
@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultCacheKeeper implements CacheKeeper {
+public class DefaultCacheManager implements CacheManager {
 
     private final Map<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
 
@@ -25,6 +25,6 @@ public class DefaultCacheKeeper implements CacheKeeper {
 
     @Override
     public <K, V> Cache<K, V> newCache(String name, CacheConfig<K, V> configuration) {
-        return new DefaultCache<>();
+        return new DefaultCache<>(configuration.getEventListeners());
     }
 }

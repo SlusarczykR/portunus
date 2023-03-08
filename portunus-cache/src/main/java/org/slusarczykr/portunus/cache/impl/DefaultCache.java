@@ -1,7 +1,8 @@
 package org.slusarczykr.portunus.cache.impl;
 
 import org.slusarczykr.portunus.cache.Cache;
-import org.slusarczykr.portunus.cache.event.observer.CacheEntryObserver;
+import org.slusarczykr.portunus.cache.event.CacheEventListener;
+import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
 
 import java.util.Collection;
@@ -14,7 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultCache<K, V> implements Cache<K, V> {
 
     private final Map<K, Cache.Entry<K, V>> cache = new ConcurrentHashMap<>();
-    private final CacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
+    private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
+
+    public DefaultCache(Map<CacheEventType, CacheEventListener> eventListeners) {
+        eventListeners.forEach(cacheEntryObserver::register);
+    }
 
     @Override
     public boolean containsKey(K key) {
@@ -23,7 +28,8 @@ public class DefaultCache<K, V> implements Cache<K, V> {
 
     @Override
     public boolean containsValue(V value) {
-        return cache.containsValue(value);
+        return cache.entrySet().stream()
+                .anyMatch(it -> it.getValue().equals(value));
     }
 
     public Optional<Cache.Entry<K, V>> getEntry(K key) {
