@@ -1,6 +1,6 @@
 package org.slusarczykr.portunus.cache.event;
 
-public interface CacheEventListenerManager {
+public interface CacheEventListenerProvider {
 
     CacheEventListener get(CacheEventType eventType);
 
