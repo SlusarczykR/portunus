@@ -1,8 +1,11 @@
 package org.slusarczykr.portunus.cache.impl;
 
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.event.observer.CacheEntryObserver;
+import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -10,7 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCache<K, V> implements Cache<K, V> {
 
-    private final ConcurrentHashMap<K, V> cache = new ConcurrentHashMap<>();
+    private final Map<K, Cache.Entry<K, V>> cache = new ConcurrentHashMap<>();
+    private final CacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
 
     @Override
     public boolean containsKey(K key) {
@@ -24,7 +28,10 @@ public class DefaultCache<K, V> implements Cache<K, V> {
 
     public Optional<Cache.Entry<K, V>> getEntry(K key) {
         return Optional.ofNullable(cache.get(key))
-                .map(it -> new Entry<>(key, it));
+                .map(it -> {
+                    cacheEntryObserver.onAccess(it);
+                    return it;
+                });
     }
 
     public Collection<Cache.Entry<K, V>> getEntries(Collection<K> keys) {
@@ -37,21 +44,28 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     public Collection<Cache.Entry<K, V>> allEntries() {
-        return cache.entrySet().stream()
-                .map(Entry::new)
-                .map(it -> (Cache.Entry<K, V>) it)
-                .toList();
+        Collection<Cache.Entry<K, V>> entries = cache.values();
+        entries.forEach(cacheEntryObserver::onAccess);
+
+        return Collections.unmodifiableCollection(entries);
     }
 
     @Override
     public void put(K key, V value) {
         validate(key, value);
-        cache.put(key, value);
+        Entry<K, V> entry = new Entry<>(key, value);
+        cache.put(key, entry);
+        cacheEntryObserver.onAdd(entry);
     }
 
     @Override
     public void putAll(Map<K, V> entries) {
-        cache.putAll(entries);
+        entries.forEach(this::validate);
+        entries.forEach((key, value) -> {
+            Entry<K, V> entry = new Entry<>(key, value);
+            cacheEntryObserver.onAdd(entry);
+            cache.put(key, entry);
+        });
     }
 
     @Override
