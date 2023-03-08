@@ -12,4 +12,6 @@ public interface CacheManager {
     Collection<Cache<?, ?>> allCaches();
 
     <K, V> Cache<K, V> newCache(String name, CacheConfig<K, V> configuration);
+
+    void removeCache(String name);
 }
