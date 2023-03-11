@@ -1,0 +1,9 @@
+syntax = "proto3";
+import "portunus-command-api.proto";
+package org.slusarczykr.portunus.cache.api.service;
+
+option java_package = "org.slusarczykr.portunus.cache.api.service";
+
+service PortunusService {
+  rpc getPartitions(org.slusarczykr.portunus.cache.api.command.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.GetPartitionsDocument);
+}

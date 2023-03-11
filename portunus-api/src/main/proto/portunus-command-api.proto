@@ -1,0 +1,15 @@
+syntax = "proto3";
+import "portunus-api.proto";
+
+package org.slusarczykr.portunus.cache.api.command;
+
+option java_package = "org.slusarczykr.portunus.cache.api.command";
+option java_outer_classname = "PortunusCommandApiProtos";
+
+message GetPartitionsCommand {
+  repeated string address = 1;
+}
+
+message GetPartitionsDocument {
+  repeated Partition partitions = 1;
+}

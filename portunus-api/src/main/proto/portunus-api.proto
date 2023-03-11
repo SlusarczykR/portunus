@@ -1,0 +1,9 @@
+syntax = "proto3";
+package org.slusarczykr.portunus.cache.api;
+
+option java_package = "org.slusarczykr.portunus.cache.api";
+option java_outer_classname = "PortunusApiProtos";
+
+message Partition {
+  int64 key = 1;
+}

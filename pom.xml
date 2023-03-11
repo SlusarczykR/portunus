@@ -13,6 +13,7 @@
     <modules>
         <module>portunus-cache</module>
         <module>portunus-jcache</module>
+        <module>portunus-api</module>
     </modules>
 
     <properties>
@@ -20,6 +21,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.source>17</maven.compiler.source>
         <cache-api.version>1.1.1</cache-api.version>
+        <javax-annotation.version>1.3.2</javax-annotation.version>
         <grpc.version>1.53.0</grpc.version>
         <jackson.version>2.14.2</jackson.version>
         <lombok.version>1.18.26</lombok.version>
@@ -33,6 +35,11 @@
                 <groupId>javax.cache</groupId>
                 <artifactId>cache-api</artifactId>
                 <version>${cache-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${javax-annotation.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
