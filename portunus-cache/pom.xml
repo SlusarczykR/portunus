@@ -17,6 +17,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.slusarczykr</groupId>
+            <artifactId>portunus-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty</artifactId>
         </dependency>
