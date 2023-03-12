@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
 import org.slusarczykr.portunus.cache.cluster.extension.GrpcCleanupExtension;
@@ -15,6 +16,7 @@ import java.io.IOException;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class LocalPortunusServerTest {
@@ -35,6 +37,10 @@ class LocalPortunusServerTest {
         GetPartitionsCommand command = GetPartitionsCommand.newBuilder()
                 .setAddress(randomAlphabetic(12))
                 .build();
-        assertNotNull(portunusServiceStub.getPartitions(command));
+
+        GetPartitionsDocument partitionsDocument = portunusServiceStub.getPartitions(command);
+
+        assertNotNull(partitionsDocument);
+        assertTrue(partitionsDocument.getPartitionsList().isEmpty());
     }
 }
