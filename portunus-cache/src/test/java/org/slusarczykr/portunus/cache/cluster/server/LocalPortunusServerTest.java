@@ -8,7 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
-import org.slusarczykr.portunus.cache.cluster.server.extension.GrpcCleanupExtension;
+import org.slusarczykr.portunus.cache.cluster.extension.GrpcCleanupExtension;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 
 import java.io.IOException;

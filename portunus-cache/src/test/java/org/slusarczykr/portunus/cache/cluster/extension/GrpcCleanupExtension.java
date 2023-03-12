@@ -1,8 +1,13 @@
-package org.slusarczykr.portunus.cache.cluster.server.extension;
+package org.slusarczykr.portunus.cache.cluster.extension;
 
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
+import io.grpc.Metadata;
 import io.grpc.Server;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -11,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -27,18 +33,22 @@ public class GrpcCleanupExtension implements AfterEachCallback {
     public ManagedChannel addService(BindableService service) throws IOException {
         String serverName = InProcessServerBuilder.generateName();
 
-        cleanupTargets.add(new ServerCleanupTarget(createInProcessServer(service, serverName)));
+        Server server = createServer(service, serverName);
+        cleanupTargets.add(new ServerCleanupTarget(server));
 
-        ManagedChannel managedChannel = InProcessChannelBuilder.forName(serverName)
-                .directExecutor()
-                .build();
-
+        ManagedChannel managedChannel = createManagedChannel(serverName);
         cleanupTargets.add(new ManagedChannelCleanupTarget(managedChannel));
 
         return managedChannel;
     }
 
-    private static Server createInProcessServer(BindableService service, String serverName) throws IOException {
+    private static ManagedChannel createManagedChannel(String serverName) {
+        return InProcessChannelBuilder.forName(serverName)
+                .directExecutor()
+                .build();
+    }
+
+    private static Server createServer(BindableService service, String serverName) throws IOException {
         return InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
@@ -132,5 +142,32 @@ class ManagedChannelCleanupTarget implements CleanupTarget {
     @Override
     public Boolean isTerminated() {
         return managedChannel.isTerminated();
+    }
+}
+
+class GrpcExceptionHandler implements ServerInterceptor {
+
+    private final Logger logger = LoggerFactory.getLogger(GrpcExceptionHandler.class);
+
+    @Override
+    public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
+                                                                 Metadata headers,
+                                                                 ServerCallHandler<ReqT, RespT> next) {
+        logger.info("GRPC call at: {}", Instant.now());
+        ServerCall.Listener<ReqT> listener;
+
+        try {
+            listener = next.startCall(call, headers);
+        } catch (Throwable ex) {
+            logger.error("Uncaught exception from grpc service");
+            call.close(
+                    Status.INTERNAL
+                            .withCause(ex)
+                            .withDescription("Uncaught exception from grpc service"), null
+            );
+            return new ServerCall.Listener<>() {
+            };
+        }
+        return listener;
     }
 }
