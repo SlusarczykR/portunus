@@ -26,6 +26,7 @@
         <grpc.version>1.53.0</grpc.version>
         <jackson.version>2.14.2</jackson.version>
         <lombok.version>1.18.26</lombok.version>
+        <commons-lang.version>3.12.0</commons-lang.version>
         <junit.version>5.9.2</junit.version>
         <mockito.version>5.2.0</mockito.version>
         <log4j.version>2.20.0</log4j.version>
@@ -38,7 +39,7 @@
                 <artifactId>cache-api</artifactId>
                 <version>${cache-api.version}</version>
             </dependency>
-            <dependency>I
+            <dependency>
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>${javax-annotation.version}</version>
@@ -74,6 +75,11 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
@@ -88,9 +94,21 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-testing</artifactId>
+                <version>${grpc.version}</version>
                 <scope>test</scope>
             </dependency>
 
