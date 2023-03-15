@@ -19,7 +19,7 @@ public class LocalPortunusServer implements PortunusServer, Managed {
 
     public static final int DEFAULT_SERVER_PORT = 8090;
     private final Server gRPCServer;
-    private final ClusterNodeContext serverContext;
+    private final ClusterMemberContext serverContext;
 
     public LocalPortunusServer() {
         try {
@@ -44,12 +44,12 @@ public class LocalPortunusServer implements PortunusServer, Managed {
         }
     }
 
-    private ClusterNodeContext initializeServerContext() throws IOException {
+    private ClusterMemberContext initializeServerContext() throws IOException {
         ResourceLoader resourceLoader = YamlResourceLoader.getInstance();
         ClusterDiscoveryConfig clusterDiscoveryConfig = resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterDiscoveryConfig.class);
         InetAddress address = InetAddress.getLocalHost();
 
-        return new ClusterNodeContext(clusterDiscoveryConfig, address.getHostAddress());
+        return new ClusterMemberContext(clusterDiscoveryConfig, address.getHostAddress());
     }
 
     @Override
@@ -57,6 +57,14 @@ public class LocalPortunusServer implements PortunusServer, Managed {
         Optional.ofNullable(gRPCServer).ifPresent(Server::shutdown);
     }
 
-    public record ClusterNodeContext(ClusterDiscoveryConfig clusterDiscoveryConfig, String address) {
+    @Override
+    public String getAddress() {
+        return serverContext.address;
+    }
+
+    public record ClusterMemberContext(
+            ClusterDiscoveryConfig clusterDiscoveryConfig,
+            String address
+    ) {
     }
 }

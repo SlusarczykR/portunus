@@ -1,8 +1,8 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
-import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 
 public class DefaultPartitionService implements PartitionService {
 
