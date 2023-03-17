@@ -12,6 +12,8 @@ public interface DiscoveryService {
 
     List<PortunusServer> allServers();
 
+    List<String> allServerAddresses();
+
     void addServer(PortunusServer server) throws PortunusException;
 
     void removeServer(String address) throws PortunusException;
