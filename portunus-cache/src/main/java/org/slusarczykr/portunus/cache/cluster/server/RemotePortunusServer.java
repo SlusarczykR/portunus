@@ -1,9 +1,17 @@
 package org.slusarczykr.portunus.cache.cluster.server;
 
-public class RemotePortunusServer implements PortunusServer {
-    
+import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.exception.PortunusException;
+
+public class RemotePortunusServer extends AbstractPortunusServer {
+
     @Override
-    public String getAddress() {
+    protected void initialize() throws PortunusException {
+
+    }
+
+    @Override
+    public <K, V> Cache.Entry<K, V> getEntry(String key) {
         return null;
     }
 }

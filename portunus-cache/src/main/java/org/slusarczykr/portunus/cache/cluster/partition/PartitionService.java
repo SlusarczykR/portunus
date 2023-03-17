@@ -4,6 +4,8 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 public interface PartitionService {
 
+    Partition getPartition(String key);
+
     String getPartitionOwner(String key) throws PortunusException;
 
     void register(String address) throws PortunusException;

@@ -17,6 +17,11 @@ public class DefaultPartitionService implements PartitionService {
     }
 
     @Override
+    public Partition getPartition(String key) {
+        return null;
+    }
+
+    @Override
     public String getPartitionOwner(String key) throws PortunusException {
         return partitionOwnerCircle.getServerAddress(key);
     }
