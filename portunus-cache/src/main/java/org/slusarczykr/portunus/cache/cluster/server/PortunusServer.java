@@ -1,14 +1,27 @@
 package org.slusarczykr.portunus.cache.cluster.server;
 
 import org.slusarczykr.portunus.cache.Cache;
-import org.slusarczykr.portunus.cache.cluster.config.ClusterDiscoveryConfig;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 
 public interface PortunusServer {
 
-    String getAddress();
+    Address getAddress();
 
-    <K, V> Cache.Entry<K, V> getEntry(String key);
+    String getPlainAddress();
 
-    record ClusterMemberContext(ClusterDiscoveryConfig clusterDiscoveryConfig, String address) {
+    <K, V> Cache<K, V> getCache(String key);
+
+    record ClusterMemberContext(Address address) {
+
+        public record Address(String hostname, int port) {
+        }
+
+        public String getHostname() {
+            return address.hostname;
+        }
+
+        public int getPort() {
+            return address.port;
+        }
     }
 }

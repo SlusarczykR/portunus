@@ -1,23 +1,16 @@
 package org.slusarczykr.portunus.cache.cluster.server;
 
-import org.slusarczykr.portunus.cache.cluster.config.ClusterDiscoveryConfig;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
-import org.slusarczykr.portunus.cache.util.resource.ResourceLoader;
-import org.slusarczykr.portunus.cache.util.resource.YamlResourceLoader;
-
-import java.io.IOException;
-import java.net.InetAddress;
-
-import static org.slusarczykr.portunus.cache.cluster.config.ClusterDiscoveryConfig.DEFAULT_CONFIG_PATH;
 
 public abstract class AbstractPortunusServer implements PortunusServer {
 
     protected final ClusterMemberContext serverContext;
 
-    protected AbstractPortunusServer() {
+    protected AbstractPortunusServer(ClusterMemberContext serverContext) {
         try {
-            this.serverContext = initializeServerContext();
+            this.serverContext = serverContext;
             initialize();
         } catch (Exception e) {
             throw new FatalPortunusException("Portunus server initialization failed", e);
@@ -26,16 +19,14 @@ public abstract class AbstractPortunusServer implements PortunusServer {
 
     protected abstract void initialize() throws PortunusException;
 
-    private ClusterMemberContext initializeServerContext() throws IOException {
-        ResourceLoader resourceLoader = YamlResourceLoader.getInstance();
-        ClusterDiscoveryConfig clusterDiscoveryConfig = resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterDiscoveryConfig.class);
-        InetAddress address = InetAddress.getLocalHost();
-
-        return new ClusterMemberContext(clusterDiscoveryConfig, address.getHostAddress());
+    @Override
+    public String getPlainAddress() {
+        Address address = serverContext.address();
+        return String.format("%s:%s", address.hostname(), address.port());
     }
 
     @Override
-    public String getAddress() {
+    public Address getAddress() {
         return serverContext.address();
     }
 }

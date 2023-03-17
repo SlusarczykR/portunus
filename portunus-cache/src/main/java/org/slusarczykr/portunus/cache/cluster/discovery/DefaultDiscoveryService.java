@@ -1,8 +1,12 @@
 package org.slusarczykr.portunus.cache.cluster.discovery;
 
+import lombok.SneakyThrows;
+import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
@@ -24,6 +28,18 @@ public class DefaultDiscoveryService implements DiscoveryService {
 
     public static DefaultDiscoveryService getInstance() {
         return INSTANCE;
+    }
+
+    @Override
+    public void loadServers() throws PortunusException {
+        List<Address> memberAddresses = DefaultClusterConfigService.getInstance().getClusterMembers();
+        memberAddresses.forEach(this::loadServer);
+    }
+
+    @SneakyThrows
+    private void loadServer(Address address) {
+        RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(address);
+        addServer(portunusServer);
     }
 
     @Override
@@ -51,8 +67,9 @@ public class DefaultDiscoveryService implements DiscoveryService {
         if (portunusInstances.containsKey(server.getAddress())) {
             throw new PortunusException(String.format("Server with address %s already exists", server.getAddress()));
         }
-        partitionService.register(server.getAddress());
-        portunusInstances.put(server.getAddress(), server);
+        String address = server.getPlainAddress();
+        partitionService.register(address);
+        portunusInstances.put(server.getPlainAddress(), server);
     }
 
     @Override

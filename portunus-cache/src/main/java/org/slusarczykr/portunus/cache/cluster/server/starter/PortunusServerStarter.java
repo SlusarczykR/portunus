@@ -16,7 +16,7 @@ public final class PortunusServerStarter {
     private static final PortunusServer server;
 
     static {
-        server = new LocalPortunusServer();
+        server = LocalPortunusServer.newInstance();
     }
 
     public static void main(String[] args) {

@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface DiscoveryService {
 
+    void loadServers() throws PortunusException;
+
     Optional<PortunusServer> getServer(String address);
 
     List<PortunusServer> allServers();

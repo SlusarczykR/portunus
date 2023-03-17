@@ -6,6 +6,8 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.Partition;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.maintenance.Managed;
 
 import java.util.Collection;
@@ -15,8 +17,8 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
 
     private final ManagedChannel channel;
 
-    public PortunusGRPCClient(String address, int port) {
-        this.channel = initializeManagedChannel(address, port);
+    public PortunusGRPCClient(Address address) {
+        this.channel = initializeManagedChannel(address.hostname(), address.port());
     }
 
     public PortunusGRPCClient(ManagedChannel channel) {
