@@ -14,6 +14,10 @@ public interface PortunusServer {
     record ClusterMemberContext(Address address) {
 
         public record Address(String hostname, int port) {
+
+            public String toPlainAddress() {
+                return String.format("%s:%s", hostname, port);
+            }
         }
 
         public String getHostname() {
@@ -22,6 +26,10 @@ public interface PortunusServer {
 
         public int getPort() {
             return address.port;
+        }
+
+        public String getPlainAddress() {
+            return address.toPlainAddress();
         }
     }
 }

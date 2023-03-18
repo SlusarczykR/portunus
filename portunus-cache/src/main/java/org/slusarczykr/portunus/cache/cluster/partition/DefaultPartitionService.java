@@ -1,15 +1,16 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
-import org.slusarczykr.portunus.cache.cluster.partition.circle.ConsistentHashingPartitionOwnerCircle;
+import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 public class DefaultPartitionService implements PartitionService {
 
     private static final DefaultPartitionService INSTANCE = new DefaultPartitionService();
-    private final ConsistentHashingPartitionOwnerCircle partitionOwnerCircle;
+    private final PortunusConsistentHashingCircle partitionOwnerCircle;
 
     private DefaultPartitionService() {
-        this.partitionOwnerCircle = new ConsistentHashingPartitionOwnerCircle();
+        this.partitionOwnerCircle = new PortunusConsistentHashingCircle();
     }
 
     public static DefaultPartitionService getInstance() {
@@ -27,12 +28,12 @@ public class DefaultPartitionService implements PartitionService {
     }
 
     @Override
-    public void register(String address) throws PortunusException {
+    public void register(Address address) throws PortunusException {
         partitionOwnerCircle.add(address);
     }
 
     @Override
-    public void unregister(String address) throws PortunusException {
+    public void unregister(Address address) throws PortunusException {
         partitionOwnerCircle.remove(address);
     }
 }

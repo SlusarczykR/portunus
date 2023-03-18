@@ -1,6 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.discovery;
 
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
@@ -10,7 +11,7 @@ public interface DiscoveryService {
 
     void loadServers() throws PortunusException;
 
-    Optional<PortunusServer> getServer(String address);
+    Optional<PortunusServer> getServer(Address address);
 
     List<PortunusServer> allServers();
 
@@ -18,5 +19,5 @@ public interface DiscoveryService {
 
     void addServer(PortunusServer server) throws PortunusException;
 
-    void removeServer(String address) throws PortunusException;
+    void removeServer(Address address) throws PortunusException;
 }

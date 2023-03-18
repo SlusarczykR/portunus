@@ -43,7 +43,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public Optional<PortunusServer> getServer(String address) {
+    public Optional<PortunusServer> getServer(Address address) {
         if (portunusInstances.containsKey(address)) {
             return Optional.of(portunusInstances.get(address));
         }
@@ -64,20 +64,21 @@ public class DefaultDiscoveryService implements DiscoveryService {
 
     @Override
     public void addServer(PortunusServer server) throws PortunusException {
-        if (portunusInstances.containsKey(server.getAddress())) {
+        if (portunusInstances.containsKey(server.getPlainAddress())) {
             throw new PortunusException(String.format("Server with address %s already exists", server.getAddress()));
         }
-        String address = server.getPlainAddress();
-        partitionService.register(address);
+        partitionService.register(server.getAddress());
         portunusInstances.put(server.getPlainAddress(), server);
     }
 
     @Override
-    public void removeServer(String address) throws PortunusException {
-        if (!portunusInstances.containsKey(address)) {
+    public void removeServer(Address address) throws PortunusException {
+        String plainAddress = address.toPlainAddress();
+
+        if (!portunusInstances.containsKey(plainAddress)) {
             throw new PortunusException(String.format("Server with address %s does not exists", address));
         }
         partitionService.unregister(address);
-        portunusInstances.remove(address);
+        portunusInstances.remove(plainAddress);
     }
 }

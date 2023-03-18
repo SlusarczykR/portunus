@@ -21,8 +21,7 @@ public abstract class AbstractPortunusServer implements PortunusServer {
 
     @Override
     public String getPlainAddress() {
-        Address address = serverContext.address();
-        return String.format("%s:%s", address.hostname(), address.port());
+        return serverContext.getPlainAddress();
     }
 
     @Override

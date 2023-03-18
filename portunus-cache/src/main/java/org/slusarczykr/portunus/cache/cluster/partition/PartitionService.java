@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 public interface PartitionService {
@@ -8,7 +9,7 @@ public interface PartitionService {
 
     String getPartitionOwner(String key) throws PortunusException;
 
-    void register(String address) throws PortunusException;
+    void register(Address address) throws PortunusException;
 
-    void unregister(String address) throws PortunusException;
+    void unregister(Address address) throws PortunusException;
 }
