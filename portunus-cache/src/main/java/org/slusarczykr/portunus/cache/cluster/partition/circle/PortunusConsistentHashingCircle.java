@@ -26,6 +26,12 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         });
     }
 
+    public int getExistingReplicas(PortunusNode node) {
+        return (int) circle.values().stream()
+                .filter(it -> it.isVirtualNodeOf(node))
+                .count();
+    }
+
     @Override
     public void remove(Address address) throws PortunusException {
         PortunusNode node = new PortunusNode(address);
@@ -36,12 +42,6 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         });
     }
 
-    public int getExistingReplicas(PortunusNode node) {
-        return (int) circle.values().stream()
-                .filter(it -> it.isVirtualNodeOf(node))
-                .count();
-    }
-
     private String generateHashCode(String key) {
         return DigestUtils.sha256Hex(key);
     }
@@ -49,9 +49,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
     @Override
     public String getServerAddress(String key) throws PortunusException {
         validateCircle();
-        String hashCode = generateHashCode(key);
-        SortedMap<String, VirtualPortunusNode> tailMap = circle.tailMap(hashCode);
-        String nodeHashCode = !tailMap.isEmpty() ? tailMap.firstKey() : circle.firstKey();
+        String nodeHashCode = getNodeHashCode(generateHashCode(key));
         VirtualPortunusNode virtualNode = circle.get(nodeHashCode);
 
         return virtualNode.getPhysicalNodeKey();
@@ -61,6 +59,11 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         if (circle.isEmpty()) {
             throw new PortunusException("Circle is empty");
         }
+    }
+
+    private String getNodeHashCode(String hashCode) {
+        SortedMap<String, VirtualPortunusNode> tailMap = circle.tailMap(hashCode);
+        return !tailMap.isEmpty() ? tailMap.firstKey() : circle.firstKey();
     }
 
     private interface Node {
