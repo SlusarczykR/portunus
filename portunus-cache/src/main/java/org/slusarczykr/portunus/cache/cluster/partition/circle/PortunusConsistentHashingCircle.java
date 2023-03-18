@@ -82,7 +82,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         }
 
         public boolean isVirtualNodeOf(PortunusNode node) {
-            return physicalNode.getKey().equals(node.getKey());
+            return getPhysicalNodeKey().equals(node.getKey());
         }
 
         public PortunusNode getPhysicalNode() {

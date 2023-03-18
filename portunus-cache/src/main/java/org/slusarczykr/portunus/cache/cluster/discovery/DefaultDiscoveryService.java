@@ -44,8 +44,10 @@ public class DefaultDiscoveryService implements DiscoveryService {
 
     @Override
     public Optional<PortunusServer> getServer(Address address) {
-        if (portunusInstances.containsKey(address)) {
-            return Optional.of(portunusInstances.get(address));
+        String plainAddress = address.toPlainAddress();
+
+        if (portunusInstances.containsKey(plainAddress)) {
+            return Optional.of(portunusInstances.get(plainAddress));
         }
         return Optional.empty();
     }
