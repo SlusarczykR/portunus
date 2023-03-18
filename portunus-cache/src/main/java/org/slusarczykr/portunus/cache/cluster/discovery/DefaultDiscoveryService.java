@@ -1,6 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.discovery;
 
 import lombok.SneakyThrows;
+import org.slusarczykr.portunus.cache.cluster.config.ClusterConfigService;
 import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
@@ -19,11 +20,13 @@ public class DefaultDiscoveryService implements DiscoveryService {
     private static final DefaultDiscoveryService INSTANCE = new DefaultDiscoveryService();
 
     private final PartitionService partitionService;
+    private final ClusterConfigService clusterConfigService;
 
     private final Map<String, PortunusServer> portunusInstances = new ConcurrentHashMap<>();
 
     private DefaultDiscoveryService() {
         this.partitionService = DefaultPartitionService.getInstance();
+        this.clusterConfigService = DefaultClusterConfigService.getInstance();
     }
 
     public static DefaultDiscoveryService getInstance() {
@@ -32,7 +35,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
 
     @Override
     public void loadServers() throws PortunusException {
-        List<Address> memberAddresses = DefaultClusterConfigService.getInstance().getClusterMembers();
+        List<Address> memberAddresses = clusterConfigService.getClusterMembers();
         memberAddresses.forEach(this::loadServer);
     }
 

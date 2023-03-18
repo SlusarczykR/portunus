@@ -1,10 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
-public class Partition {
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 
-    private final String key;
-
-    public Partition(String key) {
-        this.key = key;
-    }
+public record Partition(String key, PortunusServer owner) {
 }

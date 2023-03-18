@@ -25,6 +25,6 @@ public class RemotePortunusServer extends AbstractPortunusServer {
 
     @Override
     public <K, V> Cache<K, V> getCache(String key) {
-        return null;
+        return portunusClient.getCache();
     }
 }

@@ -2,6 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.client;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.Partition;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
@@ -29,6 +30,11 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
         return ManagedChannelBuilder.forAddress(address, port)
                 .usePlaintext()
                 .build();
+    }
+
+    @Override
+    public <K, V> Cache<K, V> getCache() {
+        return null;
     }
 
     @Override

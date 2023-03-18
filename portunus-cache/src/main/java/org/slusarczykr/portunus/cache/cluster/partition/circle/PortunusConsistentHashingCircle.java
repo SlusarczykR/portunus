@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.IntStream;
 
 public class PortunusConsistentHashingCircle implements PortunusHashingCircle, PartitionKeyStrategy {
-    private static final int NUMBER_OF_REPLICAS = 3;
+    private static final int DEFAULT_NUMBER_OF_REPLICAS = 3;
 
     private final SortedMap<String, VirtualPortunusNode> circle = new ConcurrentSkipListMap<>();
 
@@ -19,7 +19,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         PortunusNode node = new PortunusNode(address);
         int existingReplicas = getExistingReplicas(node);
 
-        IntStream.range(0, NUMBER_OF_REPLICAS).forEach(i -> {
+        IntStream.range(0, DEFAULT_NUMBER_OF_REPLICAS).forEach(i -> {
             VirtualPortunusNode virtualNode = new VirtualPortunusNode(node, i + existingReplicas);
             String hashCode = generateHashCode(virtualNode.getKey());
             circle.put(hashCode, virtualNode);
