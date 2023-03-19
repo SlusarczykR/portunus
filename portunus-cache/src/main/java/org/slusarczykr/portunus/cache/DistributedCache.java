@@ -1,9 +1,12 @@
-package org.slusarczykr.portunus.cache.impl;
+package org.slusarczykr.portunus.cache;
 
-import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
+import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -12,17 +15,29 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultCache<K, V> implements Cache<K, V> {
+public class DistributedCache<K, V> implements Cache<K, V> {
 
+    private final PartitionService partitionService;
+
+    private final String name;
     private final Map<K, Cache.Entry<K, V>> cache = new ConcurrentHashMap<>();
     private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
 
-    public DefaultCache(Map<CacheEventType, CacheEventListener> eventListeners) {
+    public DistributedCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
+        this.name = name;
+        this.partitionService = DefaultPartitionService.getInstance();
         eventListeners.forEach(cacheEntryObserver::register);
     }
 
+
     @Override
-    public boolean containsKey(K key) {
+    public boolean containsKey(K key) throws PortunusException {
+        String objectKey = key.toString();
+
+        if (!partitionService.isLocalPartition(objectKey)) {
+            Partition partition = partitionService.getPartition(objectKey);
+            return partition.owner().containsEntry(name, key);
+        }
         return cache.containsKey(key);
     }
 

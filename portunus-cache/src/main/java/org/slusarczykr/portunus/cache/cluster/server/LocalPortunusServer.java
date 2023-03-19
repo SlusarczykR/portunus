@@ -11,17 +11,22 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.Managed;
+import org.slusarczykr.portunus.cache.manager.CacheManager;
+import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 
-import java.net.InetAddress;
 import java.util.Optional;
 
 public class LocalPortunusServer extends AbstractPortunusServer implements Managed {
 
     public static final int DEFAULT_SERVER_PORT = 8090;
+
+    private final CacheManager cacheManager;
+
     private Server gRPCServer;
 
     private LocalPortunusServer(ClusterMemberContext context) {
         super(context);
+        this.cacheManager = DefaultCacheManager.getInstance();
     }
 
     public static LocalPortunusServer newInstance() {
@@ -30,9 +35,8 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
 
     @SneakyThrows
     private static ClusterMemberContext createServerContext() {
-        InetAddress inetAddress = InetAddress.getLocalHost();
         ClusterConfig clusterConfig = DefaultClusterConfigService.getInstance().getClusterConfig();
-        Address address = new Address(inetAddress.getHostAddress(), clusterConfig.getPort());
+        Address address = clusterConfig.getLocalServerAddress();
 
         return new ClusterMemberContext(address);
     }
@@ -59,7 +63,12 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     }
 
     @Override
-    public <K, V> Cache<K, V> getCache(String key) {
+    public <K> boolean containsEntry(String cacheName, K key) throws PortunusException {
+        return cacheManager.getCache(cacheName).containsKey(key);
+    }
+
+    @Override
+    public <K, V> Cache<K, V> getCache(String name) {
         return null;
     }
 }

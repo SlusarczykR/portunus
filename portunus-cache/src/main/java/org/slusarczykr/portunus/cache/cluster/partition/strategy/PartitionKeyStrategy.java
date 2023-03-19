@@ -4,5 +4,5 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 public interface PartitionKeyStrategy {
 
-    String getServerAddress(String key) throws PortunusException;
+    String getServerAddress(Integer partitionKey) throws PortunusException;
 }

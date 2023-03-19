@@ -8,6 +8,8 @@ import java.util.Collection;
 
 public interface PortunusClient {
 
+    <K> boolean containsEntry(String cacheName, K key);
+
     <K, V> Cache<K, V> getCache();
 
     Collection<Partition> getPartitions();

@@ -47,9 +47,9 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
     }
 
     @Override
-    public String getServerAddress(String key) throws PortunusException {
+    public String getServerAddress(Integer key) throws PortunusException {
         validateCircle();
-        String nodeHashCode = getNodeHashCode(generateHashCode(key));
+        String nodeHashCode = getNodeHashCode(generateHashCode(String.valueOf(key)));
         VirtualPortunusNode virtualNode = circle.get(nodeHashCode);
 
         return virtualNode.getPhysicalNodeKey();

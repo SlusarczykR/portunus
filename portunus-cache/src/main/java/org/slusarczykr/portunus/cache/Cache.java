@@ -1,12 +1,14 @@
 package org.slusarczykr.portunus.cache;
 
+import org.slusarczykr.portunus.cache.exception.PortunusException;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
 public interface Cache<K, V> {
 
-    boolean containsKey(K key);
+    boolean containsKey(K key) throws PortunusException;
 
     boolean containsValue(V value);
 

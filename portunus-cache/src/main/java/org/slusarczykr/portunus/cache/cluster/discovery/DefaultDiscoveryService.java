@@ -56,6 +56,12 @@ public class DefaultDiscoveryService implements DiscoveryService {
     }
 
     @Override
+    public PortunusServer getServerOrThrow(Address address) throws PortunusException {
+        return getServer(address)
+                .orElseThrow(() -> new PortunusException(String.format("Server: %s could not be found", address.toPlainAddress())));
+    }
+
+    @Override
     public List<PortunusServer> allServers() {
         return portunusInstances.values().stream()
                 .toList();

@@ -24,7 +24,12 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K, V> Cache<K, V> getCache(String key) {
+    public <K> boolean containsEntry(String cacheName, K key) {
+        return portunusClient.containsEntry(cacheName, key);
+    }
+
+    @Override
+    public <K, V> Cache<K, V> getCache(String name) {
         return portunusClient.getCache();
     }
 }

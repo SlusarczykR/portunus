@@ -13,6 +13,8 @@ public interface DiscoveryService {
 
     Optional<PortunusServer> getServer(Address address);
 
+    PortunusServer getServerOrThrow(Address address) throws PortunusException;
+
     List<PortunusServer> allServers();
 
     List<String> allServerAddresses();

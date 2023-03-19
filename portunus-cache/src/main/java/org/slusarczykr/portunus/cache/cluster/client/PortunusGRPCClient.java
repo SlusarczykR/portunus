@@ -33,6 +33,11 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
     }
 
     @Override
+    public <K> boolean containsEntry(String cacheName, K key) {
+        return false;
+    }
+
+    @Override
     public <K, V> Cache<K, V> getCache() {
         return null;
     }

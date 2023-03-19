@@ -5,11 +5,13 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 public interface PartitionService {
 
+    boolean isLocalPartition(String key) throws PortunusException;
+
     int getPartitionId(String key);
 
     Partition getPartition(String key);
 
-    String getPartitionOwner(String key) throws PortunusException;
+    Address getPartitionOwner(String key) throws PortunusException;
 
     void register(Address address) throws PortunusException;
 
