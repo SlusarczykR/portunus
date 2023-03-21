@@ -2,6 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.server.grpc;
 
 import io.grpc.stub.StreamObserver;
 import lombok.SneakyThrows;
+import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
@@ -19,6 +20,7 @@ import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 
 public class PortunusGRPCService extends PortunusServiceImplBase {
 
@@ -41,10 +43,21 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @SneakyThrows
     private ContainsEntryDocument createContainsEntryDocument(ContainsEntryQuery query) {
         Distributed<?> distributed = wrap(query);
-        boolean containsEntry = cacheManager.getCache(query.getCacheName()).containsKey(distributed.get());
+        boolean containsEntry = containsEntry(query, distributed);
         return ContainsEntryDocument.newBuilder()
                 .setContainsEntry(containsEntry)
                 .build();
+    }
+
+    private boolean containsEntry(ContainsEntryQuery query, Distributed<?> distributed) {
+        return Optional.ofNullable(cacheManager.getCache(query.getCacheName()))
+                .map(it -> containsEntry(it, distributed.get()))
+                .orElse(false);
+    }
+
+    @SneakyThrows
+    private <K> boolean containsEntry(Cache<K, ?> cache, K key) {
+        return cache.containsKey(key);
     }
 
     private <T extends Serializable> Distributed<T> wrap(ContainsEntryQuery query) throws PortunusException {

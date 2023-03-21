@@ -20,9 +20,8 @@ public class YamlResourceLoader implements ResourceLoader {
 
     @Override
     public <T> T load(String resource, Class<T> clazz) throws IOException {
-        InputStream in = this.getClass().getClassLoader()
-                .getResourceAsStream(resource);
-
-        return objectMapper.readValue(in, clazz);
+        try (InputStream in = this.getClass().getClassLoader().getResourceAsStream(resource)) {
+            return objectMapper.readValue(in, clazz);
+        }
     }
 }
