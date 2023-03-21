@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package org.slusarczykr.portunus.cache.api.query;
+
+option java_package = "org.slusarczykr.portunus.cache.api.query";
+option java_outer_classname = "PortunusQueryApiProtos";
+
+message ContainsEntryQuery {
+  string cacheName = 1;
+  string entryKeyType = 2;
+  bytes entryKey = 3;
+}
+
+message ContainsEntryDocument {
+  bool containsEntry = 1;
+}

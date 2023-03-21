@@ -5,13 +5,15 @@ import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
+import java.io.Serializable;
+
 public interface PortunusServer {
 
     Address getAddress();
 
     String getPlainAddress();
 
-    <K> boolean containsEntry(String cacheName, K key) throws PortunusException;
+    <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException;
 
     <K, V> Cache<K, V> getCache(String name);
 

@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "portunus-query-api.proto";
 import "portunus-command-api.proto";
 package org.slusarczykr.portunus.cache.api.service;
 
@@ -7,4 +8,5 @@ option java_outer_classname = "PortunusServiceProtos";
 
 service PortunusService {
   rpc getPartitions(org.slusarczykr.portunus.cache.api.command.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.GetPartitionsDocument);
+  rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
 }

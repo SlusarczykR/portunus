@@ -14,6 +14,7 @@ import org.slusarczykr.portunus.cache.maintenance.Managed;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 public class LocalPortunusServer extends AbstractPortunusServer implements Managed {
@@ -63,7 +64,7 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     }
 
     @Override
-    public <K> boolean containsEntry(String cacheName, K key) throws PortunusException {
+    public <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException {
         return cacheManager.getCache(cacheName).containsKey(key);
     }
 

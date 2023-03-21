@@ -8,6 +8,7 @@ import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DistributedCache<K, V> implements Cache<K, V> {
+public class DistributedCache<K extends Serializable, V> implements Cache<K, V> {
 
     private final PartitionService partitionService;
 

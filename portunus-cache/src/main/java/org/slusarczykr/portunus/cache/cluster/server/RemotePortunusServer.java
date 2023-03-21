@@ -6,6 +6,8 @@ import org.slusarczykr.portunus.cache.cluster.client.PortunusGRPCClient;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
+import java.io.Serializable;
+
 public class RemotePortunusServer extends AbstractPortunusServer {
 
     private PortunusClient portunusClient;
@@ -24,7 +26,7 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K> boolean containsEntry(String cacheName, K key) {
+    public <K extends Serializable> boolean containsEntry(String cacheName, K key) {
         return portunusClient.containsEntry(cacheName, key);
     }
 
