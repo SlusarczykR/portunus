@@ -11,7 +11,9 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultPartitionService implements PartitionService {
@@ -50,6 +52,17 @@ public class DefaultPartitionService implements PartitionService {
         return generateHashCode(key) % DEFAULT_NUMBER_OF_PARTITIONS;
     }
 
+    @Override
+    public Partition getPartition(int partitionId) {
+        return partitions.computeIfAbsent(partitionId, this::createPartition);
+    }
+
+    @Override
+    public Partition getLocalPartition(int partitionId) throws PortunusException {
+        return Optional.ofNullable(partitions.get(partitionId))
+                .orElseThrow(() -> new PortunusException(String.format("Partition '%s' does not exists", partitionId)));
+    }
+
     private int generateHashCode(String key) {
         return new HashCodeBuilder(17, 37)
                 .append(key)
@@ -57,9 +70,15 @@ public class DefaultPartitionService implements PartitionService {
     }
 
     @Override
-    public Partition getPartition(String key) {
+    public Partition getPartitionForKey(String key) {
         int partitionId = getPartitionId(key);
         return partitions.computeIfAbsent(partitionId, this::createPartition);
+    }
+
+    @Override
+    public List<Partition> getLocalPartitions() {
+        return partitions.values().stream()
+                .toList();
     }
 
     @SneakyThrows

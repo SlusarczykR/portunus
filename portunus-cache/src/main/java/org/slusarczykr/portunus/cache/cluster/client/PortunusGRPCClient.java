@@ -47,7 +47,7 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
     }
 
     private <K extends Serializable> ContainsEntryQuery createContainsEntryQuery(String cacheName, K key) {
-        Distributed<K> distributed = new Distributed.DistributedWrapper<>(key);
+        Distributed<K> distributed = Distributed.DistributedWrapper.from(key);
         ByteString keyPayload = ByteString.copyFrom(distributed.getBytes());
 
         return ContainsEntryQuery.newBuilder()

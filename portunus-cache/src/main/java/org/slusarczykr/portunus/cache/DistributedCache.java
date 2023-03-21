@@ -36,7 +36,7 @@ public class DistributedCache<K extends Serializable, V> implements Cache<K, V> 
         String objectKey = key.toString();
 
         if (!partitionService.isLocalPartition(objectKey)) {
-            Partition partition = partitionService.getPartition(objectKey);
+            Partition partition = partitionService.getPartitionForKey(objectKey);
             return partition.owner().containsEntry(name, key);
         }
         return cache.containsKey(key);

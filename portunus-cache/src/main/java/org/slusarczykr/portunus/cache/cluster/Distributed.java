@@ -14,12 +14,20 @@ public interface Distributed<T extends Serializable> extends Serializable {
 
         private final byte[] payload;
 
-        public DistributedWrapper(byte[] payload) {
+        private DistributedWrapper(byte[] payload) {
             this.payload = payload;
         }
 
-        public DistributedWrapper(T item) {
+        private DistributedWrapper(T item) {
             this.payload = SerializationUtils.serialize(item);
+        }
+
+        public static <T extends Serializable> Distributed<T> from(T item) {
+            return new DistributedWrapper<>(item);
+        }
+
+        public static <T extends Serializable> Distributed<T> fromBytes(byte[] payload, Class<T> clazz) {
+            return new DistributedWrapper<>(payload);
         }
 
         @Override
