@@ -1,8 +1,11 @@
 package org.slusarczykr.portunus.cache;
 
+import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
+import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
@@ -11,14 +14,17 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class DistributedCache<K extends Serializable, V> implements Cache<K, V> {
 
     private final PartitionService partitionService;
+    private final DiscoveryService discoveryService;
 
     private final String name;
     private final Map<K, Cache.Entry<K, V>> cache = new ConcurrentHashMap<>();
@@ -27,6 +33,7 @@ public class DistributedCache<K extends Serializable, V> implements Cache<K, V> 
     public DistributedCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
         this.name = name;
         this.partitionService = DefaultPartitionService.getInstance();
+        this.discoveryService = DefaultDiscoveryService.getInstance();
         eventListeners.forEach(cacheEntryObserver::register);
     }
 
@@ -56,6 +63,7 @@ public class DistributedCache<K extends Serializable, V> implements Cache<K, V> 
                 });
     }
 
+    @Override
     public Collection<Cache.Entry<K, V>> getEntries(Collection<K> keys) {
         return keys.stream()
                 .map(this::getEntry)
@@ -65,11 +73,26 @@ public class DistributedCache<K extends Serializable, V> implements Cache<K, V> 
 
     }
 
+    @Override
     public Collection<Cache.Entry<K, V>> allEntries() {
+        List<Cache.Entry<K, V>> remoteEntries = getRemoteEntries();
         Collection<Cache.Entry<K, V>> entries = cache.values();
         entries.forEach(cacheEntryObserver::onAccess);
+        remoteEntries.addAll(entries);
 
-        return Collections.unmodifiableCollection(entries);
+        return Collections.unmodifiableCollection(remoteEntries);
+    }
+
+    private List<Cache.Entry<K, V>> getRemoteEntries() {
+        return discoveryService.remoteServers().stream()
+                .map(this::getCache)
+                .map(Cache::allEntries)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    private Cache<K, V> getCache(PortunusServer remoteServer) {
+        return remoteServer.getCache(name);
     }
 
     @Override

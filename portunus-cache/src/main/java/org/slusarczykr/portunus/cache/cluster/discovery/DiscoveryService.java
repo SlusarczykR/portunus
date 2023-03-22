@@ -15,6 +15,8 @@ public interface DiscoveryService {
 
     PortunusServer getServerOrThrow(Address address) throws PortunusException;
 
+    List<PortunusServer> remoteServers();
+
     List<PortunusServer> allServers();
 
     List<String> allServerAddresses();

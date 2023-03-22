@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 public class DefaultDiscoveryService implements DiscoveryService {
 
@@ -59,6 +60,13 @@ public class DefaultDiscoveryService implements DiscoveryService {
     public PortunusServer getServerOrThrow(Address address) throws PortunusException {
         return getServer(address)
                 .orElseThrow(() -> new PortunusException(String.format("Server: %s could not be found", address.toPlainAddress())));
+    }
+
+    @Override
+    public List<PortunusServer> remoteServers() {
+        return portunusInstances.values().stream()
+                .filter(Predicate.not(PortunusServer::isLocal))
+                .toList();
     }
 
     @Override

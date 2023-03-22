@@ -1,9 +1,13 @@
 package org.slusarczykr.portunus.cache.cluster.server.grpc;
 
+import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntry;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
@@ -70,12 +74,37 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     @Override
-    public void getPartitions(GetPartitionsCommand request, StreamObserver<GetPartitionsDocument> responseObserver) {
-        responseObserver.onNext(createGetPartitionsDocument());
+    public void getCache(GetCacheCommand request, StreamObserver<GetCacheDocument> responseObserver) {
+        responseObserver.onNext(getLocalPartition(request));
         responseObserver.onCompleted();
     }
 
-    private GetPartitionsDocument createGetPartitionsDocument() {
+    @SneakyThrows
+    private <K extends Serializable, V extends Serializable> GetCacheDocument getLocalPartition(GetCacheCommand command) {
+        Cache<K, V> cache = cacheManager.getCache(command.getName());
+        List<CacheEntry> cacheEntries = cache.allEntries().stream()
+                .map(PortunusGRPCService::toCacheEntry)
+                .toList();
+
+        return GetCacheDocument.newBuilder()
+                .addAllCacheEntries(cacheEntries)
+                .build();
+    }
+
+    private static <K extends Serializable, V extends Serializable> CacheEntry toCacheEntry(Cache.Entry<K, V> entry) {
+        return CacheEntry.newBuilder()
+                .setKey(ByteString.copyFrom(Distributed.DistributedWrapper.from((entry.getKey())).getBytes()))
+                .setValue(ByteString.copyFrom(Distributed.DistributedWrapper.from((entry.getValue())).getBytes()))
+                .build();
+    }
+
+    @Override
+    public void getPartitions(GetPartitionsCommand request, StreamObserver<GetPartitionsDocument> responseObserver) {
+        responseObserver.onNext(getLocalPartitions());
+        responseObserver.onCompleted();
+    }
+
+    private GetPartitionsDocument getLocalPartitions() {
         List<PortunusApiProtos.Partition> partitions = partitionService.getLocalPartitions().stream()
                 .map(conversionService::convert)
                 .toList();

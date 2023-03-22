@@ -3,9 +3,12 @@ package org.slusarczykr.portunus.cache.cluster.client;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntry;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.Partition;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
@@ -16,7 +19,9 @@ import org.slusarczykr.portunus.cache.maintenance.Managed;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class PortunusGRPCClient implements PortunusClient, Managed {
 
@@ -41,9 +46,9 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
         PortunusServiceBlockingStub portunusService = newClientStub();
         ContainsEntryQuery query = createContainsEntryQuery(cacheName, key);
 
-        ContainsEntryDocument containsEntryDocument = portunusService.containsEntry(query);
+        ContainsEntryDocument document = portunusService.containsEntry(query);
 
-        return containsEntryDocument.getContainsEntry();
+        return document.getContainsEntry();
     }
 
     private <K extends Serializable> ContainsEntryQuery createContainsEntryQuery(String cacheName, K key) {
@@ -58,15 +63,29 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
     }
 
     @Override
-    public <K, V> Cache<K, V> getCache() {
+    public Set<CacheEntry> getCache(String name) {
         PortunusServiceBlockingStub portunusService = newClientStub();
-        return null;
+        GetCacheCommand command = createGetCacheCommand(name);
+
+        GetCacheDocument document = portunusService.getCache(command);
+
+        return new HashSet<>(document.getCacheEntriesList());
+    }
+
+    private static GetCacheCommand createGetCacheCommand(String name) {
+        return GetCacheCommand.newBuilder()
+                .setName(name)
+                .build();
     }
 
     @Override
     public Collection<Partition> getPartitions() {
         PortunusServiceBlockingStub portunusService = newClientStub();
-        return portunusService.getPartitions(createGetPartitionsCommand()).getPartitionsList();
+        GetPartitionsCommand command = createGetPartitionsCommand();
+
+        GetPartitionsDocument document = portunusService.getPartitions(command);
+
+        return document.getPartitionsList();
     }
 
     private PortunusServiceBlockingStub newClientStub() {
@@ -75,7 +94,6 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
 
     private static GetPartitionsCommand createGetPartitionsCommand() {
         return GetPartitionsCommand.newBuilder()
-                .setAddress("test")
                 .build();
     }
 

@@ -9,6 +9,8 @@ import java.io.Serializable;
 
 public interface PortunusServer {
 
+    boolean isLocal();
+
     Address getAddress();
 
     String getPlainAddress();

@@ -6,6 +6,14 @@ package org.slusarczykr.portunus.cache.api.command;
 option java_package = "org.slusarczykr.portunus.cache.api.command";
 option java_outer_classname = "PortunusCommandApiProtos";
 
+message GetCacheCommand {
+  string name = 1;
+}
+
+message GetCacheDocument {
+  repeated CacheEntry cacheEntries = 1;
+}
+
 message GetPartitionsCommand {
   string address = 1;
 }

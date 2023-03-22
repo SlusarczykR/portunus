@@ -26,12 +26,17 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
+    public boolean isLocal() {
+        return false;
+    }
+
+    @Override
     public <K extends Serializable> boolean containsEntry(String cacheName, K key) {
         return portunusClient.containsEntry(cacheName, key);
     }
 
     @Override
     public <K, V> Cache<K, V> getCache(String name) {
-        return portunusClient.getCache();
+        return null;
     }
 }
