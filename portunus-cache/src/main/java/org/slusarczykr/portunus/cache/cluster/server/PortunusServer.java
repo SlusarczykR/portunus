@@ -6,6 +6,7 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.io.Serializable;
+import java.util.Set;
 
 public interface PortunusServer {
 
@@ -17,7 +18,7 @@ public interface PortunusServer {
 
     <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException;
 
-    <K, V> Cache<K, V> getCache(String name);
+    <K, V> Set<Cache.Entry<K, V>> getCacheEntries(String name);
 
     record ClusterMemberContext(Address address) {
 

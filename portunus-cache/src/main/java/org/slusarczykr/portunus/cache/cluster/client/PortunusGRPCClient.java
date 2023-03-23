@@ -1,6 +1,5 @@
 package org.slusarczykr.portunus.cache.cluster.client;
 
-import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntry;
@@ -53,12 +52,11 @@ public class PortunusGRPCClient implements PortunusClient, Managed {
 
     private <K extends Serializable> ContainsEntryQuery createContainsEntryQuery(String cacheName, K key) {
         Distributed<K> distributed = Distributed.DistributedWrapper.from(key);
-        ByteString keyPayload = ByteString.copyFrom(distributed.getBytes());
 
         return ContainsEntryQuery.newBuilder()
                 .setCacheName(cacheName)
                 .setEntryKeyType(key.getClass().getCanonicalName())
-                .setEntryKey(keyPayload)
+                .setEntryKey(distributed.getByteString())
                 .build();
     }
 

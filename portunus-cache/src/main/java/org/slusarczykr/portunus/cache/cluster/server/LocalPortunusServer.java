@@ -15,7 +15,9 @@ import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class LocalPortunusServer extends AbstractPortunusServer implements Managed {
 
@@ -74,7 +76,8 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     }
 
     @Override
-    public <K, V> Cache<K, V> getCache(String name) {
-        return cacheManager.getCache(name);
+    public <K, V> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
+        Cache<K, V> cache = cacheManager.getCache(name);
+        return new HashSet<>(cache.allEntries());
     }
 }

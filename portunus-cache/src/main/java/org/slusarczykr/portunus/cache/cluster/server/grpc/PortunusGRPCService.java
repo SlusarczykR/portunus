@@ -1,6 +1,5 @@
 package org.slusarczykr.portunus.cache.cluster.server.grpc;
 
-import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
@@ -66,8 +65,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private <T extends Serializable> Distributed<T> wrap(ContainsEntryQuery query) throws PortunusException {
         try {
-            Class<?> clazz = Class.forName(query.getEntryKeyType());
-            return Distributed.DistributedWrapper.fromBytes(query.getEntryKey().toByteArray(), (Class<T>) clazz);
+            return Distributed.DistributedWrapper.fromBytes(query.getEntryKey().toByteArray());
         } catch (Exception e) {
             throw new PortunusException("Unable to deserialize request");
         }
@@ -93,8 +91,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private static <K extends Serializable, V extends Serializable> CacheEntry toCacheEntry(Cache.Entry<K, V> entry) {
         return CacheEntry.newBuilder()
-                .setKey(ByteString.copyFrom(Distributed.DistributedWrapper.from((entry.getKey())).getBytes()))
-                .setValue(ByteString.copyFrom(Distributed.DistributedWrapper.from((entry.getValue())).getBytes()))
+                .setKey(Distributed.DistributedWrapper.from((entry.getKey())).getByteString())
+                .setValue(Distributed.DistributedWrapper.from((entry.getValue())).getByteString())
                 .build();
     }
 

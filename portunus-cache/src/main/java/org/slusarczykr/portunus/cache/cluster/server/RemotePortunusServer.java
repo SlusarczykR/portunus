@@ -7,6 +7,8 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.io.Serializable;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class RemotePortunusServer extends AbstractPortunusServer {
 
@@ -36,7 +38,9 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K, V> Cache<K, V> getCache(String name) {
-        return null;
+    public <K, V> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
+        return portunusClient.getCache(name).stream()
+                .map(it -> (Cache.Entry<K, V>) conversionService.convert(it))
+                .collect(Collectors.toSet());
     }
 }
