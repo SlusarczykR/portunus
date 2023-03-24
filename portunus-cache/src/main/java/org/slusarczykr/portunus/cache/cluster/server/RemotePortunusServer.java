@@ -28,8 +28,8 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public boolean isLocal() {
-        return false;
+    public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
+        return null;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K, V> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
+    public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
         return portunusClient.getCache(name).stream()
                 .map(it -> (Cache.Entry<K, V>) conversionService.convert(it))
                 .collect(Collectors.toSet());

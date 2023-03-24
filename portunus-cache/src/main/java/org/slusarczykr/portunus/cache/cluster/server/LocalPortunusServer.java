@@ -71,12 +71,17 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
+        return null;
+    }
+
+    @Override
     public <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException {
         return cacheManager.getCache(cacheName).containsKey(key);
     }
 
     @Override
-    public <K, V> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
+    public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
         Cache<K, V> cache = cacheManager.getCache(name);
         return new HashSet<>(cache.allEntries());
     }

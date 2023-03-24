@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DistributedCache<K extends Serializable, V> implements Cache<K, V> {
+public class DistributedCache<K extends Serializable, V extends Serializable> implements Cache<K, V> {
 
     private final PartitionService partitionService;
     private final DiscoveryService discoveryService;
@@ -76,7 +76,7 @@ public class DistributedCache<K extends Serializable, V> implements Cache<K, V> 
 
     @Override
     public Collection<Cache.Entry<K, V>> allEntries() {
-        List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(getRemoteEntries());
+        List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(getRemoteServersEntries());
         Collection<Cache.Entry<K, V>> entries = cache.values();
         entries.forEach(cacheEntryObserver::onAccess);
         remoteEntries.addAll(entries);
@@ -84,7 +84,7 @@ public class DistributedCache<K extends Serializable, V> implements Cache<K, V> 
         return Collections.unmodifiableCollection(remoteEntries);
     }
 
-    private List<Cache.Entry<K, V>> getRemoteEntries() {
+    private List<Cache.Entry<K, V>> getRemoteServersEntries() {
         return discoveryService.remoteServers().stream()
                 .map(this::getRemoteEntries)
                 .flatMap(Collection::stream)

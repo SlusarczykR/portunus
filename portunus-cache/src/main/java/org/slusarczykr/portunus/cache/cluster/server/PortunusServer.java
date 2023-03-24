@@ -10,15 +10,19 @@ import java.util.Set;
 
 public interface PortunusServer {
 
-    boolean isLocal();
+    default boolean isLocal() {
+        return false;
+    }
 
     Address getAddress();
 
     String getPlainAddress();
 
+    <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name);
+
     <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException;
 
-    <K, V> Set<Cache.Entry<K, V>> getCacheEntries(String name);
+    <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name);
 
     record ClusterMemberContext(Address address) {
 
