@@ -5,7 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
 import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -21,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public class PortunusClusterInstance implements PortunusCluster, PortunusServer {
 
@@ -43,6 +48,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private void initialize() {
         registerShutdownHook();
         ServiceLoader.load();
+        publishMemberEvent(this::createMemberJoinedEvent);
     }
 
     private void registerShutdownHook() {
@@ -107,6 +113,33 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     @Override
     public void exit() {
+        publishMemberEvent(this::createMemberLeftEvent);
+    }
 
+    private void publishMemberEvent(Function<AddressDTO, ClusterEvent> eventSupplier) {
+        AddressDTO address = getLocalServerAddressDTO();
+        clusterService.getClusterEventPublisher().publishEvent(eventSupplier.apply(address));
+    }
+
+    private AddressDTO getLocalServerAddressDTO() {
+        return clusterService.getConversionService().convert(localServer.getAddress());
+    }
+
+    private ClusterEvent createMemberJoinedEvent(AddressDTO address) {
+        return ClusterEvent.newBuilder()
+                .setEventType(ClusterEventType.MemberJoinedEvent)
+                .setMemberJoinedEvent(MemberJoinedEvent.newBuilder()
+                        .setAddress(address)
+                        .build())
+                .build();
+    }
+
+    private ClusterEvent createMemberLeftEvent(AddressDTO address) {
+        return ClusterEvent.newBuilder()
+                .setEventType(ClusterEventType.MemberLeftEvent)
+                .setMemberLeftEvent(MemberLeftEvent.newBuilder()
+                        .setAddress(address)
+                        .build())
+                .build();
     }
 }

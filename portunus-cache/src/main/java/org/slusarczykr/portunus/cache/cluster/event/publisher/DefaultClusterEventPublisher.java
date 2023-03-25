@@ -5,9 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
-import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
+import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
-public class DefaultClusterEventPublisher implements ClusterEventPublisher {
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class DefaultClusterEventPublisher extends AbstractManaged implements ClusterEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterEventPublisher.class);
 
@@ -18,6 +23,7 @@ public class DefaultClusterEventPublisher implements ClusterEventPublisher {
     }
 
     private final ClusterService clusterService;
+    private final ExecutorService innerExecutor = Executors.newSingleThreadExecutor();
 
     public DefaultClusterEventPublisher() {
         this.clusterService = DefaultClusterService.getInstance();
@@ -25,14 +31,32 @@ public class DefaultClusterEventPublisher implements ClusterEventPublisher {
 
     @Override
     public void publishEvent(ClusterEvent event) {
-        clusterService.getDiscoveryService().remoteServers().forEach(it -> {
-            log.info("Sending event {} to {}", event.getEventType(), it.getPlainAddress());
-            it.sendEvent(event);
+        execute(() -> {
+            List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
+            remoteServers.forEach(it -> sendEvent(it, event));
         });
+    }
+
+    private static void sendEvent(RemotePortunusServer server, ClusterEvent event) {
+        try {
+            log.info("Sending event {} to {}", event.getEventType(), server.getPlainAddress());
+            server.sendEvent(event);
+        } catch (Exception e) {
+            log.error("Could not send event {} to {}", event.getEventType(), server.getPlainAddress());
+        }
+    }
+
+    private void execute(Runnable executable) {
+        innerExecutor.execute(executable);
     }
 
     @Override
     public String getName() {
         return ClusterEventPublisher.class.getSimpleName();
+    }
+
+    @Override
+    public void shutdown() {
+        innerExecutor.shutdown();
     }
 }

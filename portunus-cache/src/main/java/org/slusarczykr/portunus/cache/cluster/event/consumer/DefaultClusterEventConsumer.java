@@ -3,8 +3,8 @@ package org.slusarczykr.portunus.cache.cluster.event.consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberStartedEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -44,7 +44,7 @@ public class DefaultClusterEventConsumer implements ClusterEventConsumer {
         }
     }
 
-    private void handleEvent(MemberStartedEvent event) throws PortunusException {
+    private void handleEvent(MemberJoinedEvent event) throws PortunusException {
         Address address = clusterService.getConversionService().convert(event.getAddress());
         RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(address);
         clusterService.getDiscoveryService().register(portunusServer);

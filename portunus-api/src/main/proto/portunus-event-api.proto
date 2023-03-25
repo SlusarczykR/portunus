@@ -16,11 +16,11 @@ message ClusterEvent {
 
   ClusterEventType eventType = 1;
 
-  MemberStartedEvent memberJoinedEvent = 2;
+  MemberJoinedEvent memberJoinedEvent = 2;
   MemberLeftEvent memberLeftEvent = 3;
 }
 
-message MemberStartedEvent {
+message MemberJoinedEvent {
   AddressDTO address = 1;
 }
 
