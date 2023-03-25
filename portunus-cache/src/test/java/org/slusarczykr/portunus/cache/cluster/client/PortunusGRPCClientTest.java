@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.Partition;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
@@ -65,7 +65,7 @@ class PortunusGRPCClientTest {
     void shouldReturnGetPartitionsDocumentWhenGetPartitions() {
         doNothing().when(portunusService).getPartitions(any(), any());
 
-        Collection<Partition> partitions = portunusClient.getPartitions();
+        Collection<PartitionDTO> partitions = portunusClient.getPartitions();
 
         assertNotNull(partitions);
         assertTrue(partitions.isEmpty());

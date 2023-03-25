@@ -1,0 +1,29 @@
+syntax = "proto3";
+import "portunus-api.proto";
+
+package org.slusarczykr.portunus.cache.api.event;
+
+option java_package = "org.slusarczykr.portunus.cache.api.event";
+option java_outer_classname = "PortunusEventApiProtos";
+
+message ClusterEvent {
+
+  enum ClusterEventType {
+    Unknown = 0;
+    MemberJoinedEvent = 1;
+    MemberLeftEvent = 2;
+  }
+
+  ClusterEventType eventType = 1;
+
+  MemberStartedEvent memberJoinedEvent = 2;
+  MemberLeftEvent memberLeftEvent = 3;
+}
+
+message MemberStartedEvent {
+  AddressDTO address = 1;
+}
+
+message MemberLeftEvent {
+  AddressDTO address = 1;
+}

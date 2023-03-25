@@ -5,15 +5,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
-import org.slusarczykr.portunus.cache.maintenance.DefaultManagedCollector;
-import org.slusarczykr.portunus.cache.maintenance.Managed;
+import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PortunusClusterInstance implements PortunusCluster, PortunusServer {
 
     private static final Logger log = LoggerFactory.getLogger(PortunusClusterInstance.class);
+
+    private static final PortunusClusterInstance INSTANCE = new PortunusClusterInstance();
 
     private final ClusterService clusterService;
 
@@ -46,21 +48,13 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Portunus cluster is shutting down");
-            Collection<Managed> managedObjects = DefaultManagedCollector.getInstance().getAllManaged();
-            managedObjects.forEach(this::shutdownManagedObject);
+            DefaultManagedService.getInstance().shutdownAll();
+            exit();
         }));
     }
 
-    private void shutdownManagedObject(Managed managedObject) {
-        try {
-            managedObject.shutdown();
-        } catch (Exception e) {
-            log.error("Error occurred during '{}' shutdown", managedObject.getClass().getSimpleName(), e);
-        }
-    }
-
     public static PortunusClusterInstance newInstance() {
-        return new PortunusClusterInstance();
+        return INSTANCE;
     }
 
     @Override
@@ -69,7 +63,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public List<PortunusServer> allMembers() {
+    public List<RemotePortunusServer> remoteMembers() {
         return clusterService.getDiscoveryService().remoteServers();
     }
 
@@ -104,5 +98,15 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
         Cache<K, V> cache = getCache(name);
         return new HashSet<>(cache.allEntries());
+    }
+
+    @Override
+    public void sendEvent(ClusterEvent event) {
+
+    }
+
+    @Override
+    public void exit() {
+
     }
 }

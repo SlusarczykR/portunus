@@ -2,12 +2,13 @@ package org.slusarczykr.portunus.cache.cluster.client;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntry;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.Partition;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
@@ -61,7 +62,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
-    public Set<CacheEntry> getCache(String name) {
+    public Set<CacheEntryDTO> getCache(String name) {
         PortunusServiceBlockingStub portunusService = newClientStub();
         GetCacheCommand command = createGetCacheCommand(name);
 
@@ -77,13 +78,20 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
-    public Collection<Partition> getPartitions() {
+    public Collection<PartitionDTO> getPartitions() {
         PortunusServiceBlockingStub portunusService = newClientStub();
         GetPartitionsCommand command = createGetPartitionsCommand();
 
         GetPartitionsDocument document = portunusService.getPartitions(command);
 
         return document.getPartitionsList();
+    }
+
+    @Override
+    public void sendEvent(ClusterEvent event) {
+        PortunusServiceBlockingStub portunusService = newClientStub();
+
+        portunusService.sendEvent(event);
     }
 
     private PortunusServiceBlockingStub newClientStub() {

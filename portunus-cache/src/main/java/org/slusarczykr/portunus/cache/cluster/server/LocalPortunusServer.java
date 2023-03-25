@@ -4,12 +4,13 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
-import org.slusarczykr.portunus.cache.maintenance.DefaultManagedCollector;
+import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
 import org.slusarczykr.portunus.cache.maintenance.Managed;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
@@ -30,7 +31,7 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     private LocalPortunusServer(ClusterMemberContext context) {
         super(context);
         this.cacheManager = DefaultCacheManager.getInstance();
-        DefaultManagedCollector.getInstance().add(this);
+        DefaultManagedService.getInstance().add(this);
     }
 
     public static LocalPortunusServer newInstance() {
@@ -56,10 +57,6 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
                 .build();
     }
 
-    public final void start() {
-
-    }
-
     @Override
     public void shutdown() {
         Optional.ofNullable(gRPCServer).ifPresent(Server::shutdown);
@@ -72,7 +69,7 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
 
     @Override
     public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
-        return null;
+        return cacheManager.getCache(name);
     }
 
     @Override
@@ -84,5 +81,10 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
         Cache<K, V> cache = cacheManager.getCache(name);
         return new HashSet<>(cache.allEntries());
+    }
+
+    @Override
+    public void sendEvent(PortunusEventApiProtos.ClusterEvent event) {
+
     }
 }

@@ -1,12 +1,16 @@
 syntax = "proto3";
+
+import "google/protobuf/empty.proto";
 import "portunus-query-api.proto";
 import "portunus-command-api.proto";
+import "portunus-event-api.proto";
 package org.slusarczykr.portunus.cache.api.service;
 
 option java_package = "org.slusarczykr.portunus.cache.api.service";
 option java_outer_classname = "PortunusServiceProtos";
 
 service PortunusService {
+  rpc sendEvent(org.slusarczykr.portunus.cache.api.event.ClusterEvent) returns (google.protobuf.Empty);
   rpc getCache(org.slusarczykr.portunus.cache.api.command.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.command.GetCacheDocument);
   rpc getPartitions(org.slusarczykr.portunus.cache.api.command.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.GetPartitionsDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);

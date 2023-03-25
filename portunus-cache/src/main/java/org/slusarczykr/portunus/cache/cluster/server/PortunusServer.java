@@ -2,6 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.server;
 
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
@@ -23,6 +24,8 @@ public interface PortunusServer {
     <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException;
 
     <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name);
+
+    void sendEvent(ClusterEvent event);
 
     record ClusterMemberContext(Address address) {
 

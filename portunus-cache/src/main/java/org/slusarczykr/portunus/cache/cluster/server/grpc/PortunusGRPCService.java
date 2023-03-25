@@ -1,22 +1,22 @@
 package org.slusarczykr.portunus.cache.cluster.server.grpc;
 
+import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntry;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
-import org.slusarczykr.portunus.cache.cluster.conversion.ConversionService;
-import org.slusarczykr.portunus.cache.cluster.conversion.DefaultConversionService;
-import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
-import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
@@ -27,14 +27,12 @@ import java.util.Optional;
 
 public class PortunusGRPCService extends PortunusServiceImplBase {
 
+    private final ClusterService clusterService;
     private final CacheManager cacheManager;
-    private final PartitionService partitionService;
-    private final ConversionService conversionService;
 
     public PortunusGRPCService() {
+        this.clusterService = DefaultClusterService.getInstance();
         this.cacheManager = DefaultCacheManager.getInstance();
-        this.partitionService = DefaultPartitionService.getInstance();
-        this.conversionService = DefaultConversionService.getInstance();
     }
 
     @Override
@@ -80,7 +78,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> GetCacheDocument getLocalPartition(GetCacheCommand command) {
         Cache<K, V> cache = cacheManager.getCache(command.getName());
-        List<CacheEntry> cacheEntries = cache.allEntries().stream()
+        List<CacheEntryDTO> cacheEntries = cache.allEntries().stream()
                 .map(PortunusGRPCService::toCacheEntry)
                 .toList();
 
@@ -89,8 +87,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 .build();
     }
 
-    private static <K extends Serializable, V extends Serializable> CacheEntry toCacheEntry(Cache.Entry<K, V> entry) {
-        return CacheEntry.newBuilder()
+    private static <K extends Serializable, V extends Serializable> CacheEntryDTO toCacheEntry(Cache.Entry<K, V> entry) {
+        return CacheEntryDTO.newBuilder()
                 .setKey(Distributed.DistributedWrapper.from((entry.getKey())).getByteString())
                 .setValue(Distributed.DistributedWrapper.from((entry.getValue())).getByteString())
                 .build();
@@ -103,12 +101,23 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private GetPartitionsDocument getLocalPartitions() {
-        List<PortunusApiProtos.Partition> partitions = partitionService.getLocalPartitions().stream()
-                .map(conversionService::convert)
+        List<PartitionDTO> partitions = clusterService.getPartitionService().getLocalPartitions().stream()
+                .map(it -> clusterService.getConversionService().convert(it))
                 .toList();
 
         return GetPartitionsDocument.newBuilder()
                 .addAllPartitions(partitions)
                 .build();
+    }
+
+    @Override
+    public void sendEvent(ClusterEvent request, StreamObserver<Empty> responseObserver) {
+        responseObserver.onNext(handleEvent(request));
+        responseObserver.onCompleted();
+    }
+
+    private Empty handleEvent(ClusterEvent event) {
+        clusterService.getClusterEventConsumer().consumeEvent(event);
+        return Empty.getDefaultInstance();
     }
 }

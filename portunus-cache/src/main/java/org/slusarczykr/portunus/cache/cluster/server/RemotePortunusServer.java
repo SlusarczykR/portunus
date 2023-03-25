@@ -1,6 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.server;
 
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusGRPCClient;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -42,6 +43,11 @@ public class RemotePortunusServer extends AbstractPortunusServer {
         return portunusClient.getCache(name).stream()
                 .map(it -> (Cache.Entry<K, V>) conversionService.convert(it))
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    public void sendEvent(ClusterEvent event) {
+        portunusClient.sendEvent(event);
     }
 
     @Override

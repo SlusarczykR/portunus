@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package org.slusarczykr.portunus.cache.cluster.api.command;
+
+option java_package = "org.slusarczykr.portunus.cache.cluster.api.command";
+option java_outer_classname = "PortunusClusterCommandApiProtos";
+
+message JoinClusterCommand {
+  string hostname = 1;
+  string port = 2;
+}
+
+message JoinClusterCommandDocument {
+  string status = 1;
+}
+
+message LeaveClusterCommand {
+  string hostname = 1;
+  string port = 2;
+}
+
+message LeaveClusterCommandDocument {
+  string status = 1;
+}

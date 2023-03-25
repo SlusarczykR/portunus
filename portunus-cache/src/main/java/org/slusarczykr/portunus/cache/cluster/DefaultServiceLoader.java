@@ -4,6 +4,8 @@ import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
 import org.slusarczykr.portunus.cache.cluster.conversion.DefaultConversionService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
+import org.slusarczykr.portunus.cache.cluster.event.consumer.DefaultClusterEventConsumer;
+import org.slusarczykr.portunus.cache.cluster.event.publisher.DefaultClusterEventPublisher;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 
 import java.util.List;
@@ -29,6 +31,8 @@ public class DefaultServiceLoader implements ServiceLoader {
         initializeService(DefaultDiscoveryService.getInstance());
         initializeService(DefaultPartitionService.getInstance());
         initializeService(DefaultConversionService.getInstance());
+        initializeService(DefaultClusterEventPublisher.getInstance());
+        initializeService(DefaultClusterEventConsumer.getInstance());
     }
 
     @SneakyThrows

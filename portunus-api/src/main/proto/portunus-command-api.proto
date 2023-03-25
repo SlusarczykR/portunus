@@ -11,7 +11,7 @@ message GetCacheCommand {
 }
 
 message GetCacheDocument {
-  repeated CacheEntry cacheEntries = 1;
+  repeated CacheEntryDTO cacheEntries = 1;
 }
 
 message GetPartitionsCommand {
@@ -19,5 +19,5 @@ message GetPartitionsCommand {
 }
 
 message GetPartitionsDocument {
-  repeated Partition partitions = 1;
+  repeated PartitionDTO partitions = 1;
 }

@@ -4,11 +4,16 @@ package org.slusarczykr.portunus.cache.api;
 option java_package = "org.slusarczykr.portunus.cache.api";
 option java_outer_classname = "PortunusApiProtos";
 
-message Partition {
+message PartitionDTO {
   int64 key = 1;
 }
 
-message CacheEntry {
+message CacheEntryDTO {
   bytes key = 1;
   bytes value = 2;
+}
+
+message AddressDTO {
+  string hostname = 1;
+  int32 port = 2;
 }

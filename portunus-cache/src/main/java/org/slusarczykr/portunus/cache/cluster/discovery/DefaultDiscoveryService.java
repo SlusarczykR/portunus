@@ -44,7 +44,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
     @SneakyThrows
     private void loadServer(Address address) {
         RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(address);
-        addServer(portunusServer);
+        register(portunusServer);
     }
 
     @Override
@@ -64,9 +64,10 @@ public class DefaultDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public List<PortunusServer> remoteServers() {
+    public List<RemotePortunusServer> remoteServers() {
         return portunusInstances.values().stream()
-                .filter(Predicate.not(PortunusServer::isLocal))
+                .filter(Predicate.not(PortunusServer::isLocal).and(RemotePortunusServer.class::isInstance))
+                .map(RemotePortunusServer.class::cast)
                 .toList();
     }
 
@@ -83,7 +84,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public void addServer(PortunusServer server) throws PortunusException {
+    public void register(PortunusServer server) throws PortunusException {
         if (portunusInstances.containsKey(server.getPlainAddress())) {
             throw new PortunusException(String.format("Server with address %s already exists", server.getAddress()));
         }
@@ -92,7 +93,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public void removeServer(Address address) throws PortunusException {
+    public void unregister(Address address) throws PortunusException {
         String plainAddress = address.toPlainAddress();
 
         if (!portunusInstances.containsKey(plainAddress)) {
