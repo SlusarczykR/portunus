@@ -1,6 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.discovery;
 
-import org.slusarczykr.portunus.cache.cluster.Service;
+import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;

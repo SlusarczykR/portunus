@@ -7,6 +7,8 @@ import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.DefaultClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.DefaultClusterEventPublisher;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
+import org.slusarczykr.portunus.cache.cluster.service.Service;
+import org.slusarczykr.portunus.cache.cluster.service.ServiceLoader;
 
 import java.util.List;
 import java.util.Map;

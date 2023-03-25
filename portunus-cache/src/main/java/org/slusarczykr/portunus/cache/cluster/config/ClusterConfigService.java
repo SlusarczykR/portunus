@@ -1,6 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.config;
 
-import org.slusarczykr.portunus.cache.cluster.Service;
+import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 

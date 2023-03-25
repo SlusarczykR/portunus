@@ -6,13 +6,13 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
-import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractAsyncService;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class DefaultClusterEventPublisher extends AbstractManaged implements ClusterEventPublisher {
+public class DefaultClusterEventPublisher extends AbstractAsyncService implements ClusterEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterEventPublisher.class);
 
@@ -23,7 +23,6 @@ public class DefaultClusterEventPublisher extends AbstractManaged implements Clu
     }
 
     private final ClusterService clusterService;
-    private final ExecutorService innerExecutor = Executors.newSingleThreadExecutor();
 
     public DefaultClusterEventPublisher() {
         this.clusterService = DefaultClusterService.getInstance();
@@ -46,17 +45,13 @@ public class DefaultClusterEventPublisher extends AbstractManaged implements Clu
         }
     }
 
-    private void execute(Runnable executable) {
-        innerExecutor.execute(executable);
+    @Override
+    public ExecutorService createExecutorService() {
+        return Executors.newSingleThreadExecutor();
     }
 
     @Override
     public String getName() {
         return ClusterEventPublisher.class.getSimpleName();
-    }
-
-    @Override
-    public void shutdown() {
-        innerExecutor.shutdown();
     }
 }

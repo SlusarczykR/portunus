@@ -9,9 +9,13 @@ import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractAsyncService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
-public class DefaultClusterEventConsumer implements ClusterEventConsumer {
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class DefaultClusterEventConsumer extends AbstractAsyncService implements ClusterEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterEventConsumer.class);
 
@@ -29,11 +33,13 @@ public class DefaultClusterEventConsumer implements ClusterEventConsumer {
 
     @Override
     public void consumeEvent(ClusterEvent event) {
-        try {
-            handleEvent(event);
-        } catch (Exception e) {
-            log.error("Could not process event: {}", event, e);
-        }
+        execute(() -> {
+            try {
+                handleEvent(event);
+            } catch (Exception e) {
+                log.error("Could not process event: {}", event, e);
+            }
+        });
     }
 
     private void handleEvent(ClusterEvent event) throws PortunusException {
@@ -54,6 +60,11 @@ public class DefaultClusterEventConsumer implements ClusterEventConsumer {
     private void handleEvent(MemberLeftEvent event) throws PortunusException {
         Address address = clusterService.getConversionService().convert(event.getAddress());
         clusterService.getDiscoveryService().unregister(address);
+    }
+
+    @Override
+    public ExecutorService createExecutorService() {
+        return Executors.newSingleThreadExecutor();
     }
 
     @Override

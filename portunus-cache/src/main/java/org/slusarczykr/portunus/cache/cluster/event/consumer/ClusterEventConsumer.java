@@ -1,7 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.event.consumer;
 
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
-import org.slusarczykr.portunus.cache.cluster.Service;
+import org.slusarczykr.portunus.cache.cluster.service.Service;
 
 public interface ClusterEventConsumer extends Service {
 

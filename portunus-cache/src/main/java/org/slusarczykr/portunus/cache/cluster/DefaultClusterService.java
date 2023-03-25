@@ -6,6 +6,8 @@ import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.ClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.ClusterEventPublisher;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
+import org.slusarczykr.portunus.cache.cluster.service.Service;
+import org.slusarczykr.portunus.cache.cluster.service.ServiceLoader;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 
 public class DefaultClusterService implements ClusterService {

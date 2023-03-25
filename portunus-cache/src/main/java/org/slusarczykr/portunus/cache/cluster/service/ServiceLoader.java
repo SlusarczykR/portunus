@@ -1,4 +1,6 @@
-package org.slusarczykr.portunus.cache.cluster;
+package org.slusarczykr.portunus.cache.cluster.service;
+
+import org.slusarczykr.portunus.cache.cluster.DefaultServiceLoader;
 
 import java.util.List;
 
