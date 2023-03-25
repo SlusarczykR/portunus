@@ -6,7 +6,6 @@ import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
-import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -47,7 +46,6 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     @Override
     protected void initialize() throws PortunusException {
         this.gRPCServer = initializeGRPCServer();
-        DefaultDiscoveryService.getInstance().loadServers();
     }
 
     private static Server initializeGRPCServer() {

@@ -35,6 +35,11 @@ public class DefaultDiscoveryService implements DiscoveryService {
     }
 
     @Override
+    public void initialize() throws PortunusException {
+        loadServers();
+    }
+
+    @Override
     public void loadServers() throws PortunusException {
         List<Address> memberAddresses = clusterConfigService.getClusterMembers();
         memberAddresses.forEach(this::loadServer);
@@ -99,5 +104,10 @@ public class DefaultDiscoveryService implements DiscoveryService {
         }
         partitionService.unregister(address);
         portunusInstances.remove(plainAddress);
+    }
+
+    @Override
+    public String getName() {
+        return DiscoveryService.class.getSimpleName();
     }
 }

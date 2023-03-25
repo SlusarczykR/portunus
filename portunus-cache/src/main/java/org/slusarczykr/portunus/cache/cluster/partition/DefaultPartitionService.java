@@ -104,4 +104,9 @@ public class DefaultPartitionService implements PartitionService {
     public void unregister(Address address) throws PortunusException {
         partitionOwnerCircle.remove(address);
     }
+
+    @Override
+    public String getName() {
+        return PartitionService.class.getSimpleName();
+    }
 }

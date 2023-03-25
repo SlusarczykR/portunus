@@ -54,4 +54,9 @@ public class DefaultClusterConfigService implements ClusterConfigService {
         YamlResourceLoader resourceLoader = YamlResourceLoader.getInstance();
         return resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterConfig.class);
     }
+
+    @Override
+    public String getName() {
+        return ClusterConfigService.class.getSimpleName();
+    }
 }

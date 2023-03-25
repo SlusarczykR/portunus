@@ -59,4 +59,9 @@ public class DefaultConversionService implements ConversionService {
                 .setValue(value.getByteString())
                 .build();
     }
+
+    @Override
+    public String getName() {
+        return ConversionService.class.getSimpleName();
+    }
 }

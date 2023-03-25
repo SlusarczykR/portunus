@@ -1,11 +1,12 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
+import org.slusarczykr.portunus.cache.cluster.Service;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
 
-public interface PartitionService {
+public interface PartitionService extends Service {
 
     boolean isLocalPartition(String key) throws PortunusException;
 

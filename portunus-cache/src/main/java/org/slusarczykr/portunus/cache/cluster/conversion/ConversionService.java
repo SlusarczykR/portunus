@@ -3,11 +3,12 @@ package org.slusarczykr.portunus.cache.cluster.conversion;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntry;
+import org.slusarczykr.portunus.cache.cluster.Service;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 
 import java.io.Serializable;
 
-public interface ConversionService {
+public interface ConversionService extends Service {
 
     Partition convert(PortunusApiProtos.Partition partition);
 
