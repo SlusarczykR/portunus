@@ -46,7 +46,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Portunus cluster is shutting down");
-            Collection<Managed> managedObjects = DefaultManagedCollector.getInstance().getAllManagedObjects();
+            Collection<Managed> managedObjects = DefaultManagedCollector.getInstance().getAllManaged();
             managedObjects.forEach(this::shutdownManagedObject);
         }));
     }

@@ -1,18 +1,17 @@
 package org.slusarczykr.portunus.cache.maintenance;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultManagedCollector implements ManagedCollector {
 
     private static final DefaultManagedCollector INSTANCE = new DefaultManagedCollector();
 
-    private final ServiceLoader<Managed> managedServiceLoader;
+    private static final Set<Managed> allManaged = ConcurrentHashMap.newKeySet();
 
-    public DefaultManagedCollector() {
-        this.managedServiceLoader = ServiceLoader.load(Managed.class);
+    private DefaultManagedCollector() {
     }
 
     public static DefaultManagedCollector getInstance() {
@@ -20,11 +19,12 @@ public class DefaultManagedCollector implements ManagedCollector {
     }
 
     @Override
-    public Collection<Managed> getAllManagedObjects() {
-        List<Managed> managedObjects = new ArrayList<>();
-        managedServiceLoader.reload();
-        managedServiceLoader.iterator().forEachRemaining(managedObjects::add);
+    public void add(Managed managed) {
+        allManaged.add(managed);
+    }
 
-        return managedObjects;
+    @Override
+    public List<Managed> getAllManaged() {
+        return new ArrayList<>(allManaged);
     }
 }

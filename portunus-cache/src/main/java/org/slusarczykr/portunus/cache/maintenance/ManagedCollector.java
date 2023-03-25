@@ -1,8 +1,10 @@
 package org.slusarczykr.portunus.cache.maintenance;
 
-import java.util.Collection;
+import java.util.List;
 
 public interface ManagedCollector {
 
-    Collection<Managed> getAllManagedObjects();
+    void add(Managed managed);
+
+    List<Managed> getAllManaged();
 }

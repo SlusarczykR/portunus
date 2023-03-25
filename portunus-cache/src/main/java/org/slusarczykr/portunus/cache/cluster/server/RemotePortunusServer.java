@@ -43,4 +43,8 @@ public class RemotePortunusServer extends AbstractPortunusServer {
                 .map(it -> (Cache.Entry<K, V>) conversionService.convert(it))
                 .collect(Collectors.toSet());
     }
+
+    @Override
+    public void shutdown() {
+    }
 }

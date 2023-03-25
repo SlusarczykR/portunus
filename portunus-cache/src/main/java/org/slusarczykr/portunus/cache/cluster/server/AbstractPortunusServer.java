@@ -5,8 +5,9 @@ import org.slusarczykr.portunus.cache.cluster.conversion.DefaultConversionServic
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
-public abstract class AbstractPortunusServer implements PortunusServer {
+public abstract class AbstractPortunusServer extends AbstractManaged implements PortunusServer {
 
     protected final ClusterMemberContext serverContext;
     protected final ConversionService conversionService;

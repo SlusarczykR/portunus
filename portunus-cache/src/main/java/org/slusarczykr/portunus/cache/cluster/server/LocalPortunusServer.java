@@ -9,6 +9,7 @@ import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.maintenance.DefaultManagedCollector;
 import org.slusarczykr.portunus.cache.maintenance.Managed;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
@@ -29,6 +30,7 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     private LocalPortunusServer(ClusterMemberContext context) {
         super(context);
         this.cacheManager = DefaultCacheManager.getInstance();
+        DefaultManagedCollector.getInstance().add(this);
     }
 
     public static LocalPortunusServer newInstance() {
