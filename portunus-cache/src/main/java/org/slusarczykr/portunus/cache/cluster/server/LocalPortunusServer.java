@@ -4,8 +4,8 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
-import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -37,7 +37,7 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
 
     @SneakyThrows
     private static ClusterMemberContext createServerContext() {
-        ClusterConfig clusterConfig = DefaultClusterConfigService.getInstance().getClusterConfig();
+        ClusterConfig clusterConfig = DefaultClusterService.getInstance().getClusterConfigService().getClusterConfig();
         Address address = clusterConfig.getLocalServerAddress();
 
         return new ClusterMemberContext(address);

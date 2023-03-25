@@ -5,17 +5,12 @@ import org.slusarczykr.portunus.cache.cluster.conversion.ConversionService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
-
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultClusterService implements ClusterService {
 
     private static final DefaultClusterService INSTANCE = new DefaultClusterService();
 
-    private final Map<String, Service> services = new ConcurrentHashMap<>();
+    private final ServiceLoader serviceLoader;
 
     public static DefaultClusterService getInstance() {
         return INSTANCE;
@@ -23,17 +18,10 @@ public class DefaultClusterService implements ClusterService {
 
     private DefaultClusterService() {
         try {
-            initialize();
+            this.serviceLoader = DefaultServiceLoader.getInstance();
         } catch (Exception e) {
             throw new FatalPortunusException("Portunus cluster could not be initialized", e);
         }
-    }
-
-    @Override
-    public void initialize() throws PortunusException {
-        ServiceLoader.load(Service.class).stream()
-                .map(ServiceLoader.Provider::get)
-                .forEach(it -> services.put(it.getName(), it));
     }
 
     @Override
@@ -57,7 +45,7 @@ public class DefaultClusterService implements ClusterService {
     }
 
     private <T extends Service> T getService(Class<T> clazz) {
-        return (T) services.get(clazz.getSimpleName());
+        return serviceLoader.getService(clazz);
     }
 
     @Override

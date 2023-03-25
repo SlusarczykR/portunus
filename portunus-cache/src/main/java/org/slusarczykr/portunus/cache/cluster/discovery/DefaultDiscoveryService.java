@@ -1,10 +1,8 @@
 package org.slusarczykr.portunus.cache.cluster.discovery;
 
 import lombok.SneakyThrows;
-import org.slusarczykr.portunus.cache.cluster.config.ClusterConfigService;
-import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
-import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
-import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -20,14 +18,12 @@ public class DefaultDiscoveryService implements DiscoveryService {
 
     private static final DefaultDiscoveryService INSTANCE = new DefaultDiscoveryService();
 
-    private final PartitionService partitionService;
-    private final ClusterConfigService clusterConfigService;
+    private final ClusterService clusterService;
 
     private final Map<String, PortunusServer> portunusInstances = new ConcurrentHashMap<>();
 
     private DefaultDiscoveryService() {
-        this.partitionService = DefaultPartitionService.getInstance();
-        this.clusterConfigService = DefaultClusterConfigService.getInstance();
+        this.clusterService = DefaultClusterService.getInstance();
     }
 
     public static DefaultDiscoveryService getInstance() {
@@ -41,7 +37,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
 
     @Override
     public void loadServers() throws PortunusException {
-        List<Address> memberAddresses = clusterConfigService.getClusterMembers();
+        List<Address> memberAddresses = clusterService.getClusterConfigService().getClusterMembers();
         memberAddresses.forEach(this::loadServer);
     }
 
@@ -91,7 +87,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
         if (portunusInstances.containsKey(server.getPlainAddress())) {
             throw new PortunusException(String.format("Server with address %s already exists", server.getAddress()));
         }
-        partitionService.register(server.getAddress());
+        clusterService.getPartitionService().register(server.getAddress());
         portunusInstances.put(server.getPlainAddress(), server);
     }
 
@@ -102,7 +98,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
         if (!portunusInstances.containsKey(plainAddress)) {
             throw new PortunusException(String.format("Server with address %s does not exists", address));
         }
-        partitionService.unregister(address);
+        clusterService.getPartitionService().unregister(address);
         portunusInstances.remove(plainAddress);
     }
 

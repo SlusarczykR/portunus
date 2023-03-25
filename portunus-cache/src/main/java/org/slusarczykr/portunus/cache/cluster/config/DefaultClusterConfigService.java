@@ -1,7 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.config;
 
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
-import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.util.resource.YamlResourceLoader;
 
@@ -14,18 +13,18 @@ public class DefaultClusterConfigService implements ClusterConfigService {
 
     private static final DefaultClusterConfigService INSTANCE = new DefaultClusterConfigService();
 
-    private final ClusterConfig clusterConfig;
+    private ClusterConfig clusterConfig;
 
     public static DefaultClusterConfigService getInstance() {
         return INSTANCE;
     }
 
     private DefaultClusterConfigService() {
-        try {
-            this.clusterConfig = readClusterConfig();
-        } catch (IOException e) {
-            throw new FatalPortunusException("Cluster configuration could not be loaded");
-        }
+    }
+
+    @Override
+    public void initialize() throws PortunusException {
+        this.clusterConfig = readClusterConfig();
     }
 
     @Override
@@ -50,9 +49,13 @@ public class DefaultClusterConfigService implements ClusterConfigService {
                 .toList();
     }
 
-    private ClusterConfig readClusterConfig() throws IOException {
-        YamlResourceLoader resourceLoader = YamlResourceLoader.getInstance();
-        return resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterConfig.class);
+    private ClusterConfig readClusterConfig() throws PortunusException {
+        try {
+            YamlResourceLoader resourceLoader = YamlResourceLoader.getInstance();
+            return resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterConfig.class);
+        } catch (IOException e) {
+            throw new PortunusException(String.format("Could not real cluster configuration from: '%s'", DEFAULT_CONFIG_PATH));
+        }
     }
 
     @Override

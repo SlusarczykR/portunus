@@ -4,12 +4,10 @@ import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntry;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
-import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
-import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
-import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
-import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 
 import java.io.Serializable;
 
@@ -17,12 +15,10 @@ public class DefaultConversionService implements ConversionService {
 
     private static final DefaultConversionService INSTANCE = new DefaultConversionService();
 
-    private final PartitionService partitionService;
-    private final DiscoveryService discoveryService;
+    private final ClusterService clusterService;
 
     private DefaultConversionService() {
-        this.partitionService = DefaultPartitionService.getInstance();
-        this.discoveryService = DefaultDiscoveryService.getInstance();
+        this.clusterService = DefaultClusterService.getInstance();
     }
 
     public static DefaultConversionService getInstance() {
@@ -31,7 +27,7 @@ public class DefaultConversionService implements ConversionService {
 
     @Override
     public Partition convert(PortunusApiProtos.Partition partition) {
-        return partitionService.getPartition((int) partition.getKey());
+        return clusterService.getPartitionService().getPartition((int) partition.getKey());
     }
 
     @Override

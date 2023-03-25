@@ -2,10 +2,8 @@ package org.slusarczykr.portunus.cache.cluster.partition;
 
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.slusarczykr.portunus.cache.cluster.config.ClusterConfigService;
-import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
-import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
-import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -22,15 +20,13 @@ public class DefaultPartitionService implements PartitionService {
 
     private static final DefaultPartitionService INSTANCE = new DefaultPartitionService();
 
-    private final ClusterConfigService clusterConfigService;
-    private final DiscoveryService discoveryService;
+    private final ClusterService clusterService;
 
     private final PortunusConsistentHashingCircle partitionOwnerCircle;
     private final Map<Integer, Partition> partitions = new ConcurrentHashMap<>();
 
     private DefaultPartitionService() {
-        this.clusterConfigService = DefaultClusterConfigService.getInstance();
-        this.discoveryService = DefaultDiscoveryService.getInstance();
+        this.clusterService = DefaultClusterService.getInstance();
         this.partitionOwnerCircle = new PortunusConsistentHashingCircle();
     }
 
@@ -42,7 +38,7 @@ public class DefaultPartitionService implements PartitionService {
     public boolean isLocalPartition(String key) throws PortunusException {
         int partitionId = getPartitionId(key);
         String partitionOwnerAddress = partitionOwnerCircle.getServerAddress(partitionId);
-        String localServerAddress = clusterConfigService.getLocalServerPlainAddress();
+        String localServerAddress = clusterService.getClusterConfigService().getLocalServerPlainAddress();
 
         return localServerAddress.equals(partitionOwnerAddress);
     }
@@ -84,7 +80,7 @@ public class DefaultPartitionService implements PartitionService {
     @SneakyThrows
     private Partition createPartition(int partitionId) {
         String serverAddress = partitionOwnerCircle.getServerAddress(partitionId);
-        PortunusServer server = discoveryService.getServerOrThrow(Address.from(serverAddress));
+        PortunusServer server = clusterService.getDiscoveryService().getServerOrThrow(Address.from(serverAddress));
 
         return new Partition(partitionId, server);
     }

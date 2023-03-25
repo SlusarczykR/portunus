@@ -1,0 +1,50 @@
+package org.slusarczykr.portunus.cache.cluster;
+
+import lombok.SneakyThrows;
+import org.slusarczykr.portunus.cache.cluster.config.DefaultClusterConfigService;
+import org.slusarczykr.portunus.cache.cluster.conversion.DefaultConversionService;
+import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
+import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class DefaultServiceLoader implements ServiceLoader {
+
+    private static final DefaultServiceLoader INSTANCE = new DefaultServiceLoader();
+
+    private final Map<String, Service> services = new ConcurrentHashMap<>();
+
+    private DefaultServiceLoader() {
+    }
+
+    public static DefaultServiceLoader getInstance() {
+        return INSTANCE;
+    }
+
+    @Override
+    public void loadServices() {
+        initializeService(DefaultClusterConfigService.getInstance());
+        initializeService(DefaultDiscoveryService.getInstance());
+        initializeService(DefaultPartitionService.getInstance());
+        initializeService(DefaultConversionService.getInstance());
+    }
+
+    @SneakyThrows
+    private void initializeService(Service service) {
+        service.initialize();
+        services.put(service.getName(), service);
+    }
+
+    @Override
+    public List<Service> getServices() {
+        return services.values().stream()
+                .toList();
+    }
+
+    @Override
+    public <T extends Service> T getService(Class<T> clazz) {
+        return (T) services.get(clazz.getSimpleName());
+    }
+}
