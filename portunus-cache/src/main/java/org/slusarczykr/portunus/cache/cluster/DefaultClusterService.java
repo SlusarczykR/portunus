@@ -12,7 +12,12 @@ import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 
 public class DefaultClusterService implements ClusterService {
 
-    private static final DefaultClusterService INSTANCE = new DefaultClusterService();
+    private static final DefaultClusterService INSTANCE;
+
+    static {
+        INSTANCE = new DefaultClusterService();
+        ServiceLoader.load();
+    }
 
     private final ServiceLoader serviceLoader;
 

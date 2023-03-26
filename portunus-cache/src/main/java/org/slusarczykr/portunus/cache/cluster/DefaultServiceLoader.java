@@ -13,12 +13,15 @@ import org.slusarczykr.portunus.cache.cluster.service.ServiceLoader;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultServiceLoader implements ServiceLoader {
 
     private static final DefaultServiceLoader INSTANCE = new DefaultServiceLoader();
 
     private final Map<String, Service> services = new ConcurrentHashMap<>();
+
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     private DefaultServiceLoader() {
     }
@@ -29,6 +32,13 @@ public class DefaultServiceLoader implements ServiceLoader {
 
     @Override
     public void loadServices() {
+        if (!initialized.get()) {
+            initializeServices();
+            initialized.set(true);
+        }
+    }
+
+    private void initializeServices() {
         initializeService(DefaultClusterConfigService.getInstance());
         initializeService(DefaultDiscoveryService.getInstance());
         initializeService(DefaultPartitionService.getInstance());
