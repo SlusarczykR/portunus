@@ -34,16 +34,21 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
         DefaultManagedService.getInstance().add(this);
     }
 
-    public static LocalPortunusServer newInstance() {
-        return new LocalPortunusServer(createServerContext());
+    public static LocalPortunusServer newInstance(ClusterConfig clusterConfig) {
+        ClusterMemberContext serverContext = createServerContext(clusterConfig);
+        return new LocalPortunusServer(serverContext);
     }
 
     @SneakyThrows
-    private static ClusterMemberContext createServerContext() {
-        ClusterConfig clusterConfig = DefaultClusterService.getInstance().getClusterConfigService().getClusterConfig();
+    private static ClusterMemberContext createServerContext(ClusterConfig clusterConfig) {
+        clusterConfig = Optional.ofNullable(clusterConfig).orElseGet(LocalPortunusServer::getClusterConfig);
         Address address = clusterConfig.getLocalServerAddress();
 
         return new ClusterMemberContext(address);
+    }
+
+    private static ClusterConfig getClusterConfig() {
+        return DefaultClusterService.getInstance().getClusterConfigService().getClusterConfig();
     }
 
     @Override
@@ -51,7 +56,7 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
         this.gRPCServer = initializeGRPCServer();
     }
 
-    private static Server initializeGRPCServer() {
+    private Server initializeGRPCServer() {
         return ServerBuilder.forPort(DEFAULT_SERVER_PORT)
                 .addService(new PortunusGRPCService())
                 .build();

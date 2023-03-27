@@ -8,7 +8,7 @@ class PortunusClusterInstanceTest {
 
     @Test
     void shouldInitializeWhenStarted() {
-        PortunusClusterInstance portunusClusterInstance = PortunusClusterInstance.newInstance();
+        PortunusClusterInstance portunusClusterInstance = PortunusClusterInstance.getInstance(null);
 
         assertNotNull(portunusClusterInstance);
         assertNotNull(portunusClusterInstance.localMember());

@@ -10,6 +10,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
+import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -31,7 +32,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private static final Logger log = LoggerFactory.getLogger(PortunusClusterInstance.class);
 
-    private static final PortunusClusterInstance INSTANCE = new PortunusClusterInstance();
+    private static PortunusClusterInstance instance;
 
     private final ClusterService clusterService;
 
@@ -39,10 +40,17 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private final Map<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
 
-    private PortunusClusterInstance() {
+    public static synchronized PortunusClusterInstance getInstance(ClusterConfig config) {
+        if (instance == null) {
+            instance = new PortunusClusterInstance(config);
+        }
+        return instance;
+    }
+
+    private PortunusClusterInstance(ClusterConfig clusterConfig) {
         initialize();
         this.clusterService = DefaultClusterService.getInstance();
-        this.localServer = LocalPortunusServer.newInstance();
+        this.localServer = LocalPortunusServer.newInstance(clusterConfig);
         publishMemberEvent(this::createMemberJoinedEvent);
     }
 
@@ -58,8 +66,8 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         }));
     }
 
-    public static PortunusClusterInstance newInstance() {
-        return INSTANCE;
+    private void onShutdown() {
+        publishMemberEvent(this::createMemberLeftEvent);
     }
 
     @Override
@@ -108,10 +116,6 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     @Override
     public void sendEvent(ClusterEvent event) {
 
-    }
-
-    public void onShutdown() {
-        publishMemberEvent(this::createMemberLeftEvent);
     }
 
     private void publishMemberEvent(Function<AddressDTO, ClusterEvent> eventSupplier) {

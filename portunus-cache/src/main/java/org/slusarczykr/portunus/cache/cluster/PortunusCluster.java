@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster;
 
+import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 
@@ -11,9 +12,7 @@ public interface PortunusCluster {
 
     List<RemotePortunusServer> remoteMembers();
 
-    void onShutdown();
-
-    static PortunusCluster newInstance() {
-        return PortunusClusterInstance.newInstance();
+    static PortunusCluster newInstance(ClusterConfig clusterConfig) {
+        return PortunusClusterInstance.getInstance(clusterConfig);
     }
 }
