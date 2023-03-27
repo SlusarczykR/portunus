@@ -10,6 +10,7 @@ public final class PortunusClusterStarter {
 
     public static void main(String[] args) {
         log.info("Starting portunus cluster");
-        PortunusCluster.newInstance();
+        PortunusCluster cluster = PortunusCluster.newInstance();
+        System.exit(0);
     }
 }

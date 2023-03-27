@@ -31,6 +31,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     @Override
     public void publishEvent(ClusterEvent event) {
         execute(() -> {
+            log.info("Sending '{}' event to remote cluster members", event.getEventType());
             List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
             remoteServers.forEach(it -> sendEvent(it, event));
         });

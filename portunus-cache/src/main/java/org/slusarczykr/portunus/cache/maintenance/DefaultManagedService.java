@@ -35,7 +35,6 @@ public class DefaultManagedService implements ManagedService {
 
     public void shutdownAll() {
         allManaged.forEach(this::shutdownManagedObject);
-
     }
 
     private void shutdownManagedObject(Managed managedObject) {

@@ -43,11 +43,11 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         initialize();
         this.clusterService = DefaultClusterService.getInstance();
         this.localServer = LocalPortunusServer.newInstance();
+        publishMemberEvent(this::createMemberJoinedEvent);
     }
 
     private void initialize() {
         registerShutdownHook();
-        publishMemberEvent(this::createMemberJoinedEvent);
     }
 
     private void registerShutdownHook() {
