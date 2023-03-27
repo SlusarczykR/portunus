@@ -53,8 +53,8 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Portunus cluster is shutting down");
+            onShutdown();
             DefaultManagedService.getInstance().shutdownAll();
-            exit();
         }));
     }
 
@@ -110,8 +110,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     }
 
-    @Override
-    public void exit() {
+    public void onShutdown() {
         publishMemberEvent(this::createMemberLeftEvent);
     }
 

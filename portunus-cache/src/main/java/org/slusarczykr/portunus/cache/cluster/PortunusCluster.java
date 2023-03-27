@@ -11,7 +11,7 @@ public interface PortunusCluster {
 
     List<RemotePortunusServer> remoteMembers();
 
-    void exit();
+    void onShutdown();
 
     static PortunusCluster newInstance() {
         return PortunusClusterInstance.newInstance();
