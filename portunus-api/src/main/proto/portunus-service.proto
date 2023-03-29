@@ -13,5 +13,6 @@ service PortunusService {
   rpc sendEvent(org.slusarczykr.portunus.cache.api.event.ClusterEvent) returns (google.protobuf.Empty);
   rpc getCache(org.slusarczykr.portunus.cache.api.command.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.command.GetCacheDocument);
   rpc getPartitions(org.slusarczykr.portunus.cache.api.command.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.GetPartitionsDocument);
+  rpc anyEntry(org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
 }

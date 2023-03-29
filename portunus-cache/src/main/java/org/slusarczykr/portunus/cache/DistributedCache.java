@@ -40,6 +40,12 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
 
 
     @Override
+    public boolean isEmpty() {
+        return discoveryService.remoteServers().stream()
+                .anyMatch(it -> it.anyEntry(name));
+    }
+
+    @Override
     public boolean containsKey(K key) throws PortunusException {
         String objectKey = key.toString();
 

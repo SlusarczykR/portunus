@@ -9,6 +9,8 @@ import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCa
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
@@ -38,6 +40,22 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     private ManagedChannel initializeManagedChannel(String address, int port) {
         return ManagedChannelBuilder.forAddress(address, port)
                 .usePlaintext()
+                .build();
+    }
+
+    @Override
+    public boolean anyEntry(String cacheName) {
+        PortunusServiceBlockingStub portunusService = newClientStub();
+        ContainsAnyEntryQuery query = createContainsAnyEntryQuery(cacheName);
+
+        ContainsAnyEntryDocument document = portunusService.anyEntry(query);
+
+        return document.getAnyEntry();
+    }
+
+    private ContainsAnyEntryQuery createContainsAnyEntryQuery(String cacheName) {
+        return ContainsAnyEntryQuery.newBuilder()
+                .setCacheName(cacheName)
                 .build();
     }
 

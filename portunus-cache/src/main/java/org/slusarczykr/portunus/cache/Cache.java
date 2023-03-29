@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface Cache<K, V> {
 
+    boolean isEmpty();
+
     boolean containsKey(K key) throws PortunusException;
 
     boolean containsValue(V value);

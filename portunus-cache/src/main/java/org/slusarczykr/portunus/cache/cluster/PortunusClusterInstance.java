@@ -96,6 +96,11 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
+    public boolean anyEntry(String cacheName) {
+        return !getCache(cacheName).isEmpty();
+    }
+
+    @Override
     public <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException {
         return Optional.ofNullable(caches.get(cacheName))
                 .map(it -> containsKey((Cache<K, ?>) it, key))

@@ -21,6 +21,11 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     @Override
+    public boolean isEmpty() {
+        return cache.isEmpty();
+    }
+
+    @Override
     public boolean containsKey(K key) {
         return cache.containsKey(key);
     }

@@ -11,6 +11,8 @@ import java.util.Set;
 
 public interface PortunusClient {
 
+    boolean anyEntry(String cacheName);
+
     <K extends Serializable> boolean containsEntry(String cacheName, K key);
 
     Set<CacheEntryDTO> getCache(String name);

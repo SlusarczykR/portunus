@@ -29,8 +29,8 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
-        return null;
+    public boolean anyEntry(String cacheName) {
+        return portunusClient.anyEntry(cacheName);
     }
 
     @Override

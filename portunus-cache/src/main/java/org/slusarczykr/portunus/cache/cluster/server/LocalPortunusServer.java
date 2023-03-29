@@ -73,8 +73,8 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
-        return cacheManager.getCache(name);
+    public boolean anyEntry(String cacheName) {
+        return !cacheManager.getCache(cacheName).isEmpty();
     }
 
     @Override

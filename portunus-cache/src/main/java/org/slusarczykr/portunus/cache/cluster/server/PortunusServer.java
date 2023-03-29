@@ -19,7 +19,7 @@ public interface PortunusServer {
 
     String getPlainAddress();
 
-    <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name);
+    boolean anyEntry(String cacheName);
 
     <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException;
 

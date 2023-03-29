@@ -5,6 +5,14 @@ package org.slusarczykr.portunus.cache.api.query;
 option java_package = "org.slusarczykr.portunus.cache.api.query";
 option java_outer_classname = "PortunusQueryApiProtos";
 
+message ContainsAnyEntryQuery {
+  string cacheName = 1;
+}
+
+message ContainsAnyEntryDocument {
+  bool anyEntry = 1;
+}
+
 message ContainsEntryQuery {
   string cacheName = 1;
   string entryKeyType = 2;

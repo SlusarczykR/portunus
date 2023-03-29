@@ -11,6 +11,8 @@ import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCa
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
@@ -33,6 +35,24 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     public PortunusGRPCService() {
         this.clusterService = DefaultClusterService.getInstance();
         this.cacheManager = DefaultCacheManager.getInstance();
+    }
+
+    @Override
+    public void anyEntry(ContainsAnyEntryQuery request, StreamObserver<ContainsAnyEntryDocument> responseObserver) {
+        responseObserver.onNext(createContainsAnyEntryDocument(request));
+        responseObserver.onCompleted();
+    }
+
+    private ContainsAnyEntryDocument createContainsAnyEntryDocument(ContainsAnyEntryQuery query) {
+        return ContainsAnyEntryDocument.newBuilder()
+                .setAnyEntry(anyEntry(query))
+                .build();
+    }
+
+    private boolean anyEntry(ContainsAnyEntryQuery query) {
+        return Optional.ofNullable(cacheManager.getCache(query.getCacheName()))
+                .map(it -> !it.isEmpty())
+                .orElse(false);
     }
 
     @Override
