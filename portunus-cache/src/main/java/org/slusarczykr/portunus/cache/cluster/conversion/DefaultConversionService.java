@@ -10,10 +10,11 @@ import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 
 import java.io.Serializable;
 
-public class DefaultConversionService implements ConversionService {
+public class DefaultConversionService extends AbstractService implements ConversionService {
 
     private static final DefaultConversionService INSTANCE = new DefaultConversionService();
 

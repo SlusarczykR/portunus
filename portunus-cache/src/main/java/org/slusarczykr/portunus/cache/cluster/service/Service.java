@@ -6,6 +6,7 @@ public interface Service {
 
     String getName();
 
-    default void initialize() throws PortunusException {
-    }
+    boolean isInitialized();
+
+    void initialize() throws PortunusException;
 }

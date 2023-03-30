@@ -15,6 +15,7 @@ import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
+import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
 
@@ -48,14 +49,23 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
-        initialize();
+        preInitialize();
         this.clusterService = DefaultClusterService.getInstance();
         this.localServer = LocalPortunusServer.newInstance(clusterConfig);
-        publishMemberEvent(this::createMemberJoinedEvent);
+        postInitialize();
     }
 
-    private void initialize() {
+    private void preInitialize() {
         registerShutdownHook();
+    }
+
+    private void postInitialize() {
+        try {
+            clusterService.getDiscoveryService().register(localServer);
+            publishMemberEvent(this::createMemberJoinedEvent);
+        } catch (Exception e) {
+            throw new FatalPortunusException("Could not initialize portunus instance");
+        }
     }
 
     private void registerShutdownHook() {

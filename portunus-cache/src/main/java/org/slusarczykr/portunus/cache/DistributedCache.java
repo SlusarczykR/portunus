@@ -6,6 +6,7 @@ import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public class DistributedCache<K extends Serializable, V extends Serializable> implements Cache<K, V> {
 
@@ -41,7 +43,14 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
 
     @Override
     public boolean isEmpty() {
-        return discoveryService.remoteServers().stream()
+        boolean anyLocalEntry = discoveryService.localServer().anyEntry(name);
+        boolean anyEntry = anyLocalEntry || anyRemoteEntry();
+
+        return !anyEntry;
+    }
+
+    private boolean anyRemoteEntry() {
+        return remoteServersStream()
                 .anyMatch(it -> it.anyEntry(name));
     }
 
@@ -91,10 +100,14 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
     }
 
     private List<Cache.Entry<K, V>> getRemoteServersEntries() {
-        return discoveryService.remoteServers().stream()
+        return remoteServersStream()
                 .map(this::getRemoteEntries)
                 .flatMap(Collection::stream)
                 .toList();
+    }
+
+    private Stream<RemotePortunusServer> remoteServersStream() {
+        return discoveryService.remoteServers().parallelStream();
     }
 
     private Set<Cache.Entry<K, V>> getRemoteEntries(PortunusServer remoteServer) {

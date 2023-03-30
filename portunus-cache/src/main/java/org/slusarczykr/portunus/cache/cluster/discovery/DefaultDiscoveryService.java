@@ -6,6 +6,8 @@ import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
+import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
@@ -14,7 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-public class DefaultDiscoveryService implements DiscoveryService {
+public class DefaultDiscoveryService extends AbstractService implements DiscoveryService {
 
     private static final DefaultDiscoveryService INSTANCE = new DefaultDiscoveryService();
 
@@ -31,7 +33,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public void initialize() throws PortunusException {
+    public void onInitialization() throws PortunusException {
         loadServers();
     }
 
@@ -61,6 +63,14 @@ public class DefaultDiscoveryService implements DiscoveryService {
     public PortunusServer getServerOrThrow(Address address) throws PortunusException {
         return getServer(address)
                 .orElseThrow(() -> new PortunusException(String.format("Server: %s could not be found", address.toPlainAddress())));
+    }
+
+    @Override
+    public PortunusServer localServer() {
+        return portunusInstances.values().stream()
+                .filter(PortunusServer::isLocal)
+                .findFirst()
+                .orElseThrow(() -> new InvalidPortunusStateException("Could not access local server"));
     }
 
     @Override

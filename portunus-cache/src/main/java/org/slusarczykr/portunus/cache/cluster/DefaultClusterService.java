@@ -6,11 +6,13 @@ import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.ClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.ClusterEventPublisher;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceLoader;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
+import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 
-public class DefaultClusterService implements ClusterService {
+public class DefaultClusterService extends AbstractService implements ClusterService {
 
     private static final DefaultClusterService INSTANCE;
 
@@ -54,7 +56,12 @@ public class DefaultClusterService implements ClusterService {
     }
 
     private <T extends Service> T getService(Class<T> clazz) {
-        return serviceLoader.getService(clazz);
+        T service = serviceLoader.getService(clazz);
+
+        if (!service.isInitialized()) {
+            throw new InvalidPortunusStateException(String.format("Service '%s' has not been initialized yet", service.getName()));
+        }
+        return service;
     }
 
     @Override

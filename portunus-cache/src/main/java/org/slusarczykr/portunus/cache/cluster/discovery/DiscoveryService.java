@@ -1,9 +1,9 @@
 package org.slusarczykr.portunus.cache.cluster.discovery;
 
-import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
+import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
@@ -16,6 +16,8 @@ public interface DiscoveryService extends Service {
     Optional<PortunusServer> getServer(Address address);
 
     PortunusServer getServerOrThrow(Address address) throws PortunusException;
+
+    PortunusServer localServer();
 
     List<RemotePortunusServer> remoteServers();
 

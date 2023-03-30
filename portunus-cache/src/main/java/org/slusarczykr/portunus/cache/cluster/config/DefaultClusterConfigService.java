@@ -1,6 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.config;
 
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.util.resource.YamlResourceLoader;
 
@@ -9,7 +10,7 @@ import java.util.List;
 
 import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.DEFAULT_CONFIG_PATH;
 
-public class DefaultClusterConfigService implements ClusterConfigService {
+public class DefaultClusterConfigService extends AbstractService implements ClusterConfigService {
 
     private static final DefaultClusterConfigService INSTANCE = new DefaultClusterConfigService();
 
@@ -23,7 +24,7 @@ public class DefaultClusterConfigService implements ClusterConfigService {
     }
 
     @Override
-    public void initialize() throws PortunusException {
+    public void onInitialization() throws PortunusException {
         this.clusterConfig = readClusterConfig();
     }
 

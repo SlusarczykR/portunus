@@ -3,9 +3,13 @@ package org.slusarczykr.portunus.cache.manager;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.config.CacheConfig;
+import org.slusarczykr.portunus.cache.event.CacheEventListener;
+import org.slusarczykr.portunus.cache.event.CacheEventType;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCacheManager implements CacheManager {
@@ -20,7 +24,8 @@ public class DefaultCacheManager implements CacheManager {
 
     @Override
     public <K, V> Cache<K, V> getCache(String name) {
-        return (Cache<K, V>) caches.get(name);
+        return (Optional.ofNullable((Cache<K, V>) caches.get(name))
+                .orElseGet(() -> newCache(name)));
     }
 
     @Override
@@ -28,9 +33,17 @@ public class DefaultCacheManager implements CacheManager {
         return caches.values();
     }
 
+    private <K, V> Cache<K, V> newCache(String name) {
+        return newCache(name, new HashMap<>());
+    }
+
     @Override
     public <K, V> Cache<K, V> newCache(String name, CacheConfig<K, V> configuration) {
-        return new DefaultCache<>(configuration.getEventListeners());
+        return newCache(name, configuration.getEventListeners());
+    }
+
+    private <K, V> Cache<K, V> newCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
+        return (Cache<K, V>) caches.computeIfAbsent(name, it -> new DefaultCache<>(eventListeners));
     }
 
     @Override
