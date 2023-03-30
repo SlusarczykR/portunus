@@ -8,6 +8,8 @@ import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCa
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryDocument;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
@@ -110,6 +112,23 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         PortunusServiceBlockingStub portunusService = newClientStub();
 
         portunusService.sendEvent(event);
+    }
+
+    @Override
+    public boolean putEntry(String cacheName, CacheEntryDTO entry) {
+        PortunusServiceBlockingStub portunusService = newClientStub();
+        PutEntryCommand command = createPutEntryCommand(cacheName, entry);
+
+        PutEntryDocument document = portunusService.putEntry(command);
+
+        return document.getStatus();
+    }
+
+    private PutEntryCommand createPutEntryCommand(String cacheName, CacheEntryDTO entry) {
+        return PutEntryCommand.newBuilder()
+                .setCacheName(cacheName)
+                .setCacheEntry(entry)
+                .build();
     }
 
     private PortunusServiceBlockingStub newClientStub() {

@@ -36,7 +36,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     }
 
     @Override
-    public boolean isLocalPartition(String key) throws PortunusException {
+    public boolean isLocalPartition(Object key) throws PortunusException {
         int partitionId = getPartitionId(key);
         String partitionOwnerAddress = partitionOwnerCircle.getServerAddress(partitionId);
         String localServerAddress = clusterService.getClusterConfigService().getLocalServerPlainAddress();
@@ -45,7 +45,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     }
 
     @Override
-    public int getPartitionId(String key) {
+    public int getPartitionId(Object key) {
         return generateHashCode(key) % DEFAULT_NUMBER_OF_PARTITIONS;
     }
 
@@ -60,14 +60,14 @@ public class DefaultPartitionService extends AbstractService implements Partitio
                 .orElseThrow(() -> new PortunusException(String.format("Partition '%s' does not exists", partitionId)));
     }
 
-    private int generateHashCode(String key) {
+    private int generateHashCode(Object key) {
         return new HashCodeBuilder(17, 37)
                 .append(key)
                 .toHashCode();
     }
 
     @Override
-    public Partition getPartitionForKey(String key) {
+    public Partition getPartitionForKey(Object key) {
         int partitionId = getPartitionId(key);
         return partitions.computeIfAbsent(partitionId, this::createPartition);
     }

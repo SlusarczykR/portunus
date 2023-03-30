@@ -129,6 +129,14 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException {
+        Cache<K, V> cache = getCache(name);
+        cache.put(entry);
+
+        return true;
+    }
+
+    @Override
     public void sendEvent(ClusterEvent event) {
 
     }

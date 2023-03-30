@@ -46,6 +46,11 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException {
+        return portunusClient.putEntry(name, conversionService.convert(entry));
+    }
+
+    @Override
     public void sendEvent(ClusterEvent event) {
         portunusClient.sendEvent(event);
     }

@@ -21,3 +21,12 @@ message GetPartitionsCommand {
 message GetPartitionsDocument {
   repeated PartitionDTO partitions = 1;
 }
+
+message PutEntryCommand {
+  string cacheName = 2;
+  CacheEntryDTO cacheEntry = 1;
+}
+
+message PutEntryDocument {
+  bool status = 1;
+}

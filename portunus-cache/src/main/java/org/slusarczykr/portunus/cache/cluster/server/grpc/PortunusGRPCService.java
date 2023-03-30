@@ -10,6 +10,8 @@ import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCa
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryDocument;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
@@ -127,6 +129,22 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
         return GetPartitionsDocument.newBuilder()
                 .addAllPartitions(partitions)
+                .build();
+    }
+
+    @Override
+    public void putEntry(PutEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
+        responseObserver.onNext(putEntry(request));
+        responseObserver.onCompleted();
+    }
+
+    private <K extends Serializable, V extends Serializable> PutEntryDocument putEntry(PutEntryCommand command) {
+        Cache<K, V> cache = cacheManager.getCache(command.getCacheName());
+        Cache.Entry<K, V> entry = clusterService.getConversionService().convert(command.getCacheEntry());
+        cache.put(entry);
+        
+        return PutEntryDocument.newBuilder()
+                .setStatus(true)
                 .build();
     }
 

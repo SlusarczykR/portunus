@@ -20,4 +20,6 @@ public interface PortunusClient {
     Collection<PartitionDTO> getPartitions();
 
     void sendEvent(ClusterEvent event);
+
+    boolean putEntry(String cacheName, CacheEntryDTO entry);
 }

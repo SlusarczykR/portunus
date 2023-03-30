@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache;
 
+import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
@@ -10,6 +11,7 @@ import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
+import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.io.Serializable;
@@ -116,10 +118,39 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
 
     @Override
     public void put(K key, V value) {
-        validate(key, value);
-        Entry<K, V> entry = new Entry<>(key, value);
-        cache.put(key, entry);
-        cacheEntryObserver.onAdd(entry);
+        withErrorHandling(() -> {
+            validate(key, value);
+            Entry<K, V> entry = new Entry<>(key, value);
+            putEntry(key, entry);
+            cacheEntryObserver.onAdd(entry);
+        });
+    }
+
+    private void putEntry(K key, Entry<K, V> entry) {
+        if (isLocalPartition(key)) {
+            cache.put(key, entry);
+        } else {
+            PortunusServer owner = partitionService.getPartitionForKey(key).owner();
+            putEntry(owner, entry);
+        }
+    }
+
+    @SneakyThrows
+    private void putEntry(PortunusServer owner, Entry<K, V> entry) {
+        owner.put(name, entry);
+    }
+
+    @SneakyThrows
+    private boolean isLocalPartition(K key) {
+        return partitionService.isLocalPartition(key);
+    }
+
+    private void withErrorHandling(Runnable executable) {
+        try {
+            executable.run();
+        } catch (Exception e) {
+            throw new OperationFailedException("Could not execute operation");
+        }
     }
 
     @Override

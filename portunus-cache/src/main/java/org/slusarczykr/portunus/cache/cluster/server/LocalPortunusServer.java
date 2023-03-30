@@ -89,6 +89,17 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException {
+        Cache<K, V> cache = cacheManager.getCache(name);
+
+        if (!cache.containsKey(entry.getKey())) {
+            cache.put(entry);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void sendEvent(PortunusEventApiProtos.ClusterEvent event) {
 
     }
