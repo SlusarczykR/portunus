@@ -137,6 +137,12 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException {
+        Cache<K, V> cache = getCache(name);
+        return cache.remove(key);
+    }
+
+    @Override
     public void sendEvent(ClusterEvent event) {
 
     }

@@ -51,6 +51,11 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException {
+        return conversionService.convert(portunusClient.removeEntry(name, key));
+    }
+
+    @Override
     public void sendEvent(ClusterEvent event) {
         portunusClient.sendEvent(event);
     }

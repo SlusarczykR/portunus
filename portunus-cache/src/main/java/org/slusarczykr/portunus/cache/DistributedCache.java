@@ -1,6 +1,8 @@
 package org.slusarczykr.portunus.cache;
 
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
@@ -23,16 +25,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public class DistributedCache<K extends Serializable, V extends Serializable> implements Cache<K, V> {
+
+    private static final Logger log = LoggerFactory.getLogger(DistributedCache.class);
 
     private final PartitionService partitionService;
     private final DiscoveryService discoveryService;
 
     private final String name;
-    private final Map<K, Cache.Entry<K, V>> cache = new ConcurrentHashMap<>();
     private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
 
     public DistributedCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
@@ -64,21 +66,28 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
             Partition partition = partitionService.getPartitionForKey(objectKey);
             return partition.owner().containsEntry(name, key);
         }
-        return cache.containsKey(key);
+        return discoveryService.localServer().containsEntry(name, key);
     }
 
     @Override
     public boolean containsValue(V value) {
-        return cache.entrySet().stream()
+        return discoveryService.localServer().getCacheEntries(name).stream()
                 .anyMatch(it -> it.getValue().equals(value));
     }
 
     public Optional<Cache.Entry<K, V>> getEntry(K key) {
-        return Optional.ofNullable(cache.get(key))
+        return getLocalEntry(key)
                 .map(it -> {
                     cacheEntryObserver.onAccess(it);
                     return it;
                 });
+    }
+
+    private Optional<Cache.Entry<K, V>> getLocalEntry(K key) {
+        return discoveryService.localServer().getCacheEntries(name).stream()
+                .filter(it -> it.getKey().equals(key))
+                .map(it -> (Cache.Entry<K, V>) it)
+                .findFirst();
     }
 
     @Override
@@ -94,7 +103,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
     @Override
     public Collection<Cache.Entry<K, V>> allEntries() {
         List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(getRemoteServersEntries());
-        Collection<Cache.Entry<K, V>> entries = cache.values();
+        Set<Cache.Entry<K, V>> entries = discoveryService.localServer().getCacheEntries(name);
         entries.forEach(cacheEntryObserver::onAccess);
         remoteEntries.addAll(entries);
 
@@ -127,12 +136,14 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
     }
 
     private void putEntry(K key, Entry<K, V> entry) {
+        PortunusServer owner;
+
         if (isLocalPartition(key)) {
-            cache.put(key, entry);
+            owner = discoveryService.localServer();
         } else {
-            PortunusServer owner = partitionService.getPartitionForKey(key).owner();
-            putEntry(owner, entry);
+            owner = partitionService.getPartitionForKey(key).owner();
         }
+        putEntry(owner, entry);
     }
 
     @SneakyThrows
@@ -159,18 +170,35 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
         entries.forEach((key, value) -> {
             Entry<K, V> entry = new Entry<>(key, value);
             cacheEntryObserver.onAdd(entry);
-            cache.put(key, entry);
+            PortunusServer owner = discoveryService.localServer();
+            putEntry(owner, entry);
         });
     }
 
     @Override
-    public void remove(K key) {
-        Optional.ofNullable(cache.remove(key)).ifPresent(cacheEntryObserver::onRemove);
+    public Cache.Entry<K, V> remove(K key) throws PortunusException {
+        return Optional.ofNullable(removeEntry(key))
+                .map(it -> {
+                    cacheEntryObserver.onRemove(it);
+                    return it;
+                })
+                .orElseThrow(() -> new PortunusException("Entry is not present"));
+    }
+
+    @SneakyThrows
+    private Cache.Entry<K, V> removeEntry(K key) {
+        return discoveryService.localServer().remove(name, key);
     }
 
     @Override
     public void removeAll(Collection<K> keys) {
-        keys.forEach(this::remove);
+        keys.forEach(it -> {
+            try {
+                remove(it);
+            } catch (PortunusException e) {
+                log.error("Could not remove entry", e);
+            }
+        });
     }
 
     private void validate(K key, V value) {

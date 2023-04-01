@@ -22,4 +22,6 @@ public interface PortunusClient {
     void sendEvent(ClusterEvent event);
 
     boolean putEntry(String cacheName, CacheEntryDTO entry);
+
+    <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key);
 }

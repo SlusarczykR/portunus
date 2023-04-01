@@ -100,6 +100,12 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException {
+        Cache<K, V> cache = cacheManager.getCache(name);
+        return cache.remove(key);
+    }
+
+    @Override
     public void sendEvent(PortunusEventApiProtos.ClusterEvent event) {
 
     }

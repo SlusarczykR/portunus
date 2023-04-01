@@ -16,4 +16,5 @@ service PortunusService {
   rpc anyEntry(org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
   rpc putEntry(org.slusarczykr.portunus.cache.api.command.PutEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
+  rpc removeEntry(org.slusarczykr.portunus.cache.api.command.RemoveEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.RemoveEntryDocument);
 }

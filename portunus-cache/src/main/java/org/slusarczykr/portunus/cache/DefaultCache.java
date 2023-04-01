@@ -1,8 +1,11 @@
 package org.slusarczykr.portunus.cache;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
+import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -12,6 +15,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCache<K, V> implements Cache<K, V> {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultCache.class);
 
     private final Map<K, Cache.Entry<K, V>> cache = new ConcurrentHashMap<>();
     private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
@@ -82,13 +87,24 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void remove(K key) {
-        Optional.ofNullable(cache.remove(key)).ifPresent(cacheEntryObserver::onRemove);
+    public Cache.Entry<K, V> remove(K key) throws PortunusException {
+        return Optional.ofNullable(cache.remove(key))
+                .map(it -> {
+                    cacheEntryObserver.onRemove(it);
+                    return it;
+                })
+                .orElseThrow(() -> new PortunusException("Entry is not present"));
     }
 
     @Override
     public void removeAll(Collection<K> keys) {
-        keys.forEach(this::remove);
+        keys.forEach(it -> {
+            try {
+                remove(it);
+            } catch (PortunusException e) {
+                log.error("Could not remove entry", e);
+            }
+        });
     }
 
     private void validate(K key, V value) {

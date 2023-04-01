@@ -28,7 +28,7 @@ public interface Cache<K, V> {
 
     void putAll(Map<K, V> entries);
 
-    void remove(K key);
+    Entry<K, V> remove(K key) throws PortunusException;
 
     void removeAll(Collection<K> keys);
 

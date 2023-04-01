@@ -23,10 +23,19 @@ message GetPartitionsDocument {
 }
 
 message PutEntryCommand {
-  string cacheName = 2;
-  CacheEntryDTO cacheEntry = 1;
+  string cacheName = 1;
+  CacheEntryDTO cacheEntry = 2;
 }
 
 message PutEntryDocument {
   bool status = 1;
+}
+
+message RemoveEntryCommand {
+  string cacheName = 1;
+  bytes key = 2;
+}
+
+message RemoveEntryDocument {
+  CacheEntryDTO cacheEntry = 1;
 }

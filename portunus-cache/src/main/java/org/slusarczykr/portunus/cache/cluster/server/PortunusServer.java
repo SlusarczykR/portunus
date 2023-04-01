@@ -27,6 +27,8 @@ public interface PortunusServer {
 
     <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException;
 
+    <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException;
+
     void sendEvent(ClusterEvent event);
 
     record ClusterMemberContext(Address address) {

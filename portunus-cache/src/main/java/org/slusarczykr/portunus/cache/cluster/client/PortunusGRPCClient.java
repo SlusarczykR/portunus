@@ -10,6 +10,8 @@ import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPa
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryDocument;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
@@ -137,6 +139,25 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     private static GetPartitionsCommand createGetPartitionsCommand() {
         return GetPartitionsCommand.newBuilder()
+                .build();
+    }
+
+    @Override
+    public <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key) {
+        PortunusServiceBlockingStub portunusService = newClientStub();
+        RemoveEntryCommand command = createRemoveEntryCommand(cacheName, key);
+
+        RemoveEntryDocument document = portunusService.removeEntry(command);
+
+        return document.getCacheEntry();
+    }
+
+    private <K extends Serializable> RemoveEntryCommand createRemoveEntryCommand(String cacheName, K key) {
+        Distributed<K> distributed = Distributed.DistributedWrapper.from(key);
+
+        return RemoveEntryCommand.newBuilder()
+                .setCacheName(cacheName)
+                .setKey(distributed.getByteString())
                 .build();
     }
 
