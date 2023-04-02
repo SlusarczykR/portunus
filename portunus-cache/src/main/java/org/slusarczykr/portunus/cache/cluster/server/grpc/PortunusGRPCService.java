@@ -31,6 +31,7 @@ import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class PortunusGRPCService extends PortunusServiceImplBase {
 
@@ -44,8 +45,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void anyEntry(ContainsAnyEntryQuery request, StreamObserver<ContainsAnyEntryDocument> responseObserver) {
-        responseObserver.onNext(createContainsAnyEntryDocument(request));
-        responseObserver.onCompleted();
+        completeWith(responseObserver, () -> createContainsAnyEntryDocument(request));
     }
 
     private ContainsAnyEntryDocument createContainsAnyEntryDocument(ContainsAnyEntryQuery query) {
@@ -62,8 +62,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void containsEntry(ContainsEntryQuery request, StreamObserver<ContainsEntryDocument> responseObserver) {
-        responseObserver.onNext(createContainsEntryDocument(request));
-        responseObserver.onCompleted();
+        completeWith(responseObserver, () -> createContainsEntryDocument(request));
     }
 
     @SneakyThrows
@@ -100,8 +99,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void getCache(GetCacheCommand request, StreamObserver<GetCacheDocument> responseObserver) {
-        responseObserver.onNext(getLocalPartition(request));
-        responseObserver.onCompleted();
+        completeWith(responseObserver, () -> getLocalPartition(request));
     }
 
     @SneakyThrows
@@ -125,8 +123,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void getPartitions(GetPartitionsCommand request, StreamObserver<GetPartitionsDocument> responseObserver) {
-        responseObserver.onNext(getLocalPartitions());
-        responseObserver.onCompleted();
+        completeWith(responseObserver, this::getLocalPartitions);
     }
 
     private GetPartitionsDocument getLocalPartitions() {
@@ -141,8 +138,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void putEntry(PutEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
-        responseObserver.onNext(putEntry(request));
-        responseObserver.onCompleted();
+        completeWith(responseObserver, () -> putEntry(request));
     }
 
     private <K extends Serializable, V extends Serializable> PutEntryDocument putEntry(PutEntryCommand command) {
@@ -157,8 +153,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void removeEntry(RemoveEntryCommand request, StreamObserver<RemoveEntryDocument> responseObserver) {
-        responseObserver.onNext(removeEntry(request));
-        responseObserver.onCompleted();
+        completeWith(responseObserver, () -> removeEntry(request));
     }
 
     @SneakyThrows
@@ -184,12 +179,16 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendEvent(ClusterEvent request, StreamObserver<Empty> responseObserver) {
-        responseObserver.onNext(handleEvent(request));
-        responseObserver.onCompleted();
+        completeWith(responseObserver, () -> handleEvent(request));
     }
 
     private Empty handleEvent(ClusterEvent event) {
         clusterService.getClusterEventConsumer().consumeEvent(event);
         return Empty.getDefaultInstance();
+    }
+
+    private <T> void completeWith(StreamObserver<T> responseObserver, Supplier<T> onNext) {
+        responseObserver.onNext(onNext.get());
+        responseObserver.onCompleted();
     }
 }

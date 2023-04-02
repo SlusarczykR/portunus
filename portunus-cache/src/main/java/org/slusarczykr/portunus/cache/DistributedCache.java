@@ -167,6 +167,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> im
     @Override
     public void putAll(Map<K, V> entries) {
         entries.forEach(this::validate);
+
         entries.forEach((key, value) -> {
             Entry<K, V> entry = new Entry<>(key, value);
             cacheEntryObserver.onAdd(entry);

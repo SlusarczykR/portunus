@@ -1,21 +1,16 @@
 package org.slusarczykr.portunus.cache.cluster.client;
 
+import com.google.protobuf.GeneratedMessageV3;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryCommand;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryDocument;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryCommand;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryDocument;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
@@ -28,6 +23,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class PortunusGRPCClient extends AbstractManaged implements PortunusClient {
 
@@ -49,12 +46,10 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     @Override
     public boolean anyEntry(String cacheName) {
-        PortunusServiceBlockingStub portunusService = newClientStub();
-        ContainsAnyEntryQuery query = createContainsAnyEntryQuery(cacheName);
-
-        ContainsAnyEntryDocument document = portunusService.anyEntry(query);
-
-        return document.getAnyEntry();
+        return withPortunusServiceStub(portunusService -> {
+            ContainsAnyEntryQuery query = createContainsAnyEntryQuery(cacheName);
+            return portunusService.anyEntry(query);
+        }).getAnyEntry();
     }
 
     private ContainsAnyEntryQuery createContainsAnyEntryQuery(String cacheName) {
@@ -65,12 +60,10 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     @Override
     public <K extends Serializable> boolean containsEntry(String cacheName, K key) {
-        PortunusServiceBlockingStub portunusService = newClientStub();
-        ContainsEntryQuery query = createContainsEntryQuery(cacheName, key);
-
-        ContainsEntryDocument document = portunusService.containsEntry(query);
-
-        return document.getContainsEntry();
+        return withPortunusServiceStub(portunusService -> {
+            ContainsEntryQuery query = createContainsEntryQuery(cacheName, key);
+            return portunusService.containsEntry(query);
+        }).getContainsEntry();
     }
 
     private <K extends Serializable> ContainsEntryQuery createContainsEntryQuery(String cacheName, K key) {
@@ -85,12 +78,10 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     @Override
     public Set<CacheEntryDTO> getCache(String name) {
-        PortunusServiceBlockingStub portunusService = newClientStub();
-        GetCacheCommand command = createGetCacheCommand(name);
-
-        GetCacheDocument document = portunusService.getCache(command);
-
-        return new HashSet<>(document.getCacheEntriesList());
+        return new HashSet<>(withPortunusServiceStub(portunusService -> {
+            GetCacheCommand command = createGetCacheCommand(name);
+            return portunusService.getCache(command);
+        }).getCacheEntriesList());
     }
 
     private static GetCacheCommand createGetCacheCommand(String name) {
@@ -101,29 +92,25 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     @Override
     public Collection<PartitionDTO> getPartitions() {
-        PortunusServiceBlockingStub portunusService = newClientStub();
-        GetPartitionsCommand command = createGetPartitionsCommand();
-
-        GetPartitionsDocument document = portunusService.getPartitions(command);
-
-        return document.getPartitionsList();
+        return withPortunusServiceStub(portunusService -> {
+            GetPartitionsCommand command = createGetPartitionsCommand();
+            return portunusService.getPartitions(command);
+        }).getPartitionsList();
     }
 
     @Override
     public void sendEvent(ClusterEvent event) {
-        PortunusServiceBlockingStub portunusService = newClientStub();
-
-        portunusService.sendEvent(event);
+        withPortunusServiceStub(portunusService -> {
+            portunusService.sendEvent(event);
+        });
     }
 
     @Override
     public boolean putEntry(String cacheName, CacheEntryDTO entry) {
-        PortunusServiceBlockingStub portunusService = newClientStub();
-        PutEntryCommand command = createPutEntryCommand(cacheName, entry);
-
-        PutEntryDocument document = portunusService.putEntry(command);
-
-        return document.getStatus();
+        return withPortunusServiceStub(portunusService -> {
+            PutEntryCommand command = createPutEntryCommand(cacheName, entry);
+            return portunusService.putEntry(command);
+        }).getStatus();
     }
 
     private PutEntryCommand createPutEntryCommand(String cacheName, CacheEntryDTO entry) {
@@ -133,10 +120,6 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
                 .build();
     }
 
-    private PortunusServiceBlockingStub newClientStub() {
-        return PortunusServiceGrpc.newBlockingStub(channel);
-    }
-
     private static GetPartitionsCommand createGetPartitionsCommand() {
         return GetPartitionsCommand.newBuilder()
                 .build();
@@ -144,12 +127,10 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     @Override
     public <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key) {
-        PortunusServiceBlockingStub portunusService = newClientStub();
-        RemoveEntryCommand command = createRemoveEntryCommand(cacheName, key);
-
-        RemoveEntryDocument document = portunusService.removeEntry(command);
-
-        return document.getCacheEntry();
+        return withPortunusServiceStub(portunusService -> {
+            RemoveEntryCommand command = createRemoveEntryCommand(cacheName, key);
+            return portunusService.removeEntry(command);
+        }).getCacheEntry();
     }
 
     private <K extends Serializable> RemoveEntryCommand createRemoveEntryCommand(String cacheName, K key) {
@@ -159,6 +140,20 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
                 .setCacheName(cacheName)
                 .setKey(distributed.getByteString())
                 .build();
+    }
+
+    private <T extends GeneratedMessageV3> T withPortunusServiceStub(Function<PortunusServiceBlockingStub, T> executable) {
+        PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
+        return executable.apply(portunusServiceStub);
+    }
+
+    private void withPortunusServiceStub(Consumer<PortunusServiceBlockingStub> executable) {
+        PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
+        executable.accept(portunusServiceStub);
+    }
+
+    private PortunusServiceBlockingStub newPortunusServiceStub() {
+        return PortunusServiceGrpc.newBlockingStub(channel);
     }
 
     @Override
