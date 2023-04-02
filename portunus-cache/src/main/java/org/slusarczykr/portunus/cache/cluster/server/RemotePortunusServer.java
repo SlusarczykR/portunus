@@ -1,5 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
@@ -13,6 +15,8 @@ import java.util.stream.Collectors;
 
 public class RemotePortunusServer extends AbstractPortunusServer {
 
+    private static final Logger log = LoggerFactory.getLogger(RemotePortunusServer.class);
+
     private PortunusClient portunusClient;
 
     public static RemotePortunusServer newInstance(Address address) {
@@ -25,6 +29,7 @@ public class RemotePortunusServer extends AbstractPortunusServer {
 
     @Override
     protected void initialize() throws PortunusException {
+        log.info("Initializing gRPC client for '{}' remote server", serverContext.getPlainAddress());
         this.portunusClient = new PortunusGRPCClient(serverContext.address());
     }
 

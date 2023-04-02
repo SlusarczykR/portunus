@@ -3,6 +3,8 @@ package org.slusarczykr.portunus.cache.cluster.server;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
@@ -10,28 +12,25 @@ import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
-import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
-import org.slusarczykr.portunus.cache.maintenance.Managed;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-public class LocalPortunusServer extends AbstractPortunusServer implements Managed {
+public class LocalPortunusServer extends AbstractPortunusServer {
 
-    public static final int DEFAULT_SERVER_PORT = 8090;
+    private static final Logger log = LoggerFactory.getLogger(LocalPortunusServer.class);
 
-    private final CacheManager cacheManager;
+    private CacheManager cacheManager;
 
     private Server gRPCServer;
 
     private LocalPortunusServer(ClusterMemberContext context) {
         super(context);
-        this.cacheManager = DefaultCacheManager.getInstance();
-        DefaultManagedService.getInstance().add(this);
     }
 
     public static LocalPortunusServer newInstance(ClusterConfig clusterConfig) {
@@ -53,11 +52,18 @@ public class LocalPortunusServer extends AbstractPortunusServer implements Manag
 
     @Override
     protected void initialize() throws PortunusException {
-        this.gRPCServer = initializeGRPCServer();
+        try {
+            log.info("Starting gRPC server for '{}' server", serverContext.getPlainAddress());
+            this.cacheManager = DefaultCacheManager.getInstance();
+            this.gRPCServer = createGRPCServer();
+            this.gRPCServer.start();
+        } catch (IOException e) {
+            throw new PortunusException("Could not start gRPC server", e);
+        }
     }
 
-    private Server initializeGRPCServer() {
-        return ServerBuilder.forPort(DEFAULT_SERVER_PORT)
+    private Server createGRPCServer() {
+        return ServerBuilder.forPort(getClusterConfig().getPort())
                 .addService(new PortunusGRPCService())
                 .build();
     }
