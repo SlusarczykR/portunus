@@ -1,16 +1,22 @@
 package org.slusarczykr.portunus.cache.cluster.config;
 
+import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.util.resource.YamlResourceLoader;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.DEFAULT_CONFIG_PATH;
 
 public class DefaultClusterConfigService extends AbstractService implements ClusterConfigService {
+
+    private static final String PORTUNUS_PORT_PROPERTY_NAME = "portunusPort";
+    private static final String PORTUNUS_MEMBERS_PROPERTY_NAME = "portunusMembers";
 
     private static final DefaultClusterConfigService INSTANCE = new DefaultClusterConfigService();
 
@@ -25,7 +31,12 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
 
     @Override
     public void onInitialization() throws PortunusException {
-        this.clusterConfig = readClusterConfig();
+        this.clusterConfig = readPropertyClusterConfig().orElseGet(this::readFileClusterConfig);
+    }
+
+    @Override
+    public void overrideClusterConfig(ClusterConfig clusterConfig) {
+        this.clusterConfig = clusterConfig;
     }
 
     @Override
@@ -50,7 +61,22 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
                 .toList();
     }
 
-    private ClusterConfig readClusterConfig() throws PortunusException {
+    private Optional<ClusterConfig> readPropertyClusterConfig() {
+        return Optional.ofNullable(System.getProperty(PORTUNUS_PORT_PROPERTY_NAME))
+                .map(it -> ClusterConfig.builder()
+                        .port(Integer.parseInt(it))
+                        .members(readPropertyClusterMembers())
+                        .build());
+    }
+
+    private List<String> readPropertyClusterMembers() {
+        return Optional.ofNullable(System.getProperty(PORTUNUS_MEMBERS_PROPERTY_NAME))
+                .map(it -> List.of(it.split(",")))
+                .orElseGet(ArrayList::new);
+    }
+
+    @SneakyThrows
+    private ClusterConfig readFileClusterConfig() {
         try {
             YamlResourceLoader resourceLoader = YamlResourceLoader.getInstance();
             return resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterConfig.class);

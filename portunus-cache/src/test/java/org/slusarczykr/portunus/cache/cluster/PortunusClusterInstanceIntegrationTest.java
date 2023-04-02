@@ -2,6 +2,7 @@ package org.slusarczykr.portunus.cache.cluster;
 
 import org.junit.jupiter.api.Test;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,16 +11,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PortunusClusterInstanceIntegrationTest {
 
+    private static final int DEFAULT_PORT = 8091;
     private static final String DEFAULT_CACHE_NAME = "testCache";
     private static final String DEFAULT_CACHE_ENTRY_KEY = "testEntryKey";
     private static final String DEFAULT_CACHE_ENTRY_VALUE = "testEntryValue";
 
     @Test
-    void shouldInitializeWhenStarted() {
+    void shouldInitializeWhenConfigIsNull() {
         PortunusClusterInstance portunusClusterInstance = PortunusClusterInstance.getInstance(null);
 
         assertNotNull(portunusClusterInstance);
         assertNotNull(portunusClusterInstance.localMember());
+    }
+
+    @Test
+    void shouldInitializeWhenConfigIsGiven() {
+        ClusterConfig clusterConfig = newClusterConfig();
+        PortunusClusterInstance portunusClusterInstance = PortunusClusterInstance.getInstance(clusterConfig);
+
+        assertNotNull(portunusClusterInstance);
+        assertNotNull(portunusClusterInstance.localMember());
+    }
+
+    private static ClusterConfig newClusterConfig() {
+        return ClusterConfig.builder()
+                .port(DEFAULT_PORT)
+                .build();
     }
 
     @Test

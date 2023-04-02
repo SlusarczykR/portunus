@@ -33,6 +33,8 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private static final Logger log = LoggerFactory.getLogger(PortunusClusterInstance.class);
 
+    public static final int DEFAULT_PORT = 8091;
+
     private static PortunusClusterInstance instance;
 
     private final ClusterService clusterService;
@@ -41,18 +43,25 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private final Map<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
 
-    public static synchronized PortunusClusterInstance getInstance(ClusterConfig config) {
+    public static synchronized PortunusClusterInstance getInstance(ClusterConfig clusterConfig) {
         if (instance == null) {
-            instance = new PortunusClusterInstance(config);
+            instance = new PortunusClusterInstance(clusterConfig);
         }
         return instance;
     }
 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
+        log.info("Portunus instance is starting on port: '{}'", getPort(clusterConfig));
         preInitialize();
         this.clusterService = DefaultClusterService.getInstance();
         this.localServer = LocalPortunusServer.newInstance(clusterConfig);
         postInitialize();
+    }
+
+    private int getPort(ClusterConfig clusterConfig) {
+        return Optional.ofNullable(clusterConfig)
+                .map(ClusterConfig::getPort)
+                .orElse(DEFAULT_PORT);
     }
 
     private void preInitialize() {
