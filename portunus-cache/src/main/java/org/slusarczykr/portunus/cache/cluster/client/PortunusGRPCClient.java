@@ -31,10 +31,12 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     private final ManagedChannel channel;
 
     public PortunusGRPCClient(Address address) {
+        super();
         this.channel = initializeManagedChannel(address.hostname(), address.port());
     }
 
     public PortunusGRPCClient(ManagedChannel channel) {
+        super();
         this.channel = channel;
     }
 

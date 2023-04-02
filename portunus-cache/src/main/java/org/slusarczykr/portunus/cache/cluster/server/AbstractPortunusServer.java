@@ -13,6 +13,7 @@ public abstract class AbstractPortunusServer extends AbstractManaged implements 
     protected final ConversionService conversionService;
 
     protected AbstractPortunusServer(ClusterMemberContext serverContext) {
+        super();
         try {
             this.serverContext = serverContext;
             this.conversionService = DefaultConversionService.getInstance();

@@ -44,6 +44,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
 
     public DistributedCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
+        super();
         this.name = name;
         this.operationExecutor = Executors.newSingleThreadExecutor();
         this.partitionService = DefaultPartitionService.getInstance();
