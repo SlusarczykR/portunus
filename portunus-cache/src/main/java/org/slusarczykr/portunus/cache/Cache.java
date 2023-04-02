@@ -1,7 +1,5 @@
 package org.slusarczykr.portunus.cache;
 
-import org.slusarczykr.portunus.cache.exception.PortunusException;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -10,7 +8,7 @@ public interface Cache<K, V> {
 
     boolean isEmpty();
 
-    boolean containsKey(K key) throws PortunusException;
+    boolean containsKey(K key);
 
     boolean containsValue(V value);
 
@@ -28,7 +26,7 @@ public interface Cache<K, V> {
 
     void putAll(Map<K, V> entries);
 
-    Entry<K, V> remove(K key) throws PortunusException;
+    Entry<K, V> remove(K key);
 
     void removeAll(Collection<K> keys);
 

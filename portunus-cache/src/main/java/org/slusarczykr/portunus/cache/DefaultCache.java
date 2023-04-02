@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -87,24 +87,18 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public Cache.Entry<K, V> remove(K key) throws PortunusException {
+    public Cache.Entry<K, V> remove(K key) {
         return Optional.ofNullable(cache.remove(key))
                 .map(it -> {
                     cacheEntryObserver.onRemove(it);
                     return it;
                 })
-                .orElseThrow(() -> new PortunusException("Entry is not present"));
+                .orElseThrow(() -> new OperationFailedException("Entry is not present"));
     }
 
     @Override
     public void removeAll(Collection<K> keys) {
-        keys.forEach(it -> {
-            try {
-                remove(it);
-            } catch (PortunusException e) {
-                log.error("Could not remove entry", e);
-            }
-        });
+        keys.forEach(this::remove);
     }
 
     private void validate(K key, V value) {
