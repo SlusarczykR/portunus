@@ -7,6 +7,8 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public interface PortunusServer {
@@ -47,6 +49,12 @@ public interface PortunusServer {
 
             public String toPlainAddress() {
                 return String.format("%s:%s", hostname, port);
+            }
+
+            public static List<String> toPlainAddresses(Collection<Address> addresses) {
+                return addresses.stream()
+                        .map(Address::toPlainAddress)
+                        .toList();
             }
         }
 

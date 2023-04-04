@@ -8,10 +8,10 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance.DEFAULT_PORT;
 
 class PortunusClusterInstanceIntegrationTest {
 
-    private static final int DEFAULT_PORT = 8091;
     private static final String DEFAULT_CACHE_NAME = "testCache";
     private static final String DEFAULT_CACHE_ENTRY_KEY = "testEntryKey";
     private static final String DEFAULT_CACHE_ENTRY_VALUE = "testEntryValue";
