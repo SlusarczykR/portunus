@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class DefaultServiceLoader implements ServiceLoader {
 
@@ -24,6 +25,7 @@ public class DefaultServiceLoader implements ServiceLoader {
     private final Map<String, Service> services = new ConcurrentHashMap<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final ReentrantLock lock = new ReentrantLock();
 
     private DefaultServiceLoader() {
     }
@@ -34,9 +36,15 @@ public class DefaultServiceLoader implements ServiceLoader {
 
     @Override
     public void loadServices() {
-        if (!initialized.get()) {
-            initializeServices();
-            initialized.set(true);
+        try {
+            lock.lock();
+
+            if (!initialized.get()) {
+                initializeServices();
+                initialized.set(true);
+            }
+        } finally {
+            lock.unlock();
         }
     }
 

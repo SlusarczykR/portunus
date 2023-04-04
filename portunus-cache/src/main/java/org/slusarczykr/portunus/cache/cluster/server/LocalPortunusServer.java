@@ -63,7 +63,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     private Server createGRPCServer() {
-        return ServerBuilder.forPort(getClusterConfig().getPort())
+        return ServerBuilder.forPort(serverContext.getPort())
                 .addService(new PortunusGRPCService())
                 .build();
     }

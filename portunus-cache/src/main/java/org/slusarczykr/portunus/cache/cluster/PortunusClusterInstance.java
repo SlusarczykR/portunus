@@ -50,6 +50,10 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         return instance;
     }
 
+    public static synchronized PortunusClusterInstance newInstance(ClusterConfig clusterConfig) {
+        return new PortunusClusterInstance(clusterConfig);
+    }
+
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
         log.info("Portunus instance is starting on port: '{}'", getPort(clusterConfig));
         preInitialize();
