@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PortunusConsistentHashingCircle implements PortunusHashingCircle, PartitionKeyStrategy {
+
     public static final int DEFAULT_NUMBER_OF_REPLICAS = 30;
 
     private final SortedMap<String, VirtualPortunusNode> circle = new ConcurrentSkipListMap<>();

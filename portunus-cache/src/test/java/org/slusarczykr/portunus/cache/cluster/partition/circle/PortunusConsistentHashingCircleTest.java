@@ -18,8 +18,6 @@ import static org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusCo
 
 class PortunusConsistentHashingCircleTest {
 
-    private static final String LOCALHOST = "localhost";
-
     @Test
     void shouldAddNodesWithReplicasToCircle() {
         PortunusConsistentHashingCircle circle = new PortunusConsistentHashingCircle();
