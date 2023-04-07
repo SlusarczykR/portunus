@@ -38,8 +38,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     private final ClusterService clusterService;
     private final CacheManager cacheManager;
 
-    public PortunusGRPCService() {
-        this.clusterService = DefaultClusterService.getInstance();
+    public PortunusGRPCService(ClusterService clusterService) {
+        this.clusterService = clusterService;
         this.cacheManager = DefaultCacheManager.getInstance();
     }
 

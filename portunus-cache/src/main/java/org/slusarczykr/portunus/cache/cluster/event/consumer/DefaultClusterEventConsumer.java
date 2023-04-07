@@ -6,7 +6,6 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractAsyncService;
@@ -19,16 +18,12 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterEventConsumer.class);
 
-    private static final DefaultClusterEventConsumer INSTANCE = new DefaultClusterEventConsumer();
-
-    public static DefaultClusterEventConsumer getInstance() {
-        return INSTANCE;
+    public static DefaultClusterEventConsumer newInstance(ClusterService clusterService) {
+        return new DefaultClusterEventConsumer(clusterService);
     }
 
-    private final ClusterService clusterService;
-
-    public DefaultClusterEventConsumer() {
-        this.clusterService = DefaultClusterService.getInstance();
+    public DefaultClusterEventConsumer(ClusterService clusterService) {
+        super(clusterService);
     }
 
     @Override
@@ -53,7 +48,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     private void handleEvent(MemberJoinedEvent event) throws PortunusException {
         Address address = clusterService.getConversionService().convert(event.getAddress());
-        RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(address);
+        RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, address);
         clusterService.getDiscoveryService().register(portunusServer);
 
     }

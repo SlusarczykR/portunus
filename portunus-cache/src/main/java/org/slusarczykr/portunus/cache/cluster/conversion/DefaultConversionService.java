@@ -6,7 +6,6 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -16,16 +15,12 @@ import java.io.Serializable;
 
 public class DefaultConversionService extends AbstractService implements ConversionService {
 
-    private static final DefaultConversionService INSTANCE = new DefaultConversionService();
-
-    private final ClusterService clusterService;
-
-    private DefaultConversionService() {
-        this.clusterService = DefaultClusterService.getInstance();
+    private DefaultConversionService(ClusterService clusterService) {
+        super(clusterService);
     }
 
-    public static DefaultConversionService getInstance() {
-        return INSTANCE;
+    public static DefaultConversionService newInstance(ClusterService clusterService) {
+        return new DefaultConversionService(clusterService);
     }
 
     @Override

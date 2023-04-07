@@ -1,6 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.config;
 
 import lombok.SneakyThrows;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -18,15 +19,14 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
     private static final String PORTUNUS_PORT_PROPERTY_NAME = "portunusPort";
     private static final String PORTUNUS_MEMBERS_PROPERTY_NAME = "portunusMembers";
 
-    private static final DefaultClusterConfigService INSTANCE = new DefaultClusterConfigService();
-
     private ClusterConfig clusterConfig;
 
-    public static DefaultClusterConfigService getInstance() {
-        return INSTANCE;
+    public static DefaultClusterConfigService newInstance(ClusterService clusterService) {
+        return new DefaultClusterConfigService(clusterService);
     }
 
-    private DefaultClusterConfigService() {
+    private DefaultClusterConfigService(ClusterService clusterService) {
+        super(clusterService);
     }
 
     @Override

@@ -57,8 +57,8 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
         log.info("Portunus instance is starting on port: '{}'", getPort(clusterConfig));
         preInitialize();
-        this.clusterService = DefaultClusterService.getInstance();
-        this.localServer = LocalPortunusServer.newInstance(clusterConfig);
+        this.clusterService = DefaultClusterService.newInstance();
+        this.localServer = LocalPortunusServer.newInstance(clusterService, clusterConfig);
         postInitialize();
     }
 
@@ -115,7 +115,11 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     @Override
     public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
-        return (Cache<K, V>) caches.computeIfAbsent(name, it -> new DistributedCache<>(it, Collections.emptyMap()));
+        return (Cache<K, V>) caches.computeIfAbsent(name, this::newDistributedCache);
+    }
+
+    private <K extends Serializable, V extends Serializable> DistributedCache<K, V> newDistributedCache(String name) {
+        return new DistributedCache<>(clusterService, name, Collections.emptyMap());
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
@@ -13,7 +14,9 @@ import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsE
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.extension.GrpcCleanupExtension;
+import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 
 import java.io.IOException;
@@ -22,6 +25,8 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LocalPortunusServerTest {
@@ -31,14 +36,19 @@ class LocalPortunusServerTest {
 
     private PortunusServiceBlockingStub portunusServiceStub;
 
+    @Mock
+    private ClusterService clusterService;
+
     @BeforeEach
     void setUp() throws IOException {
-        PortunusGRPCService portunusService = new PortunusGRPCService();
+        PortunusGRPCService portunusService = new PortunusGRPCService(clusterService);
         portunusServiceStub = PortunusServiceGrpc.newBlockingStub(cleanupExtension.addService(portunusService));
     }
 
     @Test
     void shouldReturnGetPartitionsDocumentWhenGetPartitions() {
+        PartitionService partitionService = mock(PartitionService.class);
+        when(clusterService.getPartitionService()).thenReturn(partitionService);
         GetPartitionsCommand command = GetPartitionsCommand.newBuilder()
                 .setAddress(randomAlphabetic(12))
                 .build();

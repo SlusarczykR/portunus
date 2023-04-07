@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
@@ -29,25 +29,25 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private Server gRPCServer;
 
-    private LocalPortunusServer(ClusterMemberContext context) {
-        super(context);
+    private LocalPortunusServer(ClusterService clusterService, ClusterMemberContext context) {
+        super(clusterService, context);
     }
 
-    public static LocalPortunusServer newInstance(ClusterConfig clusterConfig) {
-        ClusterMemberContext serverContext = createServerContext(clusterConfig);
-        return new LocalPortunusServer(serverContext);
+    public static LocalPortunusServer newInstance(ClusterService clusterService, ClusterConfig clusterConfig) {
+        ClusterMemberContext serverContext = createServerContext(clusterService, clusterConfig);
+        return new LocalPortunusServer(clusterService, serverContext);
     }
 
     @SneakyThrows
-    private static ClusterMemberContext createServerContext(ClusterConfig clusterConfig) {
-        clusterConfig = Optional.ofNullable(clusterConfig).orElseGet(LocalPortunusServer::getClusterConfig);
+    private static ClusterMemberContext createServerContext(ClusterService clusterService, ClusterConfig clusterConfig) {
+        clusterConfig = Optional.ofNullable(clusterConfig).orElseGet(() -> getClusterConfig(clusterService));
         Address address = clusterConfig.getLocalServerAddress();
 
         return new ClusterMemberContext(address);
     }
 
-    private static ClusterConfig getClusterConfig() {
-        return DefaultClusterService.getInstance().getClusterConfigService().getClusterConfig();
+    private static ClusterConfig getClusterConfig(ClusterService clusterService) {
+        return clusterService.getClusterConfigService().getClusterConfig();
     }
 
     @Override
@@ -64,7 +64,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private Server createGRPCServer() {
         return ServerBuilder.forPort(serverContext.getPort())
-                .addService(new PortunusGRPCService())
+                .addService(new PortunusGRPCService(clusterService))
                 .build();
     }
 

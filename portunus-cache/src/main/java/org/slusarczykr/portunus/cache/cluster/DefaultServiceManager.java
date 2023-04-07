@@ -8,7 +8,7 @@ import org.slusarczykr.portunus.cache.cluster.event.consumer.DefaultClusterEvent
 import org.slusarczykr.portunus.cache.cluster.event.publisher.DefaultClusterEventPublisher;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
-import org.slusarczykr.portunus.cache.cluster.service.ServiceLoader;
+import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
 import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 
 import java.util.List;
@@ -18,20 +18,26 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DefaultServiceLoader implements ServiceLoader {
+public class DefaultServiceManager implements ServiceManager {
 
-    private static final DefaultServiceLoader INSTANCE = new DefaultServiceLoader();
+    private final ClusterService clusterService;
 
     private final Map<String, Service> services = new ConcurrentHashMap<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final ReentrantLock lock = new ReentrantLock();
 
-    private DefaultServiceLoader() {
+    private DefaultServiceManager(ClusterService clusterService) {
+        this.clusterService = clusterService;
     }
 
-    public static DefaultServiceLoader getInstance() {
-        return INSTANCE;
+    public static DefaultServiceManager newInstance(ClusterService clusterService) {
+        return new DefaultServiceManager(clusterService);
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return initialized.get();
     }
 
     @Override
@@ -49,12 +55,12 @@ public class DefaultServiceLoader implements ServiceLoader {
     }
 
     private void initializeServices() {
-        initializeService(DefaultClusterConfigService.getInstance());
-        initializeService(DefaultPartitionService.getInstance());
-        initializeService(DefaultDiscoveryService.getInstance());
-        initializeService(DefaultConversionService.getInstance());
-        initializeService(DefaultClusterEventPublisher.getInstance());
-        initializeService(DefaultClusterEventConsumer.getInstance());
+        initializeService(DefaultClusterConfigService.newInstance(clusterService));
+        initializeService(DefaultPartitionService.newInstance(clusterService));
+        initializeService(DefaultDiscoveryService.newInstance(clusterService));
+        initializeService(DefaultConversionService.newInstance(clusterService));
+        initializeService(DefaultClusterEventPublisher.newInstance(clusterService));
+        initializeService(DefaultClusterEventConsumer.newInstance(clusterService));
     }
 
     @SneakyThrows

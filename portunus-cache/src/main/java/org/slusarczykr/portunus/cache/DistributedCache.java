@@ -3,11 +3,9 @@ package org.slusarczykr.portunus.cache;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
-import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
-import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
-import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
@@ -36,26 +34,24 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     private static final Logger log = LoggerFactory.getLogger(DistributedCache.class);
 
-    private final PartitionService partitionService;
-    private final DiscoveryService discoveryService;
+    private final ClusterService clusterService;
 
     private final String name;
     private final ExecutorService operationExecutor;
     private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
 
-    public DistributedCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
+    public DistributedCache(ClusterService clusterService, String name, Map<CacheEventType, CacheEventListener> eventListeners) {
         super();
+        this.clusterService = clusterService;
         this.name = name;
         this.operationExecutor = Executors.newSingleThreadExecutor();
-        this.partitionService = DefaultPartitionService.getInstance();
-        this.discoveryService = DefaultDiscoveryService.getInstance();
         eventListeners.forEach(cacheEntryObserver::register);
     }
 
     @Override
     public boolean isEmpty() {
         return executeOperation(OperationType.IS_EMPTY, () -> {
-            boolean anyLocalEntry = discoveryService.localServer().anyEntry(name);
+            boolean anyLocalEntry = clusterService.getDiscoveryService().localServer().anyEntry(name);
             boolean anyEntry = anyLocalEntry || anyRemoteEntry();
 
             return !anyEntry;
@@ -72,18 +68,18 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         return executeOperation(OperationType.CONTAINS_KEY, () -> {
             String objectKey = key.toString();
 
-            if (!partitionService.isLocalPartition(objectKey)) {
-                Partition partition = partitionService.getPartitionForKey(objectKey);
+            if (!clusterService.getPartitionService().isLocalPartition(objectKey)) {
+                Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
                 return partition.owner().containsEntry(name, key);
             }
-            return discoveryService.localServer().containsEntry(name, key);
+            return clusterService.getDiscoveryService().localServer().containsEntry(name, key);
         });
     }
 
     @Override
     public boolean containsValue(V value) {
         return executeOperation(OperationType.CONTAINS_VALUE, () ->
-                discoveryService.localServer().getCacheEntries(name).stream()
+                clusterService.getDiscoveryService().localServer().getCacheEntries(name).stream()
                         .anyMatch(it -> it.getValue().equals(value))
         );
     }
@@ -97,7 +93,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     private Optional<Cache.Entry<K, V>> getLocalEntry(K key) {
-        return discoveryService.localServer().getCacheEntries(name).stream()
+        return clusterService.getDiscoveryService().localServer().getCacheEntries(name).stream()
                 .filter(it -> it.getKey().equals(key))
                 .map(it -> (Cache.Entry<K, V>) it)
                 .findFirst();
@@ -118,7 +114,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     public Collection<Cache.Entry<K, V>> allEntries() {
         return executeOperation(OperationType.GET_ALL_ENTRIES, () -> {
             List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(getRemoteServersEntries());
-            Set<Cache.Entry<K, V>> entries = discoveryService.localServer().getCacheEntries(name);
+            Set<Cache.Entry<K, V>> entries = clusterService.getDiscoveryService().localServer().getCacheEntries(name);
             entries.forEach(cacheEntryObserver::onAccess);
             remoteEntries.addAll(entries);
 
@@ -134,7 +130,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     private Stream<RemotePortunusServer> remoteServersStream() {
-        return discoveryService.remoteServers().parallelStream();
+        return clusterService.getDiscoveryService().remoteServers().parallelStream();
     }
 
     private Set<Cache.Entry<K, V>> getRemoteEntries(PortunusServer remoteServer) {
@@ -156,9 +152,9 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         PortunusServer owner;
 
         if (isLocalPartition(key)) {
-            owner = discoveryService.localServer();
+            owner = clusterService.getDiscoveryService().localServer();
         } else {
-            owner = partitionService.getPartitionForKey(key).owner();
+            owner = clusterService.getPartitionService().getPartitionForKey(key).owner();
         }
         putEntry(owner, entry);
     }
@@ -170,7 +166,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private boolean isLocalPartition(K key) {
-        return partitionService.isLocalPartition(key);
+        return clusterService.getPartitionService().isLocalPartition(key);
     }
 
     @Override
@@ -180,7 +176,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
             entries.forEach((key, value) -> {
                 Entry<K, V> entry = new Entry<>(key, value);
                 cacheEntryObserver.onAdd(entry);
-                PortunusServer owner = discoveryService.localServer();
+                PortunusServer owner = clusterService.getDiscoveryService().localServer();
                 putEntry(owner, entry);
             });
             return entries;
@@ -205,7 +201,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private Cache.Entry<K, V> removeEntry(K key) {
-        return discoveryService.localServer().remove(name, key);
+        return clusterService.getDiscoveryService().localServer().remove(name, key);
     }
 
     @Override

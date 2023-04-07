@@ -6,33 +6,38 @@ import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.ClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.ClusterEventPublisher;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
-import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
-import org.slusarczykr.portunus.cache.cluster.service.ServiceLoader;
+import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
+import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
-public class DefaultClusterService extends AbstractService implements ClusterService {
+public class DefaultClusterService extends AbstractManaged implements Service, ClusterService {
 
-    private static final DefaultClusterService INSTANCE;
+    private final ServiceManager serviceManager;
 
-    static {
-        INSTANCE = new DefaultClusterService();
-        ServiceLoader.load();
-    }
-
-    private final ServiceLoader serviceLoader;
-
-    public static DefaultClusterService getInstance() {
-        return INSTANCE;
+    public static DefaultClusterService newInstance() {
+        return new DefaultClusterService();
     }
 
     private DefaultClusterService() {
         try {
-            this.serviceLoader = DefaultServiceLoader.getInstance();
+            this.serviceManager = DefaultServiceManager.newInstance(this);
+            initialize();
         } catch (Exception e) {
             throw new FatalPortunusException("Portunus cluster could not be initialized", e);
         }
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return serviceManager.isInitialized();
+    }
+
+    @Override
+    public void initialize() throws PortunusException {
+        serviceManager.loadServices();
     }
 
     @Override
@@ -56,7 +61,7 @@ public class DefaultClusterService extends AbstractService implements ClusterSer
     }
 
     private <T extends Service> T getService(Class<T> clazz) {
-        T service = serviceLoader.getService(clazz);
+        T service = serviceManager.getService(clazz);
 
         if (!service.isInitialized()) {
             throw new InvalidPortunusStateException(String.format("Service '%s' has not been initialized yet", service.getName()));
@@ -77,5 +82,10 @@ public class DefaultClusterService extends AbstractService implements ClusterSer
     @Override
     public String getName() {
         return ClusterService.class.getSimpleName();
+    }
+
+    @Override
+    public void shutdown() {
+
     }
 }

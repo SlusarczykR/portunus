@@ -3,7 +3,6 @@ package org.slusarczykr.portunus.cache.cluster.partition;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -19,20 +18,16 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     private static final int DEFAULT_NUMBER_OF_PARTITIONS = 157;
 
-    private static final DefaultPartitionService INSTANCE = new DefaultPartitionService();
-
-    private final ClusterService clusterService;
-
     private final PortunusConsistentHashingCircle partitionOwnerCircle;
     private final Map<Integer, Partition> partitions = new ConcurrentHashMap<>();
 
-    private DefaultPartitionService() {
-        this.clusterService = DefaultClusterService.getInstance();
+    private DefaultPartitionService(ClusterService clusterService) {
+        super(clusterService);
         this.partitionOwnerCircle = new PortunusConsistentHashingCircle();
     }
 
-    public static DefaultPartitionService getInstance() {
-        return INSTANCE;
+    public static DefaultPartitionService newInstance(ClusterService clusterService) {
+        return new DefaultPartitionService(clusterService);
     }
 
     @Override

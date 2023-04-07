@@ -2,7 +2,6 @@ package org.slusarczykr.portunus.cache.cluster.discovery;
 
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -18,18 +17,14 @@ import java.util.function.Predicate;
 
 public class DefaultDiscoveryService extends AbstractService implements DiscoveryService {
 
-    private static final DefaultDiscoveryService INSTANCE = new DefaultDiscoveryService();
-
-    private final ClusterService clusterService;
-
     private final Map<String, PortunusServer> portunusInstances = new ConcurrentHashMap<>();
 
-    private DefaultDiscoveryService() {
-        this.clusterService = DefaultClusterService.getInstance();
+    private DefaultDiscoveryService(ClusterService clusterService) {
+        super(clusterService);
     }
 
-    public static DefaultDiscoveryService getInstance() {
-        return INSTANCE;
+    public static DefaultDiscoveryService newInstance(ClusterService clusterService) {
+        return new DefaultDiscoveryService(clusterService);
     }
 
     @Override
@@ -45,7 +40,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
 
     @SneakyThrows
     private void loadServer(Address address) {
-        RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(address);
+        RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, address);
         register(portunusServer);
     }
 

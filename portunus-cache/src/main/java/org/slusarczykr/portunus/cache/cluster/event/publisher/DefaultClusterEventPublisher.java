@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractAsyncService;
 
@@ -16,16 +15,12 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterEventPublisher.class);
 
-    private static final DefaultClusterEventPublisher INSTANCE = new DefaultClusterEventPublisher();
-
-    public static DefaultClusterEventPublisher getInstance() {
-        return INSTANCE;
+    public static DefaultClusterEventPublisher newInstance(ClusterService clusterService) {
+        return new DefaultClusterEventPublisher(clusterService);
     }
 
-    private final ClusterService clusterService;
-
-    public DefaultClusterEventPublisher() {
-        this.clusterService = DefaultClusterService.getInstance();
+    public DefaultClusterEventPublisher(ClusterService clusterService) {
+        super(clusterService);
     }
 
     @Override
