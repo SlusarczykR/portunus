@@ -28,7 +28,12 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
         execute(() -> {
             log.info("Sending '{}' to remote cluster members", event.getEventType());
             List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
-            remoteServers.forEach(it -> sendEvent(it, event));
+
+            if (!remoteServers.isEmpty()) {
+                remoteServers.forEach(it -> sendEvent(it, event));
+            } else {
+                log.info("No remote cluster members registered");
+            }
         });
     }
 
