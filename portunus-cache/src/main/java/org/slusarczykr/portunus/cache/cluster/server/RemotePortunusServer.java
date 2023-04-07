@@ -3,6 +3,7 @@ package org.slusarczykr.portunus.cache.cluster.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
@@ -53,6 +54,7 @@ public class RemotePortunusServer extends AbstractPortunusServer {
 
     @Override
     public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException {
+        log.info("Sending '{}' operation to {} server", OperationType.SEND_EVENT, getPlainAddress());
         return portunusClient.putEntry(name, clusterService.getConversionService().convert(entry));
     }
 

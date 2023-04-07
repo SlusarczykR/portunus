@@ -57,7 +57,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
         log.info("Portunus instance is starting on port: '{}'", getPort(clusterConfig));
         preInitialize();
-        this.clusterService = DefaultClusterService.newInstance();
+        this.clusterService = DefaultClusterService.newInstance(clusterConfig);
         this.localServer = LocalPortunusServer.newInstance(clusterService, clusterConfig);
         postInitialize();
     }

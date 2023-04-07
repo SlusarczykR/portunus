@@ -31,7 +31,15 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
 
     @Override
     public void onInitialization() throws PortunusException {
-        this.clusterConfig = readPropertyClusterConfig().orElseGet(this::readFileClusterConfig);
+        this.clusterConfig = Optional.ofNullable(clusterService.getClusterConfig())
+                .orElseGet(this::readClusterConfig);
+    }
+
+    private ClusterConfig readClusterConfig() {
+        ClusterConfig clusterConfig = readPropertyClusterConfig().orElseGet(this::readFileClusterConfig);
+        clusterService.overrideClusterConfig(clusterConfig);
+
+        return clusterConfig;
     }
 
     @Override

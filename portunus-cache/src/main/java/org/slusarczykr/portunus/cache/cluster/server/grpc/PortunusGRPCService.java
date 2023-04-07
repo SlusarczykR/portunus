@@ -4,7 +4,10 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
@@ -22,8 +25,8 @@ import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsE
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
@@ -35,6 +38,8 @@ import java.util.function.Supplier;
 
 public class PortunusGRPCService extends PortunusServiceImplBase {
 
+    private static final Logger log = LoggerFactory.getLogger(RemotePortunusServer.class);
+
     private final ClusterService clusterService;
     private final CacheManager cacheManager;
 
@@ -45,7 +50,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void anyEntry(ContainsAnyEntryQuery request, StreamObserver<ContainsAnyEntryDocument> responseObserver) {
-        completeWith(responseObserver, () -> createContainsAnyEntryDocument(request));
+        completeWith(responseObserver, OperationType.IS_EMPTY, () -> createContainsAnyEntryDocument(request));
     }
 
     private ContainsAnyEntryDocument createContainsAnyEntryDocument(ContainsAnyEntryQuery query) {
@@ -62,7 +67,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void containsEntry(ContainsEntryQuery request, StreamObserver<ContainsEntryDocument> responseObserver) {
-        completeWith(responseObserver, () -> createContainsEntryDocument(request));
+        completeWith(responseObserver, OperationType.CONTAINS_KEY, () -> createContainsEntryDocument(request));
     }
 
     @SneakyThrows
@@ -99,7 +104,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void getCache(GetCacheCommand request, StreamObserver<GetCacheDocument> responseObserver) {
-        completeWith(responseObserver, () -> getLocalPartition(request));
+        completeWith(responseObserver, OperationType.GET_ALL_ENTRIES, () -> getLocalPartition(request));
     }
 
     @SneakyThrows
@@ -123,7 +128,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void getPartitions(GetPartitionsCommand request, StreamObserver<GetPartitionsDocument> responseObserver) {
-        completeWith(responseObserver, this::getLocalPartitions);
+        completeWith(responseObserver, OperationType.GET_ALL_ENTRIES, this::getLocalPartitions);
     }
 
     private GetPartitionsDocument getLocalPartitions() {
@@ -138,7 +143,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void putEntry(PutEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
-        completeWith(responseObserver, () -> putEntry(request));
+        completeWith(responseObserver, OperationType.PUT, () -> putEntry(request));
     }
 
     private <K extends Serializable, V extends Serializable> PutEntryDocument putEntry(PutEntryCommand command) {
@@ -153,7 +158,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void removeEntry(RemoveEntryCommand request, StreamObserver<RemoveEntryDocument> responseObserver) {
-        completeWith(responseObserver, () -> removeEntry(request));
+        completeWith(responseObserver, OperationType.REMOVE, () -> removeEntry(request));
     }
 
     @SneakyThrows
@@ -179,7 +184,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendEvent(ClusterEvent request, StreamObserver<Empty> responseObserver) {
-        completeWith(responseObserver, () -> handleEvent(request));
+        completeWith(responseObserver, OperationType.SEND_EVENT, () -> handleEvent(request));
     }
 
     private Empty handleEvent(ClusterEvent event) {
@@ -187,7 +192,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         return Empty.getDefaultInstance();
     }
 
-    private <T> void completeWith(StreamObserver<T> responseObserver, Supplier<T> onNext) {
+    private <T> void completeWith(StreamObserver<T> responseObserver, OperationType operationType, Supplier<T> onNext) {
+        log.info("Received '{}' command from remote server", operationType);
         responseObserver.onNext(onNext.get());
         responseObserver.onCompleted();
     }

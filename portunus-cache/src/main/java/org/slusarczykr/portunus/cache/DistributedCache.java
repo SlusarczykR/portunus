@@ -4,7 +4,6 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.DefaultClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -250,7 +249,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         }
     }
 
-    private enum OperationType {
+    public enum OperationType {
         IS_EMPTY,
         CONTAINS_KEY,
         CONTAINS_VALUE,
@@ -260,6 +259,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         PUT,
         PUT_ALL,
         REMOVE,
-        REMOVE_ALL
+        REMOVE_ALL,
+        SEND_EVENT
     }
 }

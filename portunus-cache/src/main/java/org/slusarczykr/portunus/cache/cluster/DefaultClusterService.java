@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster;
 
+import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfigService;
 import org.slusarczykr.portunus.cache.cluster.conversion.ConversionService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
@@ -13,17 +14,19 @@ import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
-public class DefaultClusterService extends AbstractManaged implements Service, ClusterService {
+public class DefaultClusterService extends AbstractManaged implements ClusterService {
 
+    private ClusterConfig clusterConfig;
     private final ServiceManager serviceManager;
 
-    public static DefaultClusterService newInstance() {
-        return new DefaultClusterService();
+    public static DefaultClusterService newInstance(ClusterConfig clusterConfig) {
+        return new DefaultClusterService(clusterConfig);
     }
 
-    private DefaultClusterService() {
+    private DefaultClusterService(ClusterConfig clusterConfig) {
         try {
             this.serviceManager = DefaultServiceManager.newInstance(this);
+            this.clusterConfig = clusterConfig;
             initialize();
         } catch (Exception e) {
             throw new FatalPortunusException("Portunus cluster could not be initialized", e);
@@ -38,6 +41,16 @@ public class DefaultClusterService extends AbstractManaged implements Service, C
     @Override
     public void initialize() throws PortunusException {
         serviceManager.loadServices();
+    }
+
+    @Override
+    public ClusterConfig getClusterConfig() {
+        return clusterConfig;
+    }
+
+    @Override
+    public void overrideClusterConfig(ClusterConfig clusterConfig) {
+        this.clusterConfig = clusterConfig;
     }
 
     @Override

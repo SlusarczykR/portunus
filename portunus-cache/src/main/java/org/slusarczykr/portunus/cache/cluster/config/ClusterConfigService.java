@@ -6,7 +6,7 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
 
-public interface ClusterConfigService extends Service {
+public interface ClusterConfigService extends ClusterConfigHolder, Service {
 
     void overrideClusterConfig(ClusterConfig clusterConfig);
 
