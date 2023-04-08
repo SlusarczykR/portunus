@@ -7,10 +7,15 @@ import org.slusarczykr.portunus.cache.cluster.conversion.ConversionService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.ClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.ClusterEventPublisher;
+import org.slusarczykr.portunus.cache.cluster.leader.election.service.LeaderElectionService;
+import org.slusarczykr.portunus.cache.cluster.leader.election.starter.DefaultLeaderElectionStarterService;
+import org.slusarczykr.portunus.cache.cluster.leader.vote.service.RequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 
 public interface ClusterService extends ClusterConfigHolder, Service {
+
+    PortunusClusterInstance getPortunusClusterInstance();
 
     ClusterConfig getClusterConfig();
 
@@ -25,4 +30,11 @@ public interface ClusterService extends ClusterConfigHolder, Service {
     ClusterEventPublisher getClusterEventPublisher();
 
     ClusterEventConsumer getClusterEventConsumer();
+
+    LeaderElectionService getLeaderElectionService();
+
+    RequestVoteService getRequestVoteService();
+
+    DefaultLeaderElectionStarterService getLeaderElectionStarter();
+
 }

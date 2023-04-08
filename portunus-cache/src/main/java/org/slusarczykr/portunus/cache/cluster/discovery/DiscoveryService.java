@@ -19,11 +19,15 @@ public interface DiscoveryService extends Service {
 
     PortunusServer localServer();
 
+    boolean anyRemoteServerAvailable();
+
     List<RemotePortunusServer> remoteServers();
 
     List<PortunusServer> allServers();
 
     List<String> allServerAddresses();
+
+    int getNumberOfServers();
 
     void register(PortunusServer server) throws PortunusException;
 

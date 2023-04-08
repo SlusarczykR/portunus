@@ -69,6 +69,11 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
     }
 
     @Override
+    public boolean anyRemoteServerAvailable() {
+        return !remoteServers().isEmpty();
+    }
+
+    @Override
     public List<RemotePortunusServer> remoteServers() {
         return portunusInstances.values().stream()
                 .filter(Predicate.not(PortunusServer::isLocal).and(RemotePortunusServer.class::isInstance))
@@ -86,6 +91,11 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
     public List<String> allServerAddresses() {
         return portunusInstances.keySet().stream()
                 .toList();
+    }
+
+    @Override
+    public int getNumberOfServers() {
+        return portunusInstances.size();
     }
 
     @Override

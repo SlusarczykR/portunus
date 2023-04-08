@@ -6,6 +6,9 @@ import org.slusarczykr.portunus.cache.cluster.conversion.ConversionService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.ClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.ClusterEventPublisher;
+import org.slusarczykr.portunus.cache.cluster.leader.election.service.LeaderElectionService;
+import org.slusarczykr.portunus.cache.cluster.leader.election.starter.DefaultLeaderElectionStarterService;
+import org.slusarczykr.portunus.cache.cluster.leader.vote.service.RequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
@@ -16,15 +19,17 @@ import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 public class DefaultClusterService extends AbstractManaged implements ClusterService {
 
+    private PortunusClusterInstance portunusClusterInstance;
     private ClusterConfig clusterConfig;
     private final ServiceManager serviceManager;
 
-    public static DefaultClusterService newInstance(ClusterConfig clusterConfig) {
-        return new DefaultClusterService(clusterConfig);
+    public static DefaultClusterService newInstance(PortunusClusterInstance portunusClusterInstance, ClusterConfig clusterConfig) {
+        return new DefaultClusterService(portunusClusterInstance, clusterConfig);
     }
 
-    private DefaultClusterService(ClusterConfig clusterConfig) {
+    private DefaultClusterService(PortunusClusterInstance portunusClusterInstance, ClusterConfig clusterConfig) {
         try {
+            this.portunusClusterInstance = portunusClusterInstance;
             this.serviceManager = DefaultServiceManager.newInstance(this);
             this.clusterConfig = clusterConfig;
             initialize();
@@ -41,6 +46,11 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     @Override
     public void initialize() throws PortunusException {
         serviceManager.loadServices();
+    }
+
+    @Override
+    public PortunusClusterInstance getPortunusClusterInstance() {
+        return portunusClusterInstance;
     }
 
     @Override
@@ -90,6 +100,21 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     @Override
     public ClusterEventConsumer getClusterEventConsumer() {
         return getService(ClusterEventConsumer.class);
+    }
+
+    @Override
+    public LeaderElectionService getLeaderElectionService() {
+        return getService(LeaderElectionService.class);
+    }
+
+    @Override
+    public RequestVoteService getRequestVoteService() {
+        return null;
+    }
+
+    @Override
+    public DefaultLeaderElectionStarterService getLeaderElectionStarter() {
+        return null;
     }
 
     @Override

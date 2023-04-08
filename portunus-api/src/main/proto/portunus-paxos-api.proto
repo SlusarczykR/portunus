@@ -1,0 +1,21 @@
+syntax = "proto3";
+package org.slusarczykr.portunus.cache.paxos.api;
+
+option java_package = "org.slusarczykr.portunus.cache.paxos.api";
+option java_outer_classname = "PortunusPaxosApiProtos";
+
+message AppendEntry {
+  int64 serverId = 1;
+  int64 term = 2;
+}
+
+message AppendEntryResponse {
+  int64 serverId = 1;
+  bool conflict = 2;
+}
+
+message RequestVoteResponse {
+  bool accepted = 1;
+  int64 serverId = 2;
+  int64 term = 3;
+}

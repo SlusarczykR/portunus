@@ -11,6 +11,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
+import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -57,7 +58,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
         log.info("Portunus instance is starting on port: '{}'", getPort(clusterConfig));
         preInitialize();
-        this.clusterService = DefaultClusterService.newInstance(clusterConfig);
+        this.clusterService = DefaultClusterService.newInstance(this, clusterConfig);
         this.localServer = LocalPortunusServer.newInstance(clusterService, clusterConfig);
         postInitialize();
     }
@@ -162,6 +163,11 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     @Override
     public void sendEvent(ClusterEvent event) {
 
+    }
+
+    @Override
+    public PaxosServer getPaxosServer() {
+        return localServer.getPaxosServer();
     }
 
     private void publishMemberEvent(Function<AddressDTO, ClusterEvent> eventSupplier) {

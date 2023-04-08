@@ -42,7 +42,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
             log.info("Sending '{}' to '{}'", event.getEventType(), server.getPlainAddress());
             server.sendEvent(event);
         } catch (Exception e) {
-            log.error("Could not send '{}' to '{}'", event.getEventType(), server.getPlainAddress(), e);
+            log.error("Could not sent '{}' to '{}'", event.getEventType(), server.getPlainAddress());
         }
     }
 

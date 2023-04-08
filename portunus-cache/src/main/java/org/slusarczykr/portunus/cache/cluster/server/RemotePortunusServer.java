@@ -8,18 +8,23 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusGRPCClient;
+import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosClient;
+import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosGRPCClient;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class RemotePortunusServer extends AbstractPortunusServer {
+public class RemotePortunusServer extends AbstractPortunusServer implements PaxosClient {
 
     private static final Logger log = LoggerFactory.getLogger(RemotePortunusServer.class);
 
     private PortunusClient portunusClient;
+    private PaxosClient paxosClient;
 
     public static RemotePortunusServer newInstance(ClusterService clusterService, Address address) {
         return new RemotePortunusServer(clusterService, address);
@@ -33,6 +38,7 @@ public class RemotePortunusServer extends AbstractPortunusServer {
     protected void initialize() throws PortunusException {
         log.info("Initializing gRPC client for '{}' remote server", serverContext.getPlainAddress());
         this.portunusClient = new PortunusGRPCClient(serverContext.address());
+        this.paxosClient = new PaxosGRPCClient(serverContext.address(), paxosServer);
     }
 
     @Override
@@ -70,5 +76,15 @@ public class RemotePortunusServer extends AbstractPortunusServer {
 
     @Override
     public void shutdown() {
+    }
+
+    @Override
+    public RequestVoteResponse sendRequestVote(long serverId, long term) {
+        return paxosClient.sendRequestVote(serverId, term);
+    }
+
+    @Override
+    public AppendEntryResponse sendHeartbeats(long serverId, long term) {
+        return paxosClient.sendHeartbeats(serverId, term);
     }
 }

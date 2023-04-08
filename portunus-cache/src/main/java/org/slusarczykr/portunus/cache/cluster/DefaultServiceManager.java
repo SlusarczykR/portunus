@@ -6,6 +6,9 @@ import org.slusarczykr.portunus.cache.cluster.conversion.DefaultConversionServic
 import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.DefaultClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.DefaultClusterEventPublisher;
+import org.slusarczykr.portunus.cache.cluster.leader.election.service.DefaultLeaderElectionService;
+import org.slusarczykr.portunus.cache.cluster.leader.election.starter.DefaultLeaderElectionStarterService;
+import org.slusarczykr.portunus.cache.cluster.leader.vote.service.DefaultRequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
@@ -61,6 +64,10 @@ public class DefaultServiceManager implements ServiceManager {
         initializeService(DefaultConversionService.newInstance(clusterService));
         initializeService(DefaultClusterEventPublisher.newInstance(clusterService));
         initializeService(DefaultClusterEventConsumer.newInstance(clusterService));
+        initializeService(DefaultLeaderElectionService.newInstance(clusterService));
+        initializeService(DefaultLeaderElectionStarterService.newInstance(clusterService));
+        initializeService(DefaultLeaderElectionStarterService.newInstance(clusterService));
+        initializeService(DefaultRequestVoteService.newInstance(clusterService));
     }
 
     @SneakyThrows

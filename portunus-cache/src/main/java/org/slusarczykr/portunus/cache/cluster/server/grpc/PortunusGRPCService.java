@@ -26,10 +26,16 @@ import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsE
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
-import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
+import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
+import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
+import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
+import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.io.Serializable;
 import java.util.List;
@@ -38,7 +44,7 @@ import java.util.function.Supplier;
 
 public class PortunusGRPCService extends PortunusServiceImplBase {
 
-    private static final Logger log = LoggerFactory.getLogger(RemotePortunusServer.class);
+    private static final Logger log = LoggerFactory.getLogger(PortunusGRPCService.class);
 
     private final ClusterService clusterService;
     private final CacheManager cacheManager;
@@ -60,7 +66,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private boolean anyEntry(ContainsAnyEntryQuery query) {
-        return Optional.ofNullable(cacheManager.getCache(query.getCacheName()))
+        return Optional.ofNullable(getCache(query.getCacheName()))
                 .map(it -> !it.isEmpty())
                 .orElse(false);
     }
@@ -80,7 +86,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private boolean containsEntry(ContainsEntryQuery query, Distributed<?> distributed) {
-        return Optional.ofNullable(cacheManager.getCache(query.getCacheName()))
+        return Optional.ofNullable(getCache(query.getCacheName()))
                 .map(it -> containsEntry(it, distributed.get()))
                 .orElse(false);
     }
@@ -109,7 +115,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> GetCacheDocument getLocalPartition(GetCacheCommand command) {
-        Cache<K, V> cache = cacheManager.getCache(command.getName());
+        Cache<K, V> cache = getCache(command.getName());
         List<CacheEntryDTO> cacheEntries = cache.allEntries().stream()
                 .map(PortunusGRPCService::toCacheEntry)
                 .toList();
@@ -147,7 +153,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private <K extends Serializable, V extends Serializable> PutEntryDocument putEntry(PutEntryCommand command) {
-        Cache<K, V> cache = cacheManager.getCache(command.getCacheName());
+        Cache<K, V> cache = getCache(command.getCacheName());
         Cache.Entry<K, V> entry = clusterService.getConversionService().convert(command.getCacheEntry());
         cache.put(entry);
 
@@ -163,7 +169,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> RemoveEntryDocument removeEntry(RemoveEntryCommand command) {
-        Cache<K, V> cache = cacheManager.getCache(command.getCacheName());
+        Cache<K, V> cache = getCache(command.getCacheName());
         Distributed<K> distributed = toDistributed(command.getKey());
 
         return cache.getEntry(distributed.get())
@@ -190,6 +196,75 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     private Empty handleEvent(ClusterEvent event) {
         clusterService.getClusterEventConsumer().consumeEvent(event);
         return Empty.getDefaultInstance();
+    }
+
+    @Override
+    public void sendRequestVote(AppendEntry request, StreamObserver<RequestVoteResponse> responseObserver) {
+        completeWith(responseObserver, OperationType.SEND_EVENT, () -> {
+            log.info("Received requestVoteResponse from server with id: {}", request.getServerId());
+            stopHeartbeatsOrReset();
+            RequestVote.Response requestVoteResponse = voteForLeader(request);
+
+            return clusterService.getConversionService().convert(requestVoteResponse);
+        });
+    }
+
+    private RequestVote.Response voteForLeader(AppendEntry request) {
+        RequestVote requestVote = clusterService.getConversionService().convert(request);
+        return clusterService.getRequestVoteService().vote(requestVote);
+    }
+
+    private RequestVoteResponse startLeaderCandidacy() throws PaxosLeaderElectionException {
+        boolean leader = clusterService.getLeaderElectionService().startLeaderCandidacy();
+        return createRequestVoteResponse(leader);
+    }
+
+    private RequestVoteResponse createRequestVoteResponse(boolean leader) {
+        PaxosServer paxosServer = getPaxosServer();
+
+        return RequestVoteResponse.newBuilder()
+                .setAccepted(leader)
+                .setServerId(paxosServer.getIdValue())
+                .setTerm(paxosServer.getTermValue())
+                .build();
+    }
+
+    private PaxosServer getPaxosServer() {
+        PortunusClusterInstance portunusClusterInstance = clusterService.getPortunusClusterInstance();
+        return portunusClusterInstance.localMember().getPaxosServer();
+    }
+
+    @Override
+    public void sendHeartbeats(AppendEntry request, StreamObserver<AppendEntryResponse> responseObserver) {
+        completeWith(responseObserver, OperationType.SEND_EVENT, () -> {
+            log.info("Received heartbeat from leader with id: {}", request.getServerId());
+            boolean conflict = false;
+
+            if (stopHeartbeatsOrReset()) {
+                log.error("Heartbeat message received while the current server is already the leader!");
+                conflict = true;
+            }
+            return AppendEntryResponse.newBuilder()
+                    .setServerId(getPaxosServer().getIdValue())
+                    .setConflict(conflict)
+                    .build();
+        });
+    }
+
+    private boolean stopHeartbeatsOrReset() {
+        boolean leader = getPaxosServer().isLeader();
+
+        if (leader) {
+            log.info("Stopping sending heartbeats...");
+            clusterService.getLeaderElectionStarter().stopHeartbeats();
+        } else {
+            clusterService.getLeaderElectionStarter().reset();
+        }
+        return leader;
+    }
+
+    private <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
+        return clusterService.getPortunusClusterInstance().getCache(name);
     }
 
     private <T> void completeWith(StreamObserver<T> responseObserver, OperationType operationType, Supplier<T> onNext) {

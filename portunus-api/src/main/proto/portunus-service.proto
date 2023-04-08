@@ -4,6 +4,7 @@ import "google/protobuf/empty.proto";
 import "portunus-query-api.proto";
 import "portunus-command-api.proto";
 import "portunus-event-api.proto";
+import "portunus-paxos-api.proto";
 package org.slusarczykr.portunus.cache.api.service;
 
 option java_package = "org.slusarczykr.portunus.cache.api.service";
@@ -17,4 +18,6 @@ service PortunusService {
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
   rpc putEntry(org.slusarczykr.portunus.cache.api.command.PutEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
   rpc removeEntry(org.slusarczykr.portunus.cache.api.command.RemoveEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.RemoveEntryDocument);
+  rpc sendRequestVote(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.RequestVoteResponse);
+  rpc sendHeartbeats(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
 }
