@@ -6,6 +6,8 @@ import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -78,9 +80,10 @@ class PortunusClusterInstanceIntegrationTest {
     }
 
     @Test
-    void shouldReturnEntryWhenRemoteEntryIsRequested() throws PortunusException {
-        Address localAddress = new Address("localhost", DEFAULT_PORT);
-        Address remoteAddress = new Address("localhost", 8092);
+    void shouldReturnEntryWhenRemoteEntryIsRequested() throws PortunusException, UnknownHostException {
+        String localHost = InetAddress.getLocalHost().getHostAddress();
+        Address localAddress = new Address(localHost, DEFAULT_PORT);
+        Address remoteAddress = new Address(localHost, 8092);
         PortunusClusterInstance localPortunusInstance = PortunusClusterInstance.newInstance(createClusterConfig(localAddress.port(), List.of(remoteAddress.toPlainAddress())));
         PortunusClusterInstance remotePortunusInstance = PortunusClusterInstance.newInstance(createClusterConfig(remoteAddress.port(), List.of(localAddress.toPlainAddress())));
         Cache<String, String> cache = localPortunusInstance.getCache(DEFAULT_CACHE_NAME);
