@@ -6,10 +6,12 @@ import org.slusarczykr.portunus.cache.cluster.conversion.DefaultConversionServic
 import org.slusarczykr.portunus.cache.cluster.discovery.DefaultDiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.DefaultClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.DefaultClusterEventPublisher;
+import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.election.service.DefaultLeaderElectionService;
 import org.slusarczykr.portunus.cache.cluster.leader.election.starter.DefaultLeaderElectionStarterService;
 import org.slusarczykr.portunus.cache.cluster.leader.vote.service.DefaultRequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
+import org.slusarczykr.portunus.cache.cluster.service.PaxosService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
 import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
@@ -55,6 +57,13 @@ public class DefaultServiceManager implements ServiceManager {
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public void injectPaxosServer(PaxosServer paxosServer) {
+        getServices().stream()
+                .filter(PaxosService.class::isInstance)
+                .forEach(it -> ((PaxosService) it).setPaxosServer(paxosServer));
     }
 
     private void initializeServices() {

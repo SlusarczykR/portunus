@@ -3,11 +3,10 @@ package org.slusarczykr.portunus.cache.cluster.leader.election.starter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.election.config.LeaderElectionProperties;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderConflictException;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
-import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
@@ -24,13 +23,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class DefaultLeaderElectionStarterService extends AbstractService implements LeaderElectionStarterService {
+public class DefaultLeaderElectionStarterService extends AbstractPaxosService implements LeaderElectionStarterService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLeaderElectionStarterService.class);
 
     private LeaderElectionProperties leaderElectionProps;
-    private PaxosServer paxosServer;
-
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
     private final AtomicReference<CompletableFuture<Boolean>> candidacy = new AtomicReference<>();
     private final AtomicReference<Future<?>> heartbeats = new AtomicReference<>();
@@ -47,7 +44,6 @@ public class DefaultLeaderElectionStarterService extends AbstractService impleme
 
     @Override
     protected void onInitialization() throws PortunusException {
-        this.paxosServer = clusterService.getPortunusClusterInstance().getPaxosServer();
         this.leaderElectionProps = new LeaderElectionProperties();
     }
 

@@ -76,9 +76,11 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     private void postInitialize() {
         try {
             clusterService.getDiscoveryService().register(localServer);
+            clusterService.getServiceManager().injectPaxosServer(getPaxosServer());
+            clusterService.getLeaderElectionStarter().start();
             publishMemberEvent(this::createMemberJoinedEvent);
         } catch (Exception e) {
-            throw new FatalPortunusException("Could not initialize portunus instance");
+            throw new FatalPortunusException("Could not initialize portunus instance", e);
         }
     }
 

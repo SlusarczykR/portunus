@@ -17,4 +17,6 @@ public interface ClusterConfigService extends ClusterConfigHolder, Service {
     ClusterConfig getClusterConfig();
 
     List<Address> getClusterMembers();
+
+    int getNumberOfClusterMembers();
 }

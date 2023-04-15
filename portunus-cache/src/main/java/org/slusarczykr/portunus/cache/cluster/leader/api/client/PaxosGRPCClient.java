@@ -6,7 +6,6 @@ import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
-import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
@@ -22,11 +21,11 @@ public class PaxosGRPCClient extends AbstractManaged implements PaxosClient {
 
     private final ManagedChannel channel;
 
-    public PaxosGRPCClient(Address address, PaxosServer paxosServer) {
+    public PaxosGRPCClient(Address address) {
         this.channel = initializeManagedChannel(address.hostname(), address.port());
     }
 
-    public PaxosGRPCClient(ManagedChannel channel, PaxosServer paxosServer) {
+    public PaxosGRPCClient(ManagedChannel channel) {
         this.channel = channel;
     }
 

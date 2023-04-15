@@ -3,10 +3,9 @@ package org.slusarczykr.portunus.cache.cluster.leader.election.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.api.AppendEntry;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
-import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
@@ -14,11 +13,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class DefaultLeaderElectionService extends AbstractService implements LeaderElectionService {
+public class DefaultLeaderElectionService extends AbstractPaxosService implements LeaderElectionService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLeaderElectionService.class);
-
-    private PaxosServer paxosServer;
 
     public static DefaultLeaderElectionService newInstance(ClusterService clusterService) {
         return new DefaultLeaderElectionService(clusterService);
@@ -30,7 +27,6 @@ public class DefaultLeaderElectionService extends AbstractService implements Lea
 
     @Override
     protected void onInitialization() throws PortunusException {
-        this.paxosServer = clusterService.getPortunusClusterInstance().getPaxosServer();
     }
 
     @Override

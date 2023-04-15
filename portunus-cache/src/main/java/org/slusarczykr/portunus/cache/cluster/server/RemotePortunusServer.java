@@ -10,7 +10,6 @@ import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusGRPCClient;
 import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosClient;
 import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosGRPCClient;
-import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
@@ -26,19 +25,19 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     private PortunusClient portunusClient;
     private PaxosClient paxosClient;
 
-    public static RemotePortunusServer newInstance(ClusterService clusterService, Address address) {
-        return new RemotePortunusServer(clusterService, address);
+    public static RemotePortunusServer newInstance(ClusterService clusterService, ClusterMemberContext context) {
+        return new RemotePortunusServer(clusterService, context);
     }
 
-    private RemotePortunusServer(ClusterService clusterService, Address address) {
-        super(clusterService, new ClusterMemberContext(address));
+    private RemotePortunusServer(ClusterService clusterService, ClusterMemberContext context) {
+        super(clusterService, context);
     }
 
     @Override
     protected void initialize() throws PortunusException {
         log.info("Initializing gRPC client for '{}' remote server", serverContext.getPlainAddress());
         this.portunusClient = new PortunusGRPCClient(serverContext.address());
-        this.paxosClient = new PaxosGRPCClient(serverContext.address(), paxosServer);
+        this.paxosClient = new PaxosGRPCClient(serverContext.address());
     }
 
     @Override

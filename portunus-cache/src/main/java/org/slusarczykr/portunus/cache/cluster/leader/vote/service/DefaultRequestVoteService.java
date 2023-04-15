@@ -3,21 +3,19 @@ package org.slusarczykr.portunus.cache.cluster.leader.vote.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.vote.factory.RequestVoteFactory;
-import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import static org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote.Response.Status.ACCEPTED;
 import static org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote.Response.Status.REJECTED;
 
-public class DefaultRequestVoteService extends AbstractService implements RequestVoteService {
+public class DefaultRequestVoteService extends AbstractPaxosService implements RequestVoteService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultRequestVoteService.class);
 
-    private PaxosServer paxosServer;
     private RequestVoteFactory requestVoteFactory;
 
     public static Service newInstance(ClusterService clusterService) {
@@ -30,7 +28,6 @@ public class DefaultRequestVoteService extends AbstractService implements Reques
 
     @Override
     protected void onInitialization() throws PortunusException {
-        this.paxosServer = clusterService.getPortunusClusterInstance().getPaxosServer();
         this.requestVoteFactory = new RequestVoteFactory();
     }
 

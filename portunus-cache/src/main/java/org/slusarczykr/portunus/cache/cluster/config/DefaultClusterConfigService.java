@@ -64,9 +64,17 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
 
     @Override
     public List<Address> getClusterMembers() {
-        return clusterConfig.getMembers().stream()
+        List<String> clusterMembers = Optional.ofNullable(clusterConfig.getMembers())
+                .orElseGet(ArrayList::new);
+
+        return clusterMembers.stream()
                 .map(Address::from)
                 .toList();
+    }
+
+    @Override
+    public int getNumberOfClusterMembers() {
+        return getClusterMembers().size();
     }
 
     private Optional<ClusterConfig> readPropertyClusterConfig() {

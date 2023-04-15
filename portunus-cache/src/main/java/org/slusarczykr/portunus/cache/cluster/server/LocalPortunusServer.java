@@ -42,8 +42,9 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     private static ClusterMemberContext createServerContext(ClusterService clusterService, ClusterConfig clusterConfig) {
         clusterConfig = Optional.ofNullable(clusterConfig).orElseGet(() -> getClusterConfig(clusterService));
         Address address = clusterConfig.getLocalServerAddress();
+        int numberOfServers = clusterConfig.getMembers().size() + 1;
 
-        return new ClusterMemberContext(address);
+        return new ClusterMemberContext(address, numberOfServers);
     }
 
     private static ClusterConfig getClusterConfig(ClusterService clusterService) {

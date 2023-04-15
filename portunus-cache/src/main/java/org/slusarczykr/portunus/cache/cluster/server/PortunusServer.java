@@ -34,7 +34,7 @@ public interface PortunusServer {
 
     void sendEvent(ClusterEvent event);
 
-    record ClusterMemberContext(Address address) {
+    record ClusterMemberContext(Address address, int numberOfServers) {
 
         public record Address(String hostname, int port) {
 
