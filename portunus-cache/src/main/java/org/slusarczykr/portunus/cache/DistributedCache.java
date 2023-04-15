@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class DistributedCache<K extends Serializable, V extends Serializable> extends AbstractManaged implements Cache<K, V> {
@@ -47,32 +48,26 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         eventListeners.forEach(cacheEntryObserver::register);
     }
 
+    public boolean anyLocalEntry() {
+        return executeOperation(OperationType.IS_EMPTY, () -> {
+            boolean anyLocalEntry = clusterService.getDiscoveryService().localServer().anyEntry(name);
+            return anyLocalEntry;
+        });
+    }
+
     @Override
     public boolean isEmpty() {
         return executeOperation(OperationType.IS_EMPTY, () -> {
             boolean anyLocalEntry = clusterService.getDiscoveryService().localServer().anyEntry(name);
-            boolean anyEntry = anyLocalEntry || anyRemoteEntry();
-
-            return !anyEntry;
+            return !anyLocalEntry || remoteServersStream().anyMatch(it -> it.anyEntry(name));
         });
-    }
-
-    private boolean anyRemoteEntry() {
-        return remoteServersStream()
-                .anyMatch(it -> it.anyEntry(name));
     }
 
     @Override
     public boolean containsKey(K key) {
-        return executeOperation(OperationType.CONTAINS_KEY, () -> {
-            String objectKey = key.toString();
-
-            if (!clusterService.getPartitionService().isLocalPartition(objectKey)) {
-                Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
-                return partition.owner().containsEntry(name, key);
-            }
-            return clusterService.getDiscoveryService().localServer().containsEntry(name, key);
-        });
+        return executeOperation(OperationType.CONTAINS_KEY, () ->
+                executeLocalOrDistributed(key, it -> it.containsEntry(name, key))
+        );
     }
 
     @Override
@@ -225,6 +220,20 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
             log.error("Failed to execute operation: '{}'", operationType.name());
             throw new OperationFailedException(String.format("Operation: '%s' failed", operationType.name()));
         }
+    }
+
+    @SneakyThrows
+    private <T> T executeLocalOrDistributed(K key, Function<PortunusServer, T> operation) {
+        PortunusServer owner;
+        String objectKey = key.toString();
+
+        if (!clusterService.getPartitionService().isLocalPartition(objectKey)) {
+            Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
+            owner = partition.owner();
+        } else {
+            owner = clusterService.getDiscoveryService().localServer();
+        }
+        return operation.apply(owner);
     }
 
     @Override

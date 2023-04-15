@@ -85,7 +85,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException {
+    public <K extends Serializable> boolean containsEntry(String cacheName, K key) {
         return cacheManager.getCache(cacheName).containsKey(key);
     }
 
@@ -96,7 +96,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException {
+    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = cacheManager.getCache(name);
 
         if (!cache.containsKey(entry.getKey())) {
@@ -107,7 +107,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException {
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         Cache<K, V> cache = cacheManager.getCache(name);
         return cache.remove(key);
     }

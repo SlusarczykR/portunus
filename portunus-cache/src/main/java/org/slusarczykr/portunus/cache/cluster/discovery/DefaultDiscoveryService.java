@@ -103,11 +103,10 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
 
     @Override
     public void register(PortunusServer server) throws PortunusException {
-        if (portunusInstances.containsKey(server.getPlainAddress())) {
-            throw new PortunusException(String.format("Server with address %s already exists", server.getAddress()));
+        if (!portunusInstances.containsKey(server.getPlainAddress())) {
+            clusterService.getPartitionService().register(server.getAddress());
+            portunusInstances.put(server.getPlainAddress(), server);
         }
-        clusterService.getPartitionService().register(server.getAddress());
-        portunusInstances.put(server.getPlainAddress(), server);
     }
 
     @Override

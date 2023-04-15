@@ -149,4 +149,9 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     public String getName() {
         return LeaderElectionStarterService.class.getSimpleName();
     }
+
+    @Override
+    public void shutdown() {
+        scheduledExecutor.shutdown();
+    }
 }

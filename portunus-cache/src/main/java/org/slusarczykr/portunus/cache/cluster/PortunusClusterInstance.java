@@ -17,7 +17,6 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
 
 import java.io.Serializable;
@@ -131,7 +130,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException {
+    public <K extends Serializable> boolean containsEntry(String cacheName, K key) {
         return Optional.ofNullable(caches.get(cacheName))
                 .map(it -> containsKey((Cache<K, ?>) it, key))
                 .orElse(false);
@@ -149,7 +148,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException {
+    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = getCache(name);
         cache.put(entry);
 
@@ -157,7 +156,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException {
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         Cache<K, V> cache = getCache(name);
         return cache.remove(key);
     }

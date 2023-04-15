@@ -58,13 +58,13 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException {
+    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) {
         log.info("Sending '{}' operation to {} server", OperationType.SEND_EVENT, getPlainAddress());
         return portunusClient.putEntry(name, clusterService.getConversionService().convert(entry));
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException {
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         return clusterService.getConversionService().convert(portunusClient.removeEntry(name, key));
     }
 

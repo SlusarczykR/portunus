@@ -24,13 +24,13 @@ public interface PortunusServer {
 
     boolean anyEntry(String cacheName);
 
-    <K extends Serializable> boolean containsEntry(String cacheName, K key) throws PortunusException;
+    <K extends Serializable> boolean containsEntry(String cacheName, K key);
 
     <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name);
 
-    <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) throws PortunusException;
+    <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry);
 
-    <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) throws PortunusException;
+    <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key);
 
     void sendEvent(ClusterEvent event);
 

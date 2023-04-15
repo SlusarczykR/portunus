@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
@@ -27,8 +28,8 @@ import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusSe
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
-import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
+import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
@@ -66,8 +67,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private boolean anyEntry(ContainsAnyEntryQuery query) {
-        return Optional.ofNullable(getCache(query.getCacheName()))
-                .map(it -> !it.isEmpty())
+        return Optional.ofNullable(getDistributedCache(query.getCacheName()))
+                .map(it -> it.anyLocalEntry())
                 .orElse(false);
     }
 
@@ -86,7 +87,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private boolean containsEntry(ContainsEntryQuery query, Distributed<?> distributed) {
-        return Optional.ofNullable(getCache(query.getCacheName()))
+        return Optional.ofNullable(getDistributedCache(query.getCacheName()))
                 .map(it -> containsEntry(it, distributed.get()))
                 .orElse(false);
     }
@@ -115,7 +116,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> GetCacheDocument getLocalPartition(GetCacheCommand command) {
-        Cache<K, V> cache = getCache(command.getName());
+        Cache<K, V> cache = getDistributedCache(command.getName());
         List<CacheEntryDTO> cacheEntries = cache.allEntries().stream()
                 .map(PortunusGRPCService::toCacheEntry)
                 .toList();
@@ -153,7 +154,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private <K extends Serializable, V extends Serializable> PutEntryDocument putEntry(PutEntryCommand command) {
-        Cache<K, V> cache = getCache(command.getCacheName());
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
         Cache.Entry<K, V> entry = clusterService.getConversionService().convert(command.getCacheEntry());
         cache.put(entry);
 
@@ -169,7 +170,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> RemoveEntryDocument removeEntry(RemoveEntryCommand command) {
-        Cache<K, V> cache = getCache(command.getCacheName());
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
         Distributed<K> distributed = toDistributed(command.getKey());
 
         return cache.getEntry(distributed.get())
@@ -263,8 +264,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         return leader;
     }
 
-    private <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
-        return clusterService.getPortunusClusterInstance().getCache(name);
+    private <K extends Serializable, V extends Serializable> DistributedCache<K, V> getDistributedCache(String name) {
+        return (DistributedCache<K, V>) clusterService.getPortunusClusterInstance().getCache(name);
     }
 
     private <T> void completeWith(StreamObserver<T> responseObserver, OperationType operationType, Supplier<T> onNext) {
