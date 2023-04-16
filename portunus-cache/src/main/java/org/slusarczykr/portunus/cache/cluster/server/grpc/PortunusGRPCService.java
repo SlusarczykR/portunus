@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
@@ -31,17 +33,22 @@ import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.SyncPartitionsMapEntry;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class PortunusGRPCService extends PortunusServiceImplBase {
 
@@ -250,6 +257,34 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .setConflict(conflict)
                     .build();
         });
+    }
+
+    @Override
+    public void sendPartitionMap(SyncPartitionsMapEntry request, StreamObserver<AppendEntryResponse> responseObserver) {
+        completeWith(responseObserver, OperationType.SEND_EVENT, () -> {
+            log.info("Received partition map from leader with id: {}", request.getServerId());
+            boolean conflict = false;
+
+            if (updatePartitionMap(request.getPartitionList())) {
+                log.error("Partition map message received while the current server is already the leader!");
+                conflict = true;
+            }
+            return AppendEntryResponse.newBuilder()
+                    .setServerId(getPaxosServer().getIdValue())
+                    .setConflict(conflict)
+                    .build();
+        });
+    }
+
+    private boolean updatePartitionMap(List<PartitionDTO> partitions) {
+        Map<Integer, Partition> partitionMap = partitions.stream()
+                .collect(Collectors.toMap(it -> (int) it.getKey(), it -> clusterService.getConversionService().convert(it)));
+
+        if (!stopHeartbeatsOrReset()) {
+            clusterService.getPartitionService().updatePartitionMap(partitionMap);
+            return false;
+        }
+        return true;
     }
 
     private boolean stopHeartbeatsOrReset() {

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
@@ -15,6 +16,7 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEnt
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -85,5 +87,10 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     @Override
     public AppendEntryResponse sendHeartbeats(long serverId, long term) {
         return paxosClient.sendHeartbeats(serverId, term);
+    }
+
+    @Override
+    public AppendEntryResponse sendPartitionMap(long serverId, List<PartitionDTO> partitions) {
+        return paxosClient.sendPartitionMap(serverId, partitions);
     }
 }

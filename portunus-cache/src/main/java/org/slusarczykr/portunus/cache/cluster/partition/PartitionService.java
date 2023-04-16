@@ -5,6 +5,7 @@ import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
+import java.util.Map;
 
 public interface PartitionService extends Service {
 
@@ -18,6 +19,8 @@ public interface PartitionService extends Service {
 
     Partition getLocalPartition(int partitionId) throws PortunusException;
 
+    Map<Integer, Partition> getPartitionMap();
+
     List<Partition> getLocalPartitions();
 
     Address getPartitionOwner(String key) throws PortunusException;
@@ -25,4 +28,8 @@ public interface PartitionService extends Service {
     void register(Address address) throws PortunusException;
 
     void unregister(Address address) throws PortunusException;
+
+    List<String> getRegisteredAddresses();
+
+    void updatePartitionMap(Map<Integer, Partition> partitionMap);
 }

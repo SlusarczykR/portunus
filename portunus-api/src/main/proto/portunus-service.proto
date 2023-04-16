@@ -20,4 +20,5 @@ service PortunusService {
   rpc removeEntry(org.slusarczykr.portunus.cache.api.command.RemoveEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.RemoveEntryDocument);
   rpc sendRequestVote(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.RequestVoteResponse);
   rpc sendHeartbeats(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
+  rpc sendPartitionMap(org.slusarczykr.portunus.cache.paxos.api.SyncPartitionsMapEntry) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
 }

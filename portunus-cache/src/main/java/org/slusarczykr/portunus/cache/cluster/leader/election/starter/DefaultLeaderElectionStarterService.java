@@ -94,6 +94,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         }
     }
 
+
     private void scheduleHeartbeats() {
         int heartbeatsInterval = leaderElectionProps.getHeartbeatsInterval();
         log.debug("Scheduling heartbeats with interval of {}s", heartbeatsInterval);

@@ -2,6 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.leader.election.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.leader.api.AppendEntry;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
@@ -137,12 +138,18 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         try {
             log.info("Sending heartbeats to followers...");
             clusterService.getDiscoveryService().remoteServers().stream()
-                    .map(it -> it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue()))
+                    .map(it -> it.sendPartitionMap(paxosServer.getIdValue(), getPartitions()))
                     .forEach(it -> log.info("Received heartbeat reply from follower with id: {}", it.getServerId()));
         } catch (Exception e) {
             log.error("Error occurred while sending heartbeats to followers!");
             errorHandler.accept(e);
         }
+    }
+
+    private List<PartitionDTO> getPartitions() {
+        return clusterService.getPartitionService().getPartitionMap().values().stream()
+                .map(it -> clusterService.getConversionService().convert(it))
+                .toList();
     }
 
     private String getShouldCandidateForLeaderMessage(boolean candidateForLeader) {

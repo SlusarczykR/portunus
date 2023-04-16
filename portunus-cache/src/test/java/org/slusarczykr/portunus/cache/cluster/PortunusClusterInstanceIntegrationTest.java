@@ -80,7 +80,7 @@ class PortunusClusterInstanceIntegrationTest {
     }
 
     @Test
-    void shouldReturnEntryWhenRemoteEntryIsRequested() throws PortunusException, UnknownHostException {
+    void shouldReturnEntryWhenRemoteEntryIsRequested() throws PortunusException, UnknownHostException, InterruptedException {
         String localHost = InetAddress.getLocalHost().getHostAddress();
         Address localAddress = new Address(localHost, DEFAULT_PORT);
         Address remoteAddress = new Address(localHost, 8092);

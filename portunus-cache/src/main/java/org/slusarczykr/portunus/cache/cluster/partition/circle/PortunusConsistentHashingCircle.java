@@ -36,10 +36,13 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
 
     @Override
     public Set<String> getAddresses() {
-        Map<String, List<VirtualPortunusNode>> addressesByPhysicalNode = circle.values().stream()
-                .collect(Collectors.groupingBy(VirtualPortunusNode::getPhysicalNodeKey));
-
+        Map<String, List<VirtualPortunusNode>> addressesByPhysicalNode = groupPortunusNodesByPhysicalNode();
         return addressesByPhysicalNode.keySet();
+    }
+
+    private Map<String, List<VirtualPortunusNode>> groupPortunusNodesByPhysicalNode() {
+        return circle.values().stream()
+                .collect(Collectors.groupingBy(VirtualPortunusNode::getPhysicalNodeKey));
     }
 
     @Override
