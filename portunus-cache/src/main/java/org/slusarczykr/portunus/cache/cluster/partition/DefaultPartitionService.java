@@ -119,10 +119,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     @Override
     public Address getPartitionOwner(String key) throws PortunusException {
         int partitionId = getPartitionId(key);
-
-        return withLock(it -> {
-            return getOwnerAddress(partitionId);
-        }, false);
+        return getServerAddress(partitionId);
     }
 
     @SneakyThrows
