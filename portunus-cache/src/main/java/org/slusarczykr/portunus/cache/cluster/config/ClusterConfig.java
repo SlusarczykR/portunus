@@ -20,9 +20,17 @@ import java.util.List;
 public class ClusterConfig {
 
     public static final String DEFAULT_CONFIG_PATH = "portunus-config.yml";
+    public static final boolean DEFAULT_MULTICAST_ENABLED = true;
+    public static final int DEFAULT_MULTICAST_PORT = 4321;
 
     @JsonProperty
     private int port;
+
+    @JsonProperty
+    private boolean multicast = true;
+
+    @JsonProperty
+    private int multicastPort = 4321;
 
     @JsonProperty
     private List<String> members = new ArrayList<>();

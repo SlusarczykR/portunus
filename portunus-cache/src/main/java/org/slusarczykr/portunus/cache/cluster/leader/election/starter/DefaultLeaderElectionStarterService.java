@@ -12,12 +12,7 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -26,6 +21,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class DefaultLeaderElectionStarterService extends AbstractPaxosService implements LeaderElectionStarterService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLeaderElectionStarterService.class);
+
+    private static final int INITIAL_HEARTBEAT_DELAY = 10;
 
     private LeaderElectionProperties leaderElectionProps;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -104,7 +101,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     private ScheduledFuture<?> scheduleHeartbeats(int interval) {
         return scheduledExecutor.scheduleAtFixedRate(
                 this::sendHeartbeats,
-                5,
+                INITIAL_HEARTBEAT_DELAY,
                 interval,
                 SECONDS
         );

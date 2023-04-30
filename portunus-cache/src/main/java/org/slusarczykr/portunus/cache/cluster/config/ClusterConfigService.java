@@ -16,6 +16,8 @@ public interface ClusterConfigService extends ClusterConfigHolder, Service {
 
     ClusterConfig getClusterConfig();
 
+    boolean isMulticastEnabled();
+
     List<Address> getClusterMembers();
 
     int getNumberOfClusterMembers();

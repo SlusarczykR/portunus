@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.DEFAULT_CONFIG_PATH;
+import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.*;
 
 public class DefaultClusterConfigService extends AbstractService implements ClusterConfigService {
 
@@ -63,6 +63,11 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
     }
 
     @Override
+    public boolean isMulticastEnabled() {
+        return clusterConfig.isMulticast();
+    }
+
+    @Override
     public List<Address> getClusterMembers() {
         List<String> clusterMembers = Optional.ofNullable(clusterConfig.getMembers())
                 .orElseGet(ArrayList::new);
@@ -82,6 +87,8 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
                 .map(it -> ClusterConfig.builder()
                         .port(Integer.parseInt(it))
                         .members(readPropertyClusterMembers())
+                        .multicast(DEFAULT_MULTICAST_ENABLED)
+                        .multicastPort(DEFAULT_MULTICAST_PORT)
                         .build());
     }
 
