@@ -1,6 +1,8 @@
 package org.slusarczykr.portunus.cache.cluster.partition.circle;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.partition.strategy.PartitionKeyStrategy;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -14,6 +16,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PortunusConsistentHashingCircle implements PortunusHashingCircle, PartitionKeyStrategy {
+
+    private static final Logger log = LoggerFactory.getLogger(PortunusConsistentHashingCircle.class);
 
     public static final int DEFAULT_NUMBER_OF_REPLICAS = 30;
 
@@ -40,6 +44,15 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         return addressesByPhysicalNode.keySet();
     }
 
+    @Override
+    public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes) {
+        log.info("Start updating hashing circle");
+        this.circle.clear();
+        this.circle.putAll(virtualPortunusNodes);
+        log.info("Hashing circle was updated");
+        log.info("Partition circle: {}", circle);
+    }
+
     private Map<String, List<VirtualPortunusNode>> groupPortunusNodesByPhysicalNode() {
         return circle.values().stream()
                 .collect(Collectors.groupingBy(VirtualPortunusNode::getPhysicalNodeKey));
@@ -55,6 +68,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
             String hashCode = generateHashCode(virtualNode.getKey());
             circle.put(hashCode, virtualNode);
         });
+        log.info("Partition circle: {}", circle);
     }
 
     private int getExistingReplicas(PortunusNode node) {
@@ -101,7 +115,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         String getKey();
     }
 
-    private record VirtualPortunusNode(PortunusNode physicalNode, int replicaIndex) implements Node {
+    public record VirtualPortunusNode(PortunusNode physicalNode, int replicaIndex) implements Node {
 
         @Override
         public String getKey() {
@@ -121,7 +135,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         }
     }
 
-    private record PortunusNode(Address address) implements Node {
+    public record PortunusNode(Address address) implements Node {
 
         @Override
         public String getKey() {

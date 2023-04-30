@@ -5,10 +5,14 @@ import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
+import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
+import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
@@ -93,6 +97,13 @@ public class DefaultConversionService extends AbstractService implements Convers
     @Override
     public RequestVote convert(AppendEntry appendEntry) {
         return new RequestVote(appendEntry.getServerId(), appendEntry.getTerm());
+    }
+
+    @Override
+    public VirtualPortunusNode convert(VirtualPortunusNodeDTO virtualPortunusNode) {
+        Address address = convert(virtualPortunusNode.getPhysicalNodeAddress());
+        PortunusNode portunusNode = new PortunusNode(address);
+        return new VirtualPortunusNode(portunusNode, (int) virtualPortunusNode.getReplicaIndex());
     }
 
     @Override

@@ -6,21 +6,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
+import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DefaultPartitionService extends AbstractService implements PartitionService {
@@ -129,17 +125,18 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public void register(Address address) throws PortunusException {
-        withLock((Consumer<Map<Integer, Partition>>) it -> registerAddress(address), true);
+        withLock(() -> registerAddress(address), true);
     }
 
     @SneakyThrows
     private void registerAddress(Address address) {
+        log.info("Registering '{}' server", address.toPlainAddress());
         partitionOwnerCircle.add(address);
     }
 
     @Override
     public void unregister(Address address) throws PortunusException {
-        withLock((Consumer<Map<Integer, Partition>>) it -> unregisterAddress(address), true);
+        withLock(() -> unregisterAddress(address), true);
     }
 
     @SneakyThrows
@@ -149,20 +146,18 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public List<String> getRegisteredAddresses() {
-        return withLock(it -> {
-            return new ArrayList<>(partitionOwnerCircle.getAddresses());
-        }, false);
+        return withLock(it -> new ArrayList<>(partitionOwnerCircle.getAddresses()), false);
     }
 
     @Override
-    public void updatePartitionMap(Map<Integer, Partition> partitionMap) {
-        withLock(this::clearAndUpdatePartitionMap, true);
+    public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes, Map<Integer, Partition> partitions) {
+        withLock(() -> clearAndUpdate(virtualPortunusNodes, partitions), true);
     }
 
-    private void withLock(Consumer<Map<Integer, Partition>> operation, boolean write) {
+    private void withLock(Runnable operation, boolean write) {
         try {
             getLock(write).lock();
-            operation.accept(partitions);
+            operation.run();
         } finally {
             getLock(write).unlock();
         }
@@ -184,11 +179,17 @@ public class DefaultPartitionService extends AbstractService implements Partitio
         return lock.readLock();
     }
 
-    private void clearAndUpdatePartitionMap(Map<Integer, Partition> partitionMap) {
+    private void clearAndUpdate(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes,
+                                Map<Integer, Partition> partitions) {
+        partitionOwnerCircle.update(virtualPortunusNodes);
+        clearAndUpdate(partitions);
+    }
+
+    private void clearAndUpdate(Map<Integer, Partition> partitions) {
         log.info("Start updating partition map");
-        partitions.clear();
-        partitions.putAll(partitionMap);
-        log.info("Partition map updated");
+        this.partitions.clear();
+        this.partitions.putAll(partitions);
+        log.info("Partition map was updated");
     }
 
     @Override

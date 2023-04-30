@@ -4,6 +4,13 @@ package org.slusarczykr.portunus.cache.api;
 option java_package = "org.slusarczykr.portunus.cache.api";
 option java_outer_classname = "PortunusApiProtos";
 
+message VirtualPortunusNodeDTO {
+  string hashCode = 1;
+  AddressDTO physicalNodeAddress = 2;
+  int64 replicaIndex = 3;
+
+}
+
 message PartitionDTO {
   int64 key = 1;
 }

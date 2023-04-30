@@ -1,9 +1,11 @@
 package org.slusarczykr.portunus.cache.cluster.partition.circle;
 
+import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.Set;
+import java.util.SortedMap;
 
 public interface PortunusHashingCircle {
 
@@ -14,6 +16,8 @@ public interface PortunusHashingCircle {
     Set<String> getKeys();
 
     Set<String> getAddresses();
+
+    void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes);
 
     void add(Address address) throws PortunusException;
 

@@ -31,7 +31,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void consumeEvent(ClusterEvent event) {
         execute(() -> {
             try {
-                log.info("Received '{}' event: {}", event.getEventType(), event);
+                log.info("Received '{}' payload: {}", event.getEventType(), event);
                 handleEvent(event);
             } catch (Exception e) {
                 log.error("Could not process event: {}", event, e);
