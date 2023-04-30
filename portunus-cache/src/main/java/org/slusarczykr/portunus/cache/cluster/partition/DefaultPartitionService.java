@@ -48,9 +48,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     }
 
     private Address getServerAddress(int partitionId) {
-        return withLock(it -> {
-            return getOwnerAddress(partitionId);
-        }, false);
+        return withReadLock(it -> getOwnerAddress(partitionId));
     }
 
     @Override
@@ -60,16 +58,12 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public Partition getPartition(int partitionId) {
-        return withLock(it -> {
-            return it.computeIfAbsent(partitionId, this::createPartition);
-        }, true);
+        return withWriteLock(it -> it.computeIfAbsent(partitionId, this::createPartition));
     }
 
     @Override
     public Partition getLocalPartition(int partitionId) throws PortunusException {
-        Partition partition = withLock(it -> {
-            return partitions.get(partitionId);
-        }, false);
+        Partition partition = withReadLock(it -> partitions.get(partitionId));
 
         return Optional.ofNullable(partition)
                 .orElseThrow(() -> new PortunusException(String.format("Partition '%s' does not exists", partitionId)));
@@ -77,9 +71,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public Map<Integer, Partition> getPartitionMap() {
-        return withLock(it -> {
-            return new HashMap<>(partitions);
-        }, false);
+        return withReadLock(it -> new HashMap<>(partitions));
     }
 
     private int generateHashCode(Object key) {
@@ -92,16 +84,14 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     public Partition getPartitionForKey(Object key) {
         int partitionId = getPartitionId(key);
 
-        return withLock(it -> {
-            return partitions.computeIfAbsent(partitionId, this::createPartition);
-        }, false);
+        return withWriteLock(it -> partitions.computeIfAbsent(partitionId, this::createPartition));
     }
 
     @Override
     public List<Partition> getLocalPartitions() {
-        return withLock(it -> {
+        return withReadLock(it -> {
             return new ArrayList<>(partitions.values());
-        }, false);
+        });
     }
 
     @SneakyThrows
@@ -136,7 +126,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public void unregister(Address address) throws PortunusException {
-        withLock(() -> unregisterAddress(address), true);
+        withWriteLock(() -> unregisterAddress(address));
     }
 
     @SneakyThrows
@@ -146,12 +136,18 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public List<String> getRegisteredAddresses() {
-        return withLock(it -> new ArrayList<>(partitionOwnerCircle.getAddresses()), false);
+        return withReadLock(it -> {
+            return new ArrayList<>(partitionOwnerCircle.getAddresses());
+        });
     }
 
     @Override
     public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes, Map<Integer, Partition> partitions) {
-        withLock(() -> clearAndUpdate(virtualPortunusNodes, partitions), true);
+        withWriteLock(() -> clearAndUpdate(virtualPortunusNodes, partitions));
+    }
+
+    private void withWriteLock(Runnable operation) {
+        withLock(operation, true);
     }
 
     private void withLock(Runnable operation, boolean write) {
@@ -161,6 +157,14 @@ public class DefaultPartitionService extends AbstractService implements Partitio
         } finally {
             getLock(write).unlock();
         }
+    }
+
+    private <T> T withWriteLock(Function<Map<Integer, Partition>, T> operation) {
+        return withLock(operation, true);
+    }
+
+    private <T> T withReadLock(Function<Map<Integer, Partition>, T> operation) {
+        return withLock(operation, true);
     }
 
     private <T> T withLock(Function<Map<Integer, Partition>, T> operation, boolean write) {
