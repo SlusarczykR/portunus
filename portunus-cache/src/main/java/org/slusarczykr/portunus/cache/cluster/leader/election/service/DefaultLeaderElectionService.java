@@ -6,11 +6,14 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.leader.api.AppendEntry;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -63,9 +66,19 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     private List<RequestVote.Response> sendRequestVoteToFollowers() {
         return clusterService.getDiscoveryService().remoteServers().stream()
-                .map(it -> it.sendRequestVote(paxosServer.getIdValue(), paxosServer.getTermValue()))
+                .map(this::sendRequestVoteResponse)
+                .flatMap(Optional::stream)
                 .map(it -> clusterService.getConversionService().convert(it))
                 .toList();
+    }
+
+    private Optional<RequestVoteResponse> sendRequestVoteResponse(RemotePortunusServer it) {
+        try {
+            return Optional.of(it.sendRequestVote(paxosServer.getIdValue(), paxosServer.getTermValue()));
+        } catch (Exception e) {
+            log.error("Could not reach remote server", e);
+            return Optional.empty();
+        }
     }
 
     private <T extends RequestVote.Response> boolean checkAcceptanceMajority(List<T> responseRequestVotes) {

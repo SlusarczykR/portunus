@@ -11,6 +11,7 @@ import org.slusarczykr.portunus.cache.cluster.leader.election.service.DefaultLea
 import org.slusarczykr.portunus.cache.cluster.leader.election.starter.DefaultLeaderElectionStarterService;
 import org.slusarczykr.portunus.cache.cluster.leader.vote.service.DefaultRequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
+import org.slusarczykr.portunus.cache.cluster.replica.DefaultReplicaService;
 import org.slusarczykr.portunus.cache.cluster.service.PaxosService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
@@ -70,6 +71,7 @@ public class DefaultServiceManager implements ServiceManager {
         initializeService(DefaultClusterConfigService.newInstance(clusterService));
         initializeService(DefaultPartitionService.newInstance(clusterService));
         initializeService(DefaultDiscoveryService.newInstance(clusterService));
+        initializeService(DefaultReplicaService.newInstance(clusterService));
         initializeService(DefaultConversionService.newInstance(clusterService));
         initializeService(DefaultClusterEventPublisher.newInstance(clusterService));
         initializeService(DefaultClusterEventConsumer.newInstance(clusterService));

@@ -1,6 +1,5 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
-import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
