@@ -44,11 +44,14 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     @Override
     public boolean startLeaderCandidacy() {
-        paxosServer.incrementTerm(clusterService.getDiscoveryService().getNumberOfServers());
+        int numberOfServers = clusterService.getDiscoveryService().getNumberOfServers();
+        log.info("Starting validation of leader candidacy. Current number of servers: {}", numberOfServers);
+        paxosServer.incrementTerm(numberOfServers);
 
         if (shouldCandidateForLeader()) {
             return candidateForLeader();
         }
+        log.info("Server cannot candidate in the current term: {}", paxosServer.getTermValue());
         return false;
     }
 

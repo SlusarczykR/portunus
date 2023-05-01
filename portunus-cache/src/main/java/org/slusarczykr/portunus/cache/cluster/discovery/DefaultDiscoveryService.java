@@ -46,7 +46,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
     @SneakyThrows
     private void loadServer(Address address) {
         int numberOfClusterMembers = clusterService.getClusterConfigService().getNumberOfClusterMembers();
-        ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers);
+        ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers + 1);
         RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, context);
         register(portunusServer);
     }

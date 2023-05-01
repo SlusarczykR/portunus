@@ -77,7 +77,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         try {
             return clusterService.getLeaderElectionService().startLeaderCandidacy();
         } catch (PaxosLeaderElectionException e) {
-            log.error(e.getLocalizedMessage(), e);
+            log.error("Could not start leader candidacy", e);
         }
         return false;
     }
