@@ -21,6 +21,7 @@ import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsE
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
+import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
 import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
@@ -107,16 +108,16 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private <K extends Serializable> Distributed<K> toDistributed(ByteString bytes) {
-        return Distributed.DistributedWrapper.fromBytes(bytes.toByteArray());
+        return DistributedWrapper.fromBytes(bytes.toByteArray());
     }
 
     @Override
     public void getCache(GetCacheCommand request, StreamObserver<GetCacheDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.GET_ALL_ENTRIES, () -> getLocalPartition(request));
+        completeWith(responseObserver, OperationType.GET_ALL_ENTRIES, () -> getCacheEntries(request));
     }
 
     @SneakyThrows
-    private <K extends Serializable, V extends Serializable> GetCacheDocument getLocalPartition(GetCacheCommand command) {
+    private <K extends Serializable, V extends Serializable> GetCacheDocument getCacheEntries(GetCacheCommand command) {
         Cache<K, V> cache = getDistributedCache(command.getName());
         List<CacheEntryDTO> cacheEntries = cache.allEntries().stream()
                 .map(PortunusGRPCService::toCacheEntry)
@@ -129,8 +130,26 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private static <K extends Serializable, V extends Serializable> CacheEntryDTO toCacheEntry(Cache.Entry<K, V> entry) {
         return CacheEntryDTO.newBuilder()
-                .setKey(Distributed.DistributedWrapper.from((entry.getKey())).getByteString())
-                .setValue(Distributed.DistributedWrapper.from((entry.getValue())).getByteString())
+                .setKey(DistributedWrapper.from((entry.getKey())).getByteString())
+                .setValue(DistributedWrapper.from((entry.getValue())).getByteString())
+                .build();
+    }
+
+    @Override
+    public void getCacheEntry(GetEntryCommand request, StreamObserver<GetEntryDocument> responseObserver) {
+        completeWith(responseObserver, OperationType.GET_ENTRY, () -> getCacheEntry(request));
+    }
+
+    @SneakyThrows
+    private <K extends Serializable, V extends Serializable> GetEntryDocument getCacheEntry(GetEntryCommand command) {
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
+        Distributed<K> distributed = toDistributed(command.getKey());
+        CacheEntryDTO cacheEntry = cache.getEntry(distributed.get())
+                .map(it -> clusterService.getConversionService().convert(it))
+                .orElse(null);
+
+        return GetEntryDocument.newBuilder()
+                .setCacheEntry(cacheEntry)
                 .build();
     }
 

@@ -54,6 +54,11 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> getCacheEntry(String name, K key) {
+        return clusterService.getConversionService().convert(portunusClient.getCacheEntry(name, key));
+    }
+
+    @Override
     public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name) {
         return portunusClient.getCache(name).stream()
                 .map(it -> (Cache.Entry<K, V>) clusterService.getConversionService().convert(it))

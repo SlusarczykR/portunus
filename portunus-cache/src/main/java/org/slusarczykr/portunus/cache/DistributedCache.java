@@ -15,14 +15,7 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -79,18 +72,9 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     public Optional<Cache.Entry<K, V>> getEntry(K key) {
-        return getLocalEntry(key)
-                .map(it -> {
-                    cacheEntryObserver.onAccess(it);
-                    return it;
-                });
-    }
-
-    private Optional<Cache.Entry<K, V>> getLocalEntry(K key) {
-        return clusterService.getDiscoveryService().localServer().getCacheEntries(name).stream()
-                .filter(it -> it.getKey().equals(key))
-                .map(it -> (Cache.Entry<K, V>) it)
-                .findFirst();
+        return executeOperation(OperationType.GET_ENTRY, () ->
+                executeLocalOrDistributed(key, it -> Optional.ofNullable(it.getCacheEntry(name, key)))
+        );
     }
 
     @Override

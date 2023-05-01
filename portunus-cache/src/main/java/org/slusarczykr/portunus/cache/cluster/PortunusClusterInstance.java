@@ -20,14 +20,11 @@ import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 public class PortunusClusterInstance implements PortunusCluster, PortunusServer {
 
@@ -77,6 +74,11 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
             clusterService.getDiscoveryService().register(localServer);
             clusterService.getServiceManager().injectPaxosServer(getPaxosServer());
             clusterService.getLeaderElectionStarter().start();
+
+            if (getPlainAddress().contains("8082")) {
+                Cache<String, String> sampleCache = getCache("test1");
+                sampleCache.put(randomAlphabetic(8), randomAlphabetic(8));
+            }
             publishMemberEvent(this::createMemberJoinedEvent);
         } catch (Exception e) {
             throw new FatalPortunusException("Could not initialize portunus instance", e);
@@ -134,6 +136,13 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         return Optional.ofNullable(caches.get(cacheName))
                 .map(it -> containsKey((Cache<K, ?>) it, key))
                 .orElse(false);
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> getCacheEntry(String name, K key) {
+        return Optional.ofNullable(caches.get(name))
+                .flatMap(it -> ((Cache<K, V>) it).getEntry(key))
+                .orElse(null);
     }
 
     @SneakyThrows

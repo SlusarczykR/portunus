@@ -88,7 +88,6 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     @Override
     public Partition getPartitionForKey(Object key) {
         int partitionId = getPartitionId(key);
-
         return withWriteLock(it -> partitions.computeIfAbsent(partitionId, this::createPartition));
     }
 
@@ -195,10 +194,11 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     }
 
     private void clearAndUpdate(Map<Integer, Partition> partitions) {
-        log.info("Start updating partition map");
+        log.info("Start updating partition map: {}", partitions);
         this.partitions.clear();
         this.partitions.putAll(partitions);
         log.info("Partition map was updated");
+        log.info("Partition map: {}", this.partitions);
     }
 
     @Override

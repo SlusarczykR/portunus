@@ -26,6 +26,8 @@ public interface PortunusServer {
 
     <K extends Serializable> boolean containsEntry(String cacheName, K key);
 
+    <K extends Serializable, V extends Serializable> Cache.Entry<K, V> getCacheEntry(String name, K key);
+
     <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name);
 
     <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry);

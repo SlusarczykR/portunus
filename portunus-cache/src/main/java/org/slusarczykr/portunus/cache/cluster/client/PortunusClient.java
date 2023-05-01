@@ -17,6 +17,8 @@ public interface PortunusClient {
 
     Set<CacheEntryDTO> getCache(String name);
 
+    <K extends Serializable> CacheEntryDTO getCacheEntry(String name, K key);
+
     Collection<PartitionDTO> getPartitions();
 
     void sendEvent(ClusterEvent event);

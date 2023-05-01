@@ -5,16 +5,14 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryCommand;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
+import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
@@ -69,7 +67,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     private <K extends Serializable> ContainsEntryQuery createContainsEntryQuery(String cacheName, K key) {
-        Distributed<K> distributed = Distributed.DistributedWrapper.from(key);
+        Distributed<K> distributed = DistributedWrapper.from(key);
 
         return ContainsEntryQuery.newBuilder()
                 .setCacheName(cacheName)
@@ -84,6 +82,23 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
             GetCacheCommand command = createGetCacheCommand(name);
             return portunusService.getCache(command);
         }).getCacheEntriesList());
+    }
+
+    @Override
+    public <K extends Serializable> CacheEntryDTO getCacheEntry(String name, K key) {
+        return withPortunusServiceStub(portunusService -> {
+            GetEntryCommand command = createGetEntryCommand(name, key);
+            return portunusService.getCacheEntry(command);
+        }).getCacheEntry();
+    }
+
+    private <K extends Serializable> GetEntryCommand createGetEntryCommand(String cacheName, K key) {
+        Distributed<K> distributed = Distributed.DistributedWrapper.from(key);
+
+        return GetEntryCommand.newBuilder()
+                .setCacheName(cacheName)
+                .setKey(distributed.getByteString())
+                .build();
     }
 
     private static GetCacheCommand createGetCacheCommand(String name) {
@@ -136,7 +151,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     private <K extends Serializable> RemoveEntryCommand createRemoveEntryCommand(String cacheName, K key) {
-        Distributed<K> distributed = Distributed.DistributedWrapper.from(key);
+        Distributed<K> distributed = DistributedWrapper.from(key);
 
         return RemoveEntryCommand.newBuilder()
                 .setCacheName(cacheName)

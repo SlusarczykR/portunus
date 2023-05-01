@@ -22,6 +22,15 @@ message GetPartitionsDocument {
   repeated PartitionDTO partitions = 1;
 }
 
+message GetEntryCommand {
+  string cacheName = 1;
+  bytes key = 2;
+}
+
+message GetEntryDocument {
+  CacheEntryDTO cacheEntry = 1;
+}
+
 message PutEntryCommand {
   string cacheName = 1;
   CacheEntryDTO cacheEntry = 2;
