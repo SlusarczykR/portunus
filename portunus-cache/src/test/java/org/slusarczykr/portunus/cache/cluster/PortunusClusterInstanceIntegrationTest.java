@@ -9,10 +9,9 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance.DEFAULT_PORT;
 
 class PortunusClusterInstanceIntegrationTest {
@@ -80,12 +79,12 @@ class PortunusClusterInstanceIntegrationTest {
     }
 
     @Test
-    void shouldReturnEntryWhenRemoteEntryIsRequested() throws PortunusException, UnknownHostException, InterruptedException {
+    void shouldReturnTrueWhenRemoteRemoteServerContainsEntry() throws UnknownHostException {
         String localHost = InetAddress.getLocalHost().getHostAddress();
         Address localAddress = new Address(localHost, DEFAULT_PORT);
         Address remoteAddress = new Address(localHost, 8092);
-        PortunusClusterInstance localPortunusInstance = PortunusClusterInstance.newInstance(createClusterConfig(localAddress.port(), List.of(remoteAddress.toPlainAddress())));
-        PortunusClusterInstance remotePortunusInstance = PortunusClusterInstance.newInstance(createClusterConfig(remoteAddress.port(), List.of(localAddress.toPlainAddress())));
+        PortunusClusterInstance localPortunusInstance = newPortunusClusterInstance(localAddress, remoteAddress);
+        PortunusClusterInstance remotePortunusInstance = newPortunusClusterInstance(remoteAddress, localAddress);
         Cache<String, String> cache = localPortunusInstance.getCache(DEFAULT_CACHE_NAME);
         cache.put(DEFAULT_CACHE_ENTRY_KEY, DEFAULT_CACHE_ENTRY_VALUE);
 
@@ -95,6 +94,33 @@ class PortunusClusterInstanceIntegrationTest {
         assertNotNull(cache);
         assertFalse(cache.containsKey(DEFAULT_CACHE_ENTRY_KEY));
         assertTrue(cache.isEmpty());
+    }
+
+    @Test
+    void shouldReturnEntryWhenRemoteEntryContainsIt() throws UnknownHostException {
+        String localHost = InetAddress.getLocalHost().getHostAddress();
+        Address localAddress = new Address(localHost, DEFAULT_PORT);
+        Address remoteAddress = new Address(localHost, 8092);
+        PortunusClusterInstance localPortunusInstance = newPortunusClusterInstance(localAddress, remoteAddress);
+        PortunusClusterInstance remotePortunusInstance = newPortunusClusterInstance(remoteAddress, localAddress);
+        Cache<String, String> cache = localPortunusInstance.getCache(DEFAULT_CACHE_NAME);
+        cache.put(DEFAULT_CACHE_ENTRY_KEY, DEFAULT_CACHE_ENTRY_VALUE);
+
+        Optional<Cache.Entry<String, String>> entry = cache.getEntry(DEFAULT_CACHE_ENTRY_KEY);
+        assertTrue(entry.isPresent());
+        assertEquals(DEFAULT_CACHE_ENTRY_VALUE, entry.get().getValue());
+        cache.remove(DEFAULT_CACHE_ENTRY_KEY);
+
+        assertNotNull(cache);
+        assertFalse(cache.containsKey(DEFAULT_CACHE_ENTRY_KEY));
+        assertTrue(cache.isEmpty());
+    }
+
+    private PortunusClusterInstance newPortunusClusterInstance(Address localAddress, Address remoteAddress) {
+        List<String> clusterMembers = List.of(remoteAddress.toPlainAddress());
+        ClusterConfig clusterConfig = createClusterConfig(localAddress.port(), clusterMembers);
+
+        return PortunusClusterInstance.newInstance(clusterConfig);
     }
 
     private ClusterConfig createClusterConfig(int port, List<String> members) {
