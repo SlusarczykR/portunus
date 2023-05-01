@@ -53,7 +53,7 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
     }
 
     @Override
-    public Address getLocalServerAddress() throws PortunusException {
+    public Address getLocalServerAddress() {
         return clusterConfig.getLocalServerAddress();
     }
 

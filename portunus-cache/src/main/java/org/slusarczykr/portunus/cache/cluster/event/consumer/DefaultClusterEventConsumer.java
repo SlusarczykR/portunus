@@ -24,6 +24,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import static org.slusarczykr.portunus.cache.cluster.event.MulticastConstants.HOST;
+import static org.slusarczykr.portunus.cache.cluster.event.MulticastConstants.MESSAGE_MARKER;
+
 public class DefaultClusterEventConsumer extends AbstractAsyncService implements ClusterEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterEventConsumer.class);
@@ -39,8 +42,8 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     @Override
     public void onInitialization() throws PortunusException {
         if (clusterService.getClusterConfig().isMulticast()) {
-            log.info("Starting multicast receiver");
             int multicastPort = clusterService.getClusterConfig().getMulticastPort();
+            log.info("Initializing multicast receiver on port: {}", multicastPort);
             new MulticastReceiver(multicastPort, this::handleMulticastEvent).start();
             log.info("Multicast receiver was started");
         } else {
@@ -51,11 +54,15 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     private void handleMulticastEvent(MemberJoinedEvent event) {
         Address address = clusterService.getConversionService().convert(event.getAddress());
 
-        if (!address.equals(clusterService.getPortunusClusterInstance().getAddress())) {
+        if (!isLocalAddress(address)) {
             handleEvent(event);
         } else {
             log.info("Skipping self {} event", ClusterEventType.MemberJoinedEvent);
         }
+    }
+
+    private boolean isLocalAddress(Address address) {
+        return address.equals(clusterService.getClusterConfigService().getLocalServerAddress());
     }
 
     @Override
@@ -81,7 +88,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     @SneakyThrows
     private void handleEvent(MemberJoinedEvent event) {
         Address address = clusterService.getConversionService().convert(event.getAddress());
-        int numberOfClusterMembers = clusterService.getClusterConfigService().getNumberOfClusterMembers();
+        int numberOfClusterMembers = clusterService.getDiscoveryService().getNumberOfServers();
         ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers);
         RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, context);
         clusterService.getDiscoveryService().register(portunusServer);
@@ -106,9 +113,6 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     private static class MulticastReceiver extends Thread {
 
-        private static final String MESSAGE_MARKER = "@portunus";
-        private static final String HOST = "230.0.0.0";
-
         private final int port;
         private final Consumer<MemberJoinedEvent> operation;
 
@@ -127,23 +131,21 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         }
 
         private void listenForMulticast() throws IOException {
-            byte[] buf = new byte[256];
-            MulticastSocket socket = new MulticastSocket(port);
-            InetAddress group = InetAddress.getByName(HOST);
-            socket.joinGroup(group);
+            try (MulticastSocket socket = new MulticastSocket(port)) {
+                byte[] buf = new byte[256];
+                InetAddress group = InetAddress.getByName(HOST);
+                socket.joinGroup(group);
 
-            while (true) {
-                String received = receive(socket, buf);
+                while (true) {
+                    String received = receive(socket, buf);
 
-                if (received.endsWith(MESSAGE_MARKER)) {
-                    log.info("Received multicast message: {}", received);
-                    Address address = parseAddress(received);
-                    operation.accept(createMemberJoinedEvent(address));
-                    break;
+                    if (received.endsWith(MESSAGE_MARKER)) {
+                        log.info("Received multicast message: {}", received);
+                        Address address = parseAddress(received);
+                        operation.accept(createMemberJoinedEvent(address));
+                    }
                 }
             }
-            socket.leaveGroup(group);
-            socket.close();
         }
 
         private static Address parseAddress(String source) {

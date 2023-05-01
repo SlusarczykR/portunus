@@ -35,5 +35,7 @@ public interface ConversionService extends Service {
 
     RequestVote convert(AppendEntry appendEntry);
 
+    VirtualPortunusNodeDTO convert(VirtualPortunusNode virtualPortunusNode);
+
     VirtualPortunusNode convert(VirtualPortunusNodeDTO virtualPortunusNode);
 }

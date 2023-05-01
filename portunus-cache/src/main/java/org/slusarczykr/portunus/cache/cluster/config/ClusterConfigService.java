@@ -12,7 +12,7 @@ public interface ClusterConfigService extends ClusterConfigHolder, Service {
 
     String getLocalServerPlainAddress() throws PortunusException;
 
-    Address getLocalServerAddress() throws PortunusException;
+    Address getLocalServerAddress();
 
     ClusterConfig getClusterConfig();
 

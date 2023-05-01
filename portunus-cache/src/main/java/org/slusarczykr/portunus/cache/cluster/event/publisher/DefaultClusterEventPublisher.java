@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.slusarczykr.portunus.cache.cluster.event.MulticastConstants.HOST;
+import static org.slusarczykr.portunus.cache.cluster.event.MulticastConstants.MESSAGE_MARKER;
+
 public class DefaultClusterEventPublisher extends AbstractAsyncService implements ClusterEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterEventPublisher.class);
@@ -31,7 +34,9 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
 
     public DefaultClusterEventPublisher(ClusterService clusterService) {
         super(clusterService);
-        this.multicastPublisher = new MulticastPublisher(clusterService.getClusterConfig().getMulticastPort());
+        int multicastPort = clusterService.getClusterConfig().getMulticastPort();
+        log.info("Initializing multicast publisher for port: {}", multicastPort);
+        this.multicastPublisher = new MulticastPublisher(multicastPort);
     }
 
     @Override
@@ -89,9 +94,6 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     }
 
     private record MulticastPublisher(int port) {
-
-        private static final String MESSAGE_MARKER = "@portunus";
-        private static final String HOST = "230.0.0.0";
 
         public void publish(String multicastMessage) throws IOException {
             try (DatagramSocket socket = new DatagramSocket()) {

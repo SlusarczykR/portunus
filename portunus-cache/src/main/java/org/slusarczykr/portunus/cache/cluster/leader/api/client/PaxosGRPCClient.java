@@ -6,6 +6,7 @@ import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -63,16 +64,21 @@ public class PaxosGRPCClient extends AbstractManaged implements PaxosClient {
     }
 
     @Override
-    public AppendEntryResponse sendPartitionMap(long serverId, List<PartitionDTO> partitions) {
+    public AppendEntryResponse sendPartitionMap(long serverId,
+                                                List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
+                                                List<PartitionDTO> partitions) {
         return withPortunusServiceStub(portunusService -> {
-            SyncPartitionsMapEntry command = createSyncPartitionMapEntry(serverId, partitions);
+            SyncPartitionsMapEntry command = createSyncPartitionMapEntry(serverId, partitionOwnerCircleNodes, partitions);
             return portunusService.sendPartitionMap(command);
         });
     }
 
-    private static SyncPartitionsMapEntry createSyncPartitionMapEntry(long serverId, List<PartitionDTO> partitions) {
+    private static SyncPartitionsMapEntry createSyncPartitionMapEntry(long serverId,
+                                                                      List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
+                                                                      List<PartitionDTO> partitions) {
         return SyncPartitionsMapEntry.newBuilder()
                 .setServerId(serverId)
+                .addAllVirtualPortunusNode(partitionOwnerCircleNodes)
                 .addAllPartition(partitions)
                 .build();
     }

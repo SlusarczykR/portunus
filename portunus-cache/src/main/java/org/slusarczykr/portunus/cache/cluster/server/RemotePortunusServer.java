@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
@@ -90,7 +91,9 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
-    public AppendEntryResponse sendPartitionMap(long serverId, List<PartitionDTO> partitions) {
-        return paxosClient.sendPartitionMap(serverId, partitions);
+    public AppendEntryResponse sendPartitionMap(long serverId,
+                                                List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
+                                                List<PartitionDTO> partitions) {
+        return paxosClient.sendPartitionMap(serverId, partitionOwnerCircleNodes, partitions);
     }
 }

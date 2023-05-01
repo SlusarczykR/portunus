@@ -39,6 +39,11 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     }
 
     @Override
+    public SortedMap<String, VirtualPortunusNode> getPartitionOwnerCircle() {
+        return partitionOwnerCircle.get();
+    }
+
+    @Override
     public boolean isLocalPartition(Object key) throws PortunusException {
         int partitionId = getPartitionId(key);
         String partitionOwnerAddress = getServerAddress(partitionId).toPlainAddress();

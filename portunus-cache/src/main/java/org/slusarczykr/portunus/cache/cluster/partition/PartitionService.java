@@ -11,6 +11,8 @@ import java.util.SortedMap;
 
 public interface PartitionService extends Service {
 
+    SortedMap<String, VirtualPortunusNode> getPartitionOwnerCircle();
+
     boolean isLocalPartition(Object key) throws PortunusException;
 
     int getPartitionId(Object key);

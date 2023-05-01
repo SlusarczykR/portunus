@@ -10,7 +10,6 @@ import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
-import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -97,6 +96,17 @@ public class DefaultConversionService extends AbstractService implements Convers
     @Override
     public RequestVote convert(AppendEntry appendEntry) {
         return new RequestVote(appendEntry.getServerId(), appendEntry.getTerm());
+    }
+
+    @Override
+    public VirtualPortunusNodeDTO convert(VirtualPortunusNode virtualPortunusNode) {
+        AddressDTO address = convert(Address.from(virtualPortunusNode.getPhysicalNodeKey()));
+
+        return VirtualPortunusNodeDTO.newBuilder()
+                .setHashCode(virtualPortunusNode.getKey())
+                .setPhysicalNodeAddress(address)
+                .setReplicaIndex(virtualPortunusNode.getReplicaIndex())
+                .build();
     }
 
     @Override

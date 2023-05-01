@@ -9,6 +9,8 @@ import java.util.SortedMap;
 
 public interface PortunusHashingCircle {
 
+    SortedMap<String, VirtualPortunusNode> get();
+
     boolean isEmpty();
 
     int getSize();

@@ -20,8 +20,9 @@ public class PaxosServer {
     private final AtomicBoolean leader = new AtomicBoolean(false);
 
     public PaxosServer(int serverPort, int numberOfServers) {
-        initServerId(serverPort, numberOfServers);
-        incrementTerm(numberOfServers);
+        int totalNumberOfServers = numberOfServers + 1;
+        initServerId(serverPort, totalNumberOfServers);
+        incrementTerm(totalNumberOfServers);
     }
 
     private void initServerId(int serverPort, int numberOfServers) {

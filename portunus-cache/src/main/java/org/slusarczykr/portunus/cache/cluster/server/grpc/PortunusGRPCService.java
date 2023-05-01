@@ -36,7 +36,11 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVo
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.SyncPartitionsMapEntry;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.SortedMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -292,7 +296,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                         VirtualPortunusNodeDTO::getHashCode,
                         it -> clusterService.getConversionService().convert(it),
                         (e1, e2) -> e2,
-                        TreeMap::new
+                        ConcurrentSkipListMap::new
                 ));
     }
 

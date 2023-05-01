@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -35,12 +35,12 @@ public class ClusterConfig {
     @JsonProperty
     private List<String> members = new ArrayList<>();
 
-    public Address getLocalServerAddress() throws PortunusException {
+    public Address getLocalServerAddress() {
         try {
             InetAddress inetAddress = InetAddress.getLocalHost();
             return new Address(inetAddress.getHostAddress(), port);
         } catch (UnknownHostException e) {
-            throw new PortunusException("Could not identify the host");
+            throw new InvalidPortunusStateException("Could not identify the host");
         }
     }
 }

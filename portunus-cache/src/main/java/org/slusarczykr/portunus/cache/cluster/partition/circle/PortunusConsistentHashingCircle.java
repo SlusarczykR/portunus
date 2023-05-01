@@ -24,6 +24,11 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
     private final SortedMap<String, VirtualPortunusNode> circle = new ConcurrentSkipListMap<>();
 
     @Override
+    public SortedMap<String, VirtualPortunusNode> get() {
+        return new ConcurrentSkipListMap<>(circle);
+    }
+
+    @Override
     public boolean isEmpty() {
         return circle.isEmpty();
     }
@@ -46,7 +51,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
 
     @Override
     public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes) {
-        log.info("Start updating hashing circle");
+        log.info("Start updating hashing circle: {}", virtualPortunusNodes);
         this.circle.clear();
         this.circle.putAll(virtualPortunusNodes);
         log.info("Hashing circle was updated");
@@ -132,6 +137,10 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
 
         public PortunusNode getPhysicalNode() {
             return physicalNode;
+        }
+
+        public int getReplicaIndex() {
+            return replicaIndex;
         }
     }
 

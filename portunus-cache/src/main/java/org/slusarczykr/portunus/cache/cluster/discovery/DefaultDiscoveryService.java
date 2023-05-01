@@ -1,6 +1,8 @@
 package org.slusarczykr.portunus.cache.cluster.discovery;
 
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
@@ -17,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 public class DefaultDiscoveryService extends AbstractService implements DiscoveryService {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultDiscoveryService.class);
 
     private final Map<String, PortunusServer> portunusInstances = new ConcurrentHashMap<>();
 
@@ -104,6 +108,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
     @Override
     public void register(PortunusServer server) throws PortunusException {
         if (!portunusInstances.containsKey(server.getPlainAddress())) {
+            log.info("Registering remote server with address: '{}'", server.getPlainAddress());
             clusterService.getPartitionService().register(server.getAddress());
             portunusInstances.put(server.getPlainAddress(), server);
         }
@@ -116,6 +121,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
         if (!portunusInstances.containsKey(plainAddress)) {
             throw new PortunusException(String.format("Server with address %s does not exists", address));
         }
+        log.info("Unregistering remote server with address: '{}'", address.toPlainAddress());
         clusterService.getPartitionService().unregister(address);
         portunusInstances.remove(plainAddress);
     }
