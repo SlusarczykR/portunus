@@ -2,12 +2,13 @@ package org.slusarczykr.portunus.cache.cluster.conversion;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
+import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
@@ -30,29 +31,33 @@ public class DefaultConversionService extends AbstractService implements Convers
     }
 
     @Override
-    public Partition convert(PortunusApiProtos.PartitionDTO partition) {
-        return clusterService.getPartitionService().getPartition((int) partition.getKey());
+    public Partition convert(PartitionDTO partition) {
+        Address address = convert(partition.getOwner());
+        return clusterService.getDiscoveryService().getServer(address)
+                .map(it -> new Partition((int) partition.getKey(), it))
+                .orElseThrow(() -> new IllegalStateException(String.format("Could not find server with address: '%s'", address)));
     }
 
     @Override
-    public PortunusApiProtos.PartitionDTO convert(Partition partition) {
-        return PortunusApiProtos.PartitionDTO.newBuilder()
+    public PartitionDTO convert(Partition partition) {
+        return PartitionDTO.newBuilder()
                 .setKey(partition.partitionId())
+                .setOwner(convert(partition.getOwnerAddress()))
                 .build();
     }
 
     @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> convert(CacheEntryDTO cacheEntry) {
-        Distributed<K> key = Distributed.DistributedWrapper.fromBytes(cacheEntry.getKey().toByteArray());
-        Distributed<V> value = Distributed.DistributedWrapper.fromBytes(cacheEntry.getValue().toByteArray());
+        Distributed<K> key = DistributedWrapper.fromBytes(cacheEntry.getKey().toByteArray());
+        Distributed<V> value = DistributedWrapper.fromBytes(cacheEntry.getValue().toByteArray());
 
         return new DefaultCache.Entry<>(key.get(), value.get());
     }
 
     @Override
     public <K extends Serializable, V extends Serializable> CacheEntryDTO convert(Cache.Entry<K, V> cacheEntry) {
-        Distributed<K> key = Distributed.DistributedWrapper.from(cacheEntry.getKey());
-        Distributed<V> value = Distributed.DistributedWrapper.from(cacheEntry.getValue());
+        Distributed<K> key = DistributedWrapper.from(cacheEntry.getKey());
+        Distributed<V> value = DistributedWrapper.from(cacheEntry.getValue());
 
         return CacheEntryDTO.newBuilder()
                 .setKey(key.getByteString())

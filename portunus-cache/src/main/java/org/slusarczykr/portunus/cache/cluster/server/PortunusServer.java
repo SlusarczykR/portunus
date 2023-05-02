@@ -59,6 +59,11 @@ public interface PortunusServer {
                         .map(Address::toPlainAddress)
                         .toList();
             }
+
+            @Override
+            public String toString() {
+                return toPlainAddress();
+            }
         }
 
         public String getHostname() {

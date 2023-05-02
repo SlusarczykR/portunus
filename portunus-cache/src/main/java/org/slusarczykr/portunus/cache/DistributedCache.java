@@ -127,24 +127,13 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     private void putEntry(K key, Entry<K, V> entry) {
-        PortunusServer owner;
-
-        if (isLocalPartition(key)) {
-            owner = clusterService.getDiscoveryService().localServer();
-        } else {
-            owner = clusterService.getPartitionService().getPartitionForKey(key).owner();
-        }
+        PortunusServer owner = clusterService.getPartitionService().getPartitionForKey(key).owner();
         putEntry(owner, entry);
     }
 
     @SneakyThrows
     private void putEntry(PortunusServer owner, Entry<K, V> entry) {
         owner.put(name, entry);
-    }
-
-    @SneakyThrows
-    private boolean isLocalPartition(K key) {
-        return clusterService.getPartitionService().isLocalPartition(key);
     }
 
     @Override

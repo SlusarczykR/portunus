@@ -14,7 +14,7 @@ public interface PaxosClient {
 
     AppendEntryResponse sendHeartbeats(long serverId, long term);
 
-    AppendEntryResponse sendPartitionMap(long serverId,
-                                         List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
-                                         List<PartitionDTO> partitions);
+    AppendEntryResponse syncServerState(long serverId,
+                                        List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
+                                        List<PartitionDTO> partitions);
 }

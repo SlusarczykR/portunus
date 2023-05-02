@@ -155,7 +155,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         try {
             log.info("Sending heartbeats to followers...");
             clusterService.getDiscoveryService().remoteServers().stream()
-                    .map(it -> it.sendPartitionMap(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions()))
+                    .map(it -> it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions()))
                     .forEach(it -> log.info("Received heartbeat reply from follower with id: {}", it.getServerId()));
         } catch (Exception e) {
             log.error("Error occurred while sending heartbeats to followers!");

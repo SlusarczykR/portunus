@@ -9,17 +9,13 @@ import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsisten
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
-import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 
-public class DefaultPartitionService extends AbstractService implements PartitionService {
+public class DefaultPartitionService extends AbstractConcurrentService implements PartitionService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPartitionService.class);
 
@@ -27,7 +23,6 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     private final PortunusConsistentHashingCircle partitionOwnerCircle;
     private final Map<Integer, Partition> partitions = new ConcurrentHashMap<>();
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private DefaultPartitionService(ClusterService clusterService) {
         super(clusterService);
@@ -53,7 +48,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     }
 
     private Address getServerAddress(int partitionId) {
-        return withReadLock(it -> getOwnerAddress(partitionId));
+        return withReadLock(() -> getOwnerAddress(partitionId));
     }
 
     @Override
@@ -63,12 +58,12 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public Partition getPartition(int partitionId) {
-        return withWriteLock(it -> it.computeIfAbsent(partitionId, this::createPartition));
+        return withWriteLock(() -> this.partitions.computeIfAbsent(partitionId, this::createPartition));
     }
 
     @Override
     public Partition getLocalPartition(int partitionId) throws PortunusException {
-        Partition partition = withReadLock(it -> partitions.get(partitionId));
+        Partition partition = withReadLock(() -> partitions.get(partitionId));
 
         return Optional.ofNullable(partition)
                 .orElseThrow(() -> new PortunusException(String.format("Partition '%s' does not exists", partitionId)));
@@ -76,7 +71,7 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public Map<Integer, Partition> getPartitionMap() {
-        return withReadLock(it -> new HashMap<>(partitions));
+        return withReadLock(() -> new HashMap<>(partitions));
     }
 
     private int generateHashCode(Object key) {
@@ -88,12 +83,12 @@ public class DefaultPartitionService extends AbstractService implements Partitio
     @Override
     public Partition getPartitionForKey(Object key) {
         int partitionId = getPartitionId(key);
-        return withWriteLock(it -> partitions.computeIfAbsent(partitionId, this::createPartition));
+        return withWriteLock(() -> partitions.computeIfAbsent(partitionId, this::createPartition));
     }
 
     @Override
     public List<Partition> getLocalPartitions() {
-        return withReadLock(it -> {
+        return withReadLock(() -> {
             return new ArrayList<>(partitions.values());
         });
     }
@@ -119,12 +114,12 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public void register(Address address) throws PortunusException {
-        withLock(() -> registerAddress(address), true);
+        withWriteLock(() -> registerAddress(address));
     }
 
     @SneakyThrows
     private void registerAddress(Address address) {
-        log.info("Registering '{}' server", address.toPlainAddress());
+        log.info("Registering '{}' server", address);
         partitionOwnerCircle.add(address);
     }
 
@@ -140,60 +135,20 @@ public class DefaultPartitionService extends AbstractService implements Partitio
 
     @Override
     public List<String> getRegisteredAddresses() {
-        return withReadLock(it -> {
+        return withReadLock(() -> {
             return new ArrayList<>(partitionOwnerCircle.getAddresses());
         });
     }
 
     @Override
     public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes, Map<Integer, Partition> partitions) {
-        withWriteLock(() -> clearAndUpdate(virtualPortunusNodes, partitions));
+        withWriteLock(() -> {
+            partitionOwnerCircle.update(virtualPortunusNodes);
+            update(partitions);
+        });
     }
 
-    private void withWriteLock(Runnable operation) {
-        withLock(operation, true);
-    }
-
-    private void withLock(Runnable operation, boolean write) {
-        try {
-            getLock(write).lock();
-            operation.run();
-        } finally {
-            getLock(write).unlock();
-        }
-    }
-
-    private <T> T withWriteLock(Function<Map<Integer, Partition>, T> operation) {
-        return withLock(operation, true);
-    }
-
-    private <T> T withReadLock(Function<Map<Integer, Partition>, T> operation) {
-        return withLock(operation, true);
-    }
-
-    private <T> T withLock(Function<Map<Integer, Partition>, T> operation, boolean write) {
-        try {
-            getLock(write).lock();
-            return operation.apply(partitions);
-        } finally {
-            getLock(write).unlock();
-        }
-    }
-
-    private Lock getLock(boolean write) {
-        if (write) {
-            return lock.writeLock();
-        }
-        return lock.readLock();
-    }
-
-    private void clearAndUpdate(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes,
-                                Map<Integer, Partition> partitions) {
-        partitionOwnerCircle.update(virtualPortunusNodes);
-        clearAndUpdate(partitions);
-    }
-
-    private void clearAndUpdate(Map<Integer, Partition> partitions) {
+    private void update(Map<Integer, Partition> partitions) {
         log.info("Start updating partition map: {}", partitions);
         this.partitions.clear();
         this.partitions.putAll(partitions);

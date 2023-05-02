@@ -14,7 +14,7 @@ import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
-import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.SyncPartitionsMapEntry;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.SyncServerStateRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,19 +64,19 @@ public class PaxosGRPCClient extends AbstractManaged implements PaxosClient {
     }
 
     @Override
-    public AppendEntryResponse sendPartitionMap(long serverId,
-                                                List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
-                                                List<PartitionDTO> partitions) {
+    public AppendEntryResponse syncServerState(long serverId,
+                                               List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
+                                               List<PartitionDTO> partitions) {
         return withPortunusServiceStub(portunusService -> {
-            SyncPartitionsMapEntry command = createSyncPartitionMapEntry(serverId, partitionOwnerCircleNodes, partitions);
-            return portunusService.sendPartitionMap(command);
+            SyncServerStateRequest request = createSyncServerStateRequest(serverId, partitionOwnerCircleNodes, partitions);
+            return portunusService.syncServerState(request);
         });
     }
 
-    private static SyncPartitionsMapEntry createSyncPartitionMapEntry(long serverId,
-                                                                      List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
-                                                                      List<PartitionDTO> partitions) {
-        return SyncPartitionsMapEntry.newBuilder()
+    private static SyncServerStateRequest createSyncServerStateRequest(long serverId,
+                                                                       List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
+                                                                       List<PartitionDTO> partitions) {
+        return SyncServerStateRequest.newBuilder()
                 .setServerId(serverId)
                 .addAllVirtualPortunusNode(partitionOwnerCircleNodes)
                 .addAllPartition(partitions)

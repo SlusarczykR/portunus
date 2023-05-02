@@ -28,19 +28,17 @@ import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.manager.CacheManager;
 import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
-import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.SyncPartitionsMapEntry;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.SyncServerStateRequest;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -273,12 +271,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     @Override
-    public void sendPartitionMap(SyncPartitionsMapEntry request, StreamObserver<AppendEntryResponse> responseObserver) {
+    public void syncServerState(SyncServerStateRequest request, StreamObserver<AppendEntryResponse> responseObserver) {
         completeWith(responseObserver, OperationType.SEND_EVENT, () -> {
             log.info("Received partition map from leader with id: {}", request.getServerId());
             boolean conflict = false;
 
-            if (updatePartitionMap(request.getVirtualPortunusNodeList(), request.getPartitionList())) {
+            if (syncServerState(request.getVirtualPortunusNodeList(), request.getPartitionList())) {
                 log.error("Partition map message received while the current server is already the leader!");
                 conflict = true;
             }
@@ -289,16 +287,26 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         });
     }
 
-    private boolean updatePartitionMap(List<VirtualPortunusNodeDTO> virtualPortunusNodes,
-                                       List<PartitionDTO> partitions) {
-        Map<Integer, Partition> partitionMap = toPartitionsMap(partitions);
-        SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap = toVirtualPortunusNodeMap(virtualPortunusNodes);
-
+    private boolean syncServerState(List<VirtualPortunusNodeDTO> virtualPortunusNodes,
+                                    List<PartitionDTO> partitions) {
         if (!stopHeartbeatsOrReset()) {
-            clusterService.getPartitionService().update(virtualPortunusNodeMap, partitionMap);
+            SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap = toVirtualPortunusNodeMap(virtualPortunusNodes);
+            updateServerDiscovery(virtualPortunusNodeMap);
+            updatePartitions(partitions, virtualPortunusNodeMap);
+
             return false;
         }
         return true;
+    }
+
+    private void updateServerDiscovery(SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
+        Set<Address> portunusNodes = getPhysicalNodeAddresses(virtualPortunusNodeMap);
+        clusterService.getDiscoveryService().update(portunusNodes);
+    }
+
+    private void updatePartitions(List<PartitionDTO> partitions, SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
+        Map<Integer, Partition> partitionMap = toPartitionsMap(partitions);
+        clusterService.getPartitionService().update(virtualPortunusNodeMap, partitionMap);
     }
 
     private Map<Integer, Partition> toPartitionsMap(List<PartitionDTO> partitions) {
@@ -317,6 +325,13 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                         (e1, e2) -> e2,
                         ConcurrentSkipListMap::new
                 ));
+    }
+
+    private static Set<Address> getPhysicalNodeAddresses(SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
+        return virtualPortunusNodeMap.values().stream()
+                .map(VirtualPortunusNode::getPhysicalNodeKey)
+                .map(Address::from)
+                .collect(Collectors.toSet());
     }
 
     private boolean stopHeartbeatsOrReset() {

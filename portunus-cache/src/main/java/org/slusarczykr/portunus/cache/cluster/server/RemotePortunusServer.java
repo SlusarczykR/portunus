@@ -96,9 +96,9 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
-    public AppendEntryResponse sendPartitionMap(long serverId,
-                                                List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
-                                                List<PartitionDTO> partitions) {
-        return paxosClient.sendPartitionMap(serverId, partitionOwnerCircleNodes, partitions);
+    public AppendEntryResponse syncServerState(long serverId,
+                                               List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
+                                               List<PartitionDTO> partitions) {
+        return paxosClient.syncServerState(serverId, partitionOwnerCircleNodes, partitions);
     }
 }
