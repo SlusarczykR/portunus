@@ -197,15 +197,10 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private <T> T executeLocalOrDistributed(K key, Function<PortunusServer, T> operation) {
-        PortunusServer owner;
         String objectKey = key.toString();
+        Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
+        PortunusServer owner = partition.owner();
 
-        if (!clusterService.getPartitionService().isLocalPartition(objectKey)) {
-            Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
-            owner = partition.owner();
-        } else {
-            owner = clusterService.getDiscoveryService().localServer();
-        }
         return operation.apply(owner);
     }
 
