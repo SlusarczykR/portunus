@@ -58,7 +58,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public Partition getPartition(int partitionId) {
-        return withWriteLock(() -> this.partitions.computeIfAbsent(partitionId, this::createPartition));
+        return withWriteLock(() -> partitions.computeIfAbsent(partitionId, this::createPartition));
     }
 
     @Override
