@@ -1,9 +1,31 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
+import lombok.Data;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 
-public record Partition(int partitionId, PortunusServer owner) {
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Data
+public class Partition {
+
+    private final int partitionId;
+    private final PortunusServer owner;
+    private final Set<PortunusServer> replicaOwners;
+
+    public Partition(int partitionId, PortunusServer owner, Collection<PortunusServer> replicaOwners) {
+        this.partitionId = partitionId;
+        this.owner = owner;
+        this.replicaOwners = ConcurrentHashMap.newKeySet();
+        this.replicaOwners.addAll(replicaOwners);
+    }
+
+    public Partition(int partitionId, PortunusServer owner) {
+        this(partitionId, owner, ConcurrentHashMap.newKeySet());
+    }
 
     public Address getOwnerAddress() {
         return owner.getAddress();
@@ -11,5 +33,26 @@ public record Partition(int partitionId, PortunusServer owner) {
 
     public String getOwnerPlainAddress() {
         return owner.getPlainAddress();
+    }
+
+    public void addReplicaOwner(PortunusServer replicaOwner) {
+        replicaOwners.add(replicaOwner);
+    }
+
+    public void removeReplicaOwner(PortunusServer replicaOwner) {
+        replicaOwners.remove(replicaOwner);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Partition partition = (Partition) o;
+        return partitionId == partition.partitionId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(partitionId);
     }
 }

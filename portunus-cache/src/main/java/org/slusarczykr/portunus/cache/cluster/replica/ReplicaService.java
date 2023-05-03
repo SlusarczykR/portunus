@@ -5,11 +5,13 @@ import org.slusarczykr.portunus.cache.cluster.service.Service;
 
 public interface ReplicaService extends Service {
 
-    boolean isReplicaOwner(int partitionId);
+    boolean isPartitionReplicaOwner(int partitionId);
 
-    boolean isReplicaOwnerForKey(Object key);
+    boolean isPartitionReplicaOwnerForKey(Object key);
 
-    void registerReplica(Partition partition);
+    void registerPartitionReplica(Partition partition);
 
-    void unregisterReplica(int partitionId);
+    void unregisterPartitionReplica(int partitionId);
+
+    void replicatePartition(Partition partition);
 }

@@ -7,11 +7,13 @@ import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusGRPCClient;
 import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosClient;
 import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosGRPCClient;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
@@ -67,7 +69,7 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
 
     @Override
     public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) {
-        log.info("Sending '{}' operation to {} server", OperationType.SEND_EVENT, getPlainAddress());
+        log.info("Sending '{}' operation to {} server", OperationType.SEND_CLUSTER_EVENT, getPlainAddress());
         return portunusClient.putEntry(name, clusterService.getConversionService().convert(entry));
     }
 
@@ -79,6 +81,17 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     @Override
     public void sendEvent(ClusterEvent event) {
         portunusClient.sendEvent(event);
+    }
+
+    @Override
+    public void sendEvent(PartitionEvent event) {
+        portunusClient.sendEvent(event);
+    }
+
+    @Override
+    public void replicate(Partition partition) {
+        PartitionDTO partitionDTO = clusterService.getConversionService().convert(partition);
+        portunusClient.replicate(partitionDTO);
     }
 
     @Override

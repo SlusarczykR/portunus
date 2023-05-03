@@ -11,7 +11,8 @@ option java_package = "org.slusarczykr.portunus.cache.api.service";
 option java_outer_classname = "PortunusServiceProtos";
 
 service PortunusService {
-  rpc sendEvent(org.slusarczykr.portunus.cache.api.event.ClusterEvent) returns (google.protobuf.Empty);
+  rpc sendClusterEvent(org.slusarczykr.portunus.cache.api.event.ClusterEvent) returns (google.protobuf.Empty);
+  rpc sendPartitionEvent(org.slusarczykr.portunus.cache.api.event.PartitionEvent) returns (google.protobuf.Empty);
   rpc getCache(org.slusarczykr.portunus.cache.api.command.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.command.GetCacheDocument);
   rpc getCacheEntry(org.slusarczykr.portunus.cache.api.command.GetEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.GetEntryDocument);
   rpc getPartitions(org.slusarczykr.portunus.cache.api.command.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.GetPartitionsDocument);
@@ -22,4 +23,5 @@ service PortunusService {
   rpc sendRequestVote(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.RequestVoteResponse);
   rpc sendHeartbeats(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
   rpc syncServerState(org.slusarczykr.portunus.cache.paxos.api.SyncServerStateRequest) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
+  rpc replicate(org.slusarczykr.portunus.cache.api.command.ReplicatePartitionCommand) returns (org.slusarczykr.portunus.cache.api.command.ReplicatePartitionDocument);
 }

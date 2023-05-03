@@ -4,11 +4,10 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -55,7 +54,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         Address address = clusterService.getConversionService().convert(event.getAddress());
 
         if (!isLocalAddress(address)) {
-            handleEvent(event);
+            handleMemberJoinedEvent(event);
         } else {
             log.info("Skipping self {} event", ClusterEventType.MemberJoinedEvent);
         }
@@ -69,24 +68,24 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void consumeEvent(ClusterEvent event) {
         execute(() -> {
             try {
-                log.info("Received '{}' payload: {}", event.getEventType(), event);
-                handleEvent(event);
+                log.info("Received '{}' event. Payload: {}", event.getEventType(), event);
+                handleClusterEvent(event);
             } catch (Exception e) {
                 log.error("Could not process event: {}", event, e);
             }
         });
     }
 
-    private void handleEvent(ClusterEvent event) {
+    private void handleClusterEvent(ClusterEvent event) {
         switch (event.getEventType()) {
-            case MemberJoinedEvent -> handleEvent(event.getMemberJoinedEvent());
-            case MemberLeftEvent -> handleEvent(event.getMemberLeftEvent());
+            case MemberJoinedEvent -> handleMemberJoinedEvent(event.getMemberJoinedEvent());
+            case MemberLeftEvent -> handleMemberLeftEvent(event.getMemberLeftEvent());
             default -> log.error("Unknown event type");
         }
     }
 
     @SneakyThrows
-    private void handleEvent(MemberJoinedEvent event) {
+    private void handleMemberJoinedEvent(MemberJoinedEvent event) {
         Address address = clusterService.getConversionService().convert(event.getAddress());
         int numberOfClusterMembers = clusterService.getDiscoveryService().getNumberOfServers();
         ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers + 1);
@@ -96,9 +95,42 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     }
 
     @SneakyThrows
-    private void handleEvent(MemberLeftEvent event) {
+    private void handleMemberLeftEvent(MemberLeftEvent event) {
         Address address = clusterService.getConversionService().convert(event.getAddress());
         clusterService.getDiscoveryService().unregister(address);
+    }
+
+    @Override
+    public void consumeEvent(PartitionEvent event) {
+        execute(() -> {
+            try {
+                log.info("Received '{}' event. Payload: {}", event.getEventType(), event);
+                handlePartitionEvent(event);
+            } catch (Exception e) {
+                log.error("Could not process event: {}", event, e);
+            }
+        });
+    }
+
+    private void handlePartitionEvent(PartitionEvent event) {
+        switch (event.getEventType()) {
+            case PartitionCreated -> handlePartitionCreated(event.getPartitionCreated());
+            case PartitionReplicated -> handlePartitionReplicated(event.getPartitionReplicated());
+            default -> log.error("Unknown event type");
+        }
+    }
+
+    @SneakyThrows
+    private void handlePartitionCreated(PartitionCreatedEvent event) {
+        Partition partition = clusterService.getConversionService().convert(event.getPartition());
+        clusterService.getPartitionService().register(partition);
+
+    }
+
+    @SneakyThrows
+    private void handlePartitionReplicated(PartitionReplicatedEvent event) {
+        Partition partition = clusterService.getConversionService().convert(event.getPartition());
+        clusterService.getReplicaService().registerPartitionReplica(partition);
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
@@ -118,7 +119,14 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     @Override
     public void sendEvent(ClusterEvent event) {
         withPortunusServiceStub(portunusService -> {
-            portunusService.sendEvent(event);
+            portunusService.sendClusterEvent(event);
+        });
+    }
+
+    @Override
+    public void sendEvent(PartitionEvent event) {
+        withPortunusServiceStub(portunusService -> {
+            portunusService.sendPartitionEvent(event);
         });
     }
 
@@ -148,6 +156,20 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
             RemoveEntryCommand command = createRemoveEntryCommand(cacheName, key);
             return portunusService.removeEntry(command);
         }).getCacheEntry();
+    }
+
+    @Override
+    public boolean replicate(PartitionDTO partition) {
+        return withPortunusServiceStub(portunusService -> {
+            ReplicatePartitionCommand command = createReplicatePartitionCommand(partition);
+            return portunusService.replicate(command);
+        }).getStatus();
+    }
+
+    private ReplicatePartitionCommand createReplicatePartitionCommand(PartitionDTO partition) {
+        return ReplicatePartitionCommand.newBuilder()
+                .setPartition(partition)
+                .build();
     }
 
     private <K extends Serializable> RemoveEntryCommand createRemoveEntryCommand(String cacheName, K key) {

@@ -6,9 +6,11 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -119,6 +121,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public void sendEvent(ClusterEvent event) {
+    public void replicate(Partition partition) {
+        clusterService.getReplicaService().registerPartitionReplica(partition);
     }
 }

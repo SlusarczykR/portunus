@@ -127,7 +127,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     private void putEntry(K key, Entry<K, V> entry) {
-        PortunusServer owner = clusterService.getPartitionService().getPartitionForKey(key).owner();
+        PortunusServer owner = clusterService.getPartitionService().getPartitionForKey(key).getOwner();
         putEntry(owner, entry);
     }
 
@@ -199,7 +199,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     private <T> T executeLocalOrDistributed(K key, Function<PortunusServer, T> operation) {
         String objectKey = key.toString();
         Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
-        PortunusServer owner = partition.owner();
+        PortunusServer owner = partition.getOwner();
 
         return operation.apply(owner);
     }
@@ -237,6 +237,9 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         PUT_ALL,
         REMOVE,
         REMOVE_ALL,
-        SEND_EVENT
+        SEND_CLUSTER_EVENT,
+        SEND_PARTITION_EVENT,
+        SYNC_STATE,
+        REPLICATE_PARTITION
     }
 }

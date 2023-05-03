@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 
 import java.util.Map;
@@ -24,12 +25,12 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     }
 
     @Override
-    public boolean isReplicaOwner(int partitionId) {
+    public boolean isPartitionReplicaOwner(int partitionId) {
         return withReadLock(() -> partitionReplicas.containsKey(partitionId));
     }
 
     @Override
-    public boolean isReplicaOwnerForKey(Object key) {
+    public boolean isPartitionReplicaOwnerForKey(Object key) {
         return withReadLock(() -> {
             int partitionId = clusterService.getPartitionService().getPartitionId(key);
             return partitionReplicas.containsKey(partitionId);
@@ -37,13 +38,32 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     }
 
     @Override
-    public void registerReplica(Partition partition) {
-        withWriteLock(() -> partitionReplicas.computeIfAbsent(partition.partitionId(), it -> partition));
+    public void registerPartitionReplica(Partition partition) {
+        log.info("Registering partition: {} replica for server: '{}'", partition.getPartitionId(), partition.getOwnerPlainAddress());
+        withWriteLock(() -> partitionReplicas.computeIfAbsent(partition.getPartitionId(), it -> partition));
     }
 
     @Override
-    public void unregisterReplica(int partitionId) {
+    public void unregisterPartitionReplica(int partitionId) {
+        log.info("Unregistering partition: {}", partitionId);
         withWriteLock(() -> partitionReplicas.remove(partitionId));
+    }
+
+    @Override
+    public void replicatePartition(Partition partition) {
+        Map<PortunusServer, Long> portunusServersCount = clusterService.getPartitionService().getPartitionsCount();
+
+        portunusServersCount.entrySet().stream()
+                .filter(it -> !it.getKey().isLocal())
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .ifPresent(it -> replicate(partition, it));
+    }
+
+    private void replicate(Partition partition, PortunusServer portunusServer) {
+        portunusServer.replicate(partition);
+        partition.addReplicaOwner(portunusServer);
     }
 
     @Override

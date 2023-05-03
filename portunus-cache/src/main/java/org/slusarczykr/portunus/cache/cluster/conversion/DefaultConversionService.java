@@ -13,12 +13,16 @@ import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class DefaultConversionService extends AbstractService implements ConversionService {
 
@@ -34,16 +38,32 @@ public class DefaultConversionService extends AbstractService implements Convers
     public Partition convert(PartitionDTO partition) {
         Address address = convert(partition.getOwner());
         return clusterService.getDiscoveryService().getServer(address)
-                .map(it -> new Partition((int) partition.getKey(), it))
+                .map(it -> new Partition((int) partition.getKey(), it, getReplicaOwners(partition)
+                ))
                 .orElseThrow(() -> new IllegalStateException(String.format("Could not find server with address: '%s'", address)));
+    }
+
+    private List<PortunusServer> getReplicaOwners(PartitionDTO partition) {
+        return partition.getReplicaOwnersList().stream()
+                .map(server -> clusterService.getDiscoveryService().getServer(convert(server)))
+                .flatMap(Optional::stream)
+                .toList();
     }
 
     @Override
     public PartitionDTO convert(Partition partition) {
         return PartitionDTO.newBuilder()
-                .setKey(partition.partitionId())
+                .setKey(partition.getPartitionId())
                 .setOwner(convert(partition.getOwnerAddress()))
+                .addAllReplicaOwners(convertReplicaOwners(partition.getReplicaOwners()))
                 .build();
+    }
+
+    private List<AddressDTO> convertReplicaOwners(Set<PortunusServer> replicaOwners) {
+        return replicaOwners.stream()
+                .map(PortunusServer::getAddress)
+                .map(it -> clusterService.getConversionService().convert(it))
+                .toList();
     }
 
     @Override

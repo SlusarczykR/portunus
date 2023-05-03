@@ -2,8 +2,11 @@ package org.slusarczykr.portunus.cache.cluster.server;
 
 import lombok.SneakyThrows;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
@@ -34,7 +37,13 @@ public interface PortunusServer {
 
     <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key);
 
-    void sendEvent(ClusterEvent event);
+    default void sendEvent(ClusterEvent event) {
+    }
+
+    default void sendEvent(PartitionEvent event) {
+    }
+
+    void replicate(Partition partition);
 
     record ClusterMemberContext(Address address, int numberOfServers) {
 

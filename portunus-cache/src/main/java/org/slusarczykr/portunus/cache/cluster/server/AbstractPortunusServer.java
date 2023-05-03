@@ -7,6 +7,8 @@ import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
+import java.util.Objects;
+
 public abstract class AbstractPortunusServer extends AbstractManaged implements PortunusServer {
 
     protected final ClusterService clusterService;
@@ -40,5 +42,18 @@ public abstract class AbstractPortunusServer extends AbstractManaged implements 
     @Override
     public PaxosServer getPaxosServer() {
         return paxosServer;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AbstractPortunusServer that = (AbstractPortunusServer) o;
+        return Objects.equals(serverContext, that.serverContext);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(serverContext);
     }
 }

@@ -48,3 +48,12 @@ message RemoveEntryCommand {
 message RemoveEntryDocument {
   CacheEntryDTO cacheEntry = 1;
 }
+
+message ReplicatePartitionCommand {
+  PartitionDTO partition = 1;
+}
+
+message ReplicatePartitionDocument {
+  bool status = 1;
+}
+

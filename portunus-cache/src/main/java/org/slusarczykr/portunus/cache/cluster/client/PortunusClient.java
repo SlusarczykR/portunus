@@ -3,7 +3,10 @@ package org.slusarczykr.portunus.cache.cluster.client;
 
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -23,7 +26,11 @@ public interface PortunusClient {
 
     void sendEvent(ClusterEvent event);
 
+    void sendEvent(PartitionEvent event);
+
     boolean putEntry(String cacheName, CacheEntryDTO entry);
 
     <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key);
+
+    boolean replicate(PartitionDTO partition);
 }

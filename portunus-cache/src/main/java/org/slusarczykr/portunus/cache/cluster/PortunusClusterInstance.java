@@ -6,12 +6,15 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -23,8 +26,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 public class PortunusClusterInstance implements PortunusCluster, PortunusServer {
 
@@ -75,10 +76,6 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
             clusterService.getServiceManager().injectPaxosServer(getPaxosServer());
             clusterService.getLeaderElectionStarter().start();
 
-            if (getPlainAddress().contains("8082")) {
-                Cache<String, String> sampleCache = getCache("test1");
-                sampleCache.put(randomAlphabetic(8), randomAlphabetic(8));
-            }
             publishMemberEvent(this::createMemberJoinedEvent);
         } catch (Exception e) {
             throw new FatalPortunusException("Could not initialize portunus instance", e);
@@ -171,8 +168,8 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public void sendEvent(ClusterEvent event) {
-
+    public void replicate(Partition partition) {
+        clusterService.getReplicaService().replicatePartition(partition);
     }
 
     @Override

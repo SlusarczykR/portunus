@@ -4,6 +4,9 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionCreatedEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
@@ -13,7 +16,11 @@ import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent.PartitionEventType.PartitionCreated;
 
 public class DefaultPartitionService extends AbstractConcurrentService implements PartitionService {
 
@@ -57,8 +64,16 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     @Override
+    public Partition register(Partition partition) {
+        return withWriteLock(() -> {
+            log.info("Registering partition: {} for server: '{}'", partition.getPartitionId(), partition.getOwnerPlainAddress());
+            return partitions.put(partition.getPartitionId(), partition);
+        });
+    }
+
+    @Override
     public Partition getPartition(int partitionId) {
-        return withWriteLock(() -> partitions.computeIfAbsent(partitionId, this::createPartition));
+        return withWriteLock(() -> getOrCreate(partitionId));
     }
 
     @Override
@@ -83,7 +98,22 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     @Override
     public Partition getPartitionForKey(Object key) {
         int partitionId = getPartitionId(key);
-        return withWriteLock(() -> partitions.computeIfAbsent(partitionId, this::createPartition));
+        return withWriteLock(() -> getOrCreate(partitionId));
+    }
+
+    private Partition getOrCreate(int partitionId) {
+        if (!partitions.containsKey(partitionId)) {
+            log.info("Creating partition for id: {}", partitionId);
+            Partition partition = createPartition(partitionId);
+            partitions.put(partitionId, partition);
+            replicatePartition(partition);
+            return partition;
+        }
+        return partitions.get(partitionId);
+    }
+
+    private void replicatePartition(Partition partition) {
+        CompletableFuture.runAsync(() -> clusterService.getReplicaService().replicatePartition(partition));
     }
 
     @Override
@@ -97,8 +127,23 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     private Partition createPartition(int partitionId) {
         Address serverAddress = getServerAddress(partitionId);
         PortunusServer server = clusterService.getDiscoveryService().getServerOrThrow(serverAddress);
+        Partition partition = new Partition(partitionId, server);
+        sendPartitionCreatedEvent(partition);
 
-        return new Partition(partitionId, server);
+        return partition;
+    }
+
+    private void sendPartitionCreatedEvent(Partition partition) {
+        PartitionDTO partitionDTO = clusterService.getConversionService().convert(partition);
+        PartitionEvent partitionEvent = PartitionEvent.newBuilder()
+                .setEventType(PartitionCreated)
+                .setPartitionCreated(PartitionCreatedEvent.newBuilder()
+                        .setPartition(partitionDTO)
+                        .build()
+                )
+                .build();
+
+        clusterService.getClusterEventPublisher().publishEvent(partitionEvent);
     }
 
     @Override
@@ -141,16 +186,22 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     @Override
-    public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes, Map<Integer, Partition> partitions) {
+    public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes,
+                       Map<Integer, Partition> partitions) {
         withWriteLock(() -> {
             partitionOwnerCircle.update(virtualPortunusNodes);
             update(partitions);
         });
     }
 
+    @Override
+    public Map<PortunusServer, Long> getPartitionsCount() {
+        return partitions.values().stream()
+                .collect(Collectors.groupingBy(Partition::getOwner, Collectors.counting()));
+    }
+
     private void update(Map<Integer, Partition> partitions) {
         log.info("Start updating partition map: {}", partitions);
-        this.partitions.clear();
         this.partitions.putAll(partitions);
         log.info("Partition map was updated");
         log.info("Partition map: {}", this.partitions);

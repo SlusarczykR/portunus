@@ -10,6 +10,7 @@ import org.slusarczykr.portunus.cache.cluster.leader.election.service.LeaderElec
 import org.slusarczykr.portunus.cache.cluster.leader.election.starter.LeaderElectionStarterService;
 import org.slusarczykr.portunus.cache.cluster.leader.vote.service.RequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
+import org.slusarczykr.portunus.cache.cluster.replica.ReplicaService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
@@ -76,6 +77,11 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     @Override
     public PartitionService getPartitionService() {
         return getService(PartitionService.class);
+    }
+
+    @Override
+    public ReplicaService getReplicaService() {
+        return getService(ReplicaService.class);
     }
 
     @Override

@@ -41,16 +41,23 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public void loadServers() throws PortunusException {
-        List<Address> memberAddresses = clusterService.getClusterConfigService().getClusterMembers();
-        memberAddresses.forEach(this::register);
+        withWriteLock(() -> {
+            List<Address> memberAddresses = clusterService.getClusterConfigService().getClusterMembers();
+            memberAddresses.forEach(this::registerServer);
+        });
     }
 
     @SneakyThrows
-    private void register(Address address) {
+    private void registerServer(Address address) {
+        RemotePortunusServer portunusServer = createRemoteServer(address);
+        registerServer(portunusServer);
+    }
+
+    private RemotePortunusServer createRemoteServer(Address address) {
         int numberOfClusterMembers = clusterService.getClusterConfigService().getNumberOfClusterMembers();
         ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers + 1);
-        RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, context);
-        register(portunusServer);
+
+        return RemotePortunusServer.newInstance(clusterService, context);
     }
 
     @Override
@@ -147,22 +154,16 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
         withWriteLock(() -> {
             log.info("Start updating portunus instance map: {}", portunusInstances);
             Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
-            String localServerPlainAddress = localServerAddress.toPlainAddress();
-            removeRemoteServers(portunusInstances, it -> !it.equals(localServerPlainAddress));
-            registerAll(addresses, it -> !it.equals(localServerAddress));
+            registerServers(addresses, it -> !it.equals(localServerAddress));
             log.info("Portunus instance map was updated");
             log.info("Portunus instance map: {}", portunusInstances);
         });
     }
 
-    private static void removeRemoteServers(Map<String, PortunusServer> portunusServers, Predicate<String> condition) {
-        portunusServers.keySet().removeIf(condition);
-    }
-
-    private void registerAll(Collection<Address> addresses, Predicate<Address> filter) {
+    private void registerServers(Collection<Address> addresses, Predicate<Address> filter) {
         addresses.stream()
                 .filter(filter)
-                .forEach(this::register);
+                .forEach(this::registerServer);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -16,6 +17,8 @@ public interface PartitionService extends Service {
     boolean isLocalPartition(Object key) throws PortunusException;
 
     int getPartitionId(Object key);
+
+    Partition register(Partition partition);
 
     Partition getPartition(int partitionId);
 
@@ -35,5 +38,8 @@ public interface PartitionService extends Service {
 
     List<String> getRegisteredAddresses();
 
-    void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes, Map<Integer, Partition> partitions);
+    void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes,
+                Map<Integer, Partition> partitions);
+
+    Map<PortunusServer, Long> getPartitionsCount();
 }

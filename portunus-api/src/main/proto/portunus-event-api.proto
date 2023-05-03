@@ -27,3 +27,25 @@ message MemberJoinedEvent {
 message MemberLeftEvent {
   AddressDTO address = 1;
 }
+
+message PartitionEvent {
+
+  enum PartitionEventType {
+    Unknown = 0;
+    PartitionCreated = 1;
+    PartitionReplicated = 3;
+  }
+
+  PartitionEventType eventType = 1;
+
+  PartitionCreatedEvent partitionCreated = 2;
+  PartitionReplicatedEvent partitionReplicated = 3;
+}
+
+message PartitionCreatedEvent {
+  PartitionDTO partition = 1;
+}
+
+message PartitionReplicatedEvent {
+  PartitionDTO partition = 1;
+}

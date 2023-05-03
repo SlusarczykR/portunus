@@ -2,6 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.leader.election.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
@@ -17,6 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 public class DefaultLeaderElectionService extends AbstractPaxosService implements LeaderElectionService {
 
@@ -154,6 +157,10 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     public void sendHeartbeats(Consumer<Exception> errorHandler) {
         try {
             log.info("Sending heartbeats to followers...");
+            //TODO remove this block
+            Cache<String, String> sampleCache = clusterService.getPortunusClusterInstance().getCache(randomAlphabetic(10));
+            sampleCache.put(randomAlphabetic(8), randomAlphabetic(8));
+
             clusterService.getDiscoveryService().remoteServers().stream()
                     .map(it -> it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions()))
                     .forEach(it -> log.info("Received heartbeat reply from follower with id: {}", it.getServerId()));

@@ -7,6 +7,7 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractAsyncService;
@@ -18,6 +19,7 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import static org.slusarczykr.portunus.cache.cluster.event.MulticastConstants.HOST;
 import static org.slusarczykr.portunus.cache.cluster.event.MulticastConstants.MESSAGE_MARKER;
@@ -45,8 +47,21 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
             if (isMulticastEvent(event)) {
                 sendMulticastEvent(event.getMemberJoinedEvent());
             } else {
-                sendEventToMembers(event);
+                log.info("Sending '{}' to remote cluster members", event.getEventType());
+                withClusterMembers(it -> {
+                    log.info("Sending '{}' to '{}'", event.getEventType(), it.getPlainAddress());
+                    it.sendEvent(event);
+                });
             }
+        });
+    }
+
+    @Override
+    public void publishEvent(PartitionEvent event) {
+        log.info("Sending '{}' to remote cluster members", event.getEventType());
+        withClusterMembers(it -> {
+            log.info("Sending '{}' to '{}'", event.getEventType(), it.getPlainAddress());
+            it.sendEvent(event);
         });
     }
 
@@ -63,23 +78,21 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
         multicastPublisher.publish(message);
     }
 
-    private void sendEventToMembers(ClusterEvent event) {
-        log.info("Sending '{}' to remote cluster members", event.getEventType());
+    private void withClusterMembers(Consumer<RemotePortunusServer> operation) {
         List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
 
         if (!remoteServers.isEmpty()) {
-            remoteServers.forEach(it -> sendEvent(it, event));
+            remoteServers.forEach(it -> sendEvent(it, operation));
         } else {
             log.info("No remote cluster members registered");
         }
     }
 
-    private static void sendEvent(RemotePortunusServer server, ClusterEvent event) {
+    private static void sendEvent(RemotePortunusServer server, Consumer<RemotePortunusServer> operation) {
         try {
-            log.info("Sending '{}' to '{}'", event.getEventType(), server.getPlainAddress());
-            server.sendEvent(event);
+            operation.accept(server);
         } catch (Exception e) {
-            log.error("Could not sent '{}' to '{}'", event.getEventType(), server.getPlainAddress());
+            log.error("Could not process operation on server: '{}'", server.getPlainAddress());
         }
     }
 
