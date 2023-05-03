@@ -43,6 +43,10 @@ public class Partition {
         replicaOwners.remove(replicaOwner);
     }
 
+    public boolean isLocal() {
+        return getOwner().isLocal();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

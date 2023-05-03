@@ -90,8 +90,8 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         int numberOfClusterMembers = clusterService.getDiscoveryService().getNumberOfServers();
         ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers + 1);
         RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, context);
-        clusterService.getDiscoveryService().register(portunusServer);
 
+        clusterService.getDiscoveryService().register(portunusServer);
     }
 
     @SneakyThrows

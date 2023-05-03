@@ -11,7 +11,7 @@ import org.slusarczykr.portunus.cache.cluster.leader.election.service.DefaultLea
 import org.slusarczykr.portunus.cache.cluster.leader.election.starter.DefaultLeaderElectionStarterService;
 import org.slusarczykr.portunus.cache.cluster.leader.vote.service.DefaultRequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
-import org.slusarczykr.portunus.cache.cluster.replica.DefaultReplicaService;
+import org.slusarczykr.portunus.cache.cluster.partition.replica.DefaultReplicaService;
 import org.slusarczykr.portunus.cache.cluster.service.PaxosService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;

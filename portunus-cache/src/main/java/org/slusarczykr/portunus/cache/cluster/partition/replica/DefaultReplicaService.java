@@ -1,4 +1,4 @@
-package org.slusarczykr.portunus.cache.cluster.replica;
+package org.slusarczykr.portunus.cache.cluster.partition.replica;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package org.slusarczykr.portunus.cache.cluster.replica;
+package org.slusarczykr.portunus.cache.cluster.partition.replica;
 
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.service.Service;

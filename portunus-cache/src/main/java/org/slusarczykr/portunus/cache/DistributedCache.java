@@ -201,6 +201,9 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
         PortunusServer owner = partition.getOwner();
 
+        if (clusterService.getReplicaService().isPartitionReplicaOwner(partition.getPartitionId())) {
+            owner = clusterService.getPortunusClusterInstance().localMember();
+        }
         return operation.apply(owner);
     }
 
