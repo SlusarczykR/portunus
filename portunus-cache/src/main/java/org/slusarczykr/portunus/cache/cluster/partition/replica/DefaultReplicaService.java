@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 
 import java.util.Map;
@@ -58,10 +59,10 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
                 .sorted(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
                 .findFirst()
-                .ifPresent(it -> replicate(partition, it));
+                .ifPresent(it -> replicate(partition, (RemotePortunusServer) it));
     }
 
-    private void replicate(Partition partition, PortunusServer portunusServer) {
+    private void replicate(Partition partition, RemotePortunusServer portunusServer) {
         portunusServer.replicate(partition);
         partition.addReplicaOwner(portunusServer);
     }

@@ -11,6 +11,7 @@ import org.slusarczykr.portunus.cache.cluster.leader.election.starter.LeaderElec
 import org.slusarczykr.portunus.cache.cluster.leader.vote.service.RequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.replica.ReplicaService;
+import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
@@ -20,7 +21,7 @@ import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 public class DefaultClusterService extends AbstractManaged implements ClusterService {
 
-    private PortunusClusterInstance portunusClusterInstance;
+    private final PortunusClusterInstance portunusClusterInstance;
     private ClusterConfig clusterConfig;
     private final ServiceManager serviceManager;
 
@@ -52,6 +53,11 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     @Override
     public PortunusClusterInstance getPortunusClusterInstance() {
         return portunusClusterInstance;
+    }
+
+    @Override
+    public LocalPortunusServer getLocalMember() {
+        return portunusClusterInstance.localMember();
     }
 
     @Override

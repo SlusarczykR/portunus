@@ -17,6 +17,16 @@ message PartitionDTO {
   repeated AddressDTO replicaOwners = 3;
 }
 
+message CacheChunkDTO {
+  PartitionDTO partition = 1;
+  repeated CacheDTO caches = 2;
+}
+
+message CacheDTO {
+  string name = 1;
+  repeated CacheEntryDTO cacheEntries = 2;
+}
+
 message CacheEntryDTO {
   bytes key = 1;
   bytes value = 2;

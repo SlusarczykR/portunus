@@ -49,6 +49,11 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
     public boolean isEmpty() {
         return executeOperation(OperationType.IS_EMPTY, () -> {
             boolean anyLocalEntry = clusterService.getDiscoveryService().localServer().anyEntry(name);

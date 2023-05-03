@@ -2,9 +2,8 @@ package org.slusarczykr.portunus.cache.cluster.conversion;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
@@ -20,6 +19,10 @@ public interface ConversionService extends Service {
     Partition convert(PortunusApiProtos.PartitionDTO partition);
 
     PortunusApiProtos.PartitionDTO convert(Partition partition);
+
+    <K extends Serializable, V extends Serializable> CacheDTO convert(Cache<K, V> cache);
+
+    <K extends Serializable, V extends Serializable> Cache<K, V> convert(CacheDTO cache);
 
     <K extends Serializable, V extends Serializable> Cache.Entry<K, V> convert(CacheEntryDTO cacheEntry);
 
@@ -38,4 +41,8 @@ public interface ConversionService extends Service {
     VirtualPortunusNodeDTO convert(VirtualPortunusNode virtualPortunusNode);
 
     VirtualPortunusNode convert(VirtualPortunusNodeDTO virtualPortunusNode);
+
+    CacheChunk convert(CacheChunkDTO cacheChunkDTO);
+
+    CacheChunkDTO convert(CacheChunk cacheChunk);
 }

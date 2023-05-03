@@ -6,20 +6,19 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
-import org.slusarczykr.portunus.cache.manager.CacheManager;
-import org.slusarczykr.portunus.cache.manager.DefaultCacheManager;
+import org.slusarczykr.portunus.cache.manager.DefaultDistributedCacheManager;
+import org.slusarczykr.portunus.cache.manager.DistributedCacheManager;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -27,7 +26,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private static final Logger log = LoggerFactory.getLogger(LocalPortunusServer.class);
 
-    private CacheManager cacheManager;
+    private DistributedCacheManager cacheManager;
 
     private Server gRPCServer;
 
@@ -57,7 +56,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     protected void initialize() throws PortunusException {
         try {
             log.info("Starting gRPC server for '{}' server", serverContext.getPlainAddress());
-            this.cacheManager = DefaultCacheManager.getInstance();
+            this.cacheManager = new DefaultDistributedCacheManager();
             this.gRPCServer = createGRPCServer();
             this.gRPCServer.start();
         } catch (IOException e) {
@@ -92,6 +91,11 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
+        return cacheManager.getCache(name);
+    }
+
+    @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> getCacheEntry(String name, K key) {
         Cache<K, V> cache = cacheManager.getCache(name);
         return cache.getEntry(key).orElse(null);
@@ -104,20 +108,26 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) {
+    public <K extends Serializable, V extends Serializable> void put(String name, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = cacheManager.getCache(name);
+        cache.put(entry);
+    }
 
-        if (!cache.containsKey(entry.getKey())) {
-            cache.put(entry);
-            return true;
-        }
-        return false;
+    @Override
+    public <K extends Serializable, V extends Serializable> void putAll(String name, Map<K, V> entries) {
+        Cache<K, V> cache = cacheManager.getCache(name);
+        cache.putAll(entries);
     }
 
     @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         Cache<K, V> cache = cacheManager.getCache(name);
         return cache.remove(key);
+    }
+
+    @Override
+    public Set<Cache<? extends Serializable, ? extends Serializable>> getCacheEntries(int partitionId) {
+        return cacheManager.getCacheEntries(partitionId);
     }
 
     @Override

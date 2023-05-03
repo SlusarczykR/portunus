@@ -24,6 +24,7 @@ import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
 import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
@@ -355,13 +356,25 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void replicate(ReplicatePartitionCommand request, StreamObserver<ReplicatePartitionDocument> responseObserver) {
         completeWith(responseObserver, OperationType.REPLICATE_PARTITION, () -> {
-            Partition partition = clusterService.getConversionService().convert(request.getPartition());
-            clusterService.getReplicaService().registerPartitionReplica(partition);
+            CacheChunk cacheChunk = clusterService.getConversionService().convert(request.getCacheChunk());
+            clusterService.getReplicaService().registerPartitionReplica(cacheChunk.partition());
+            updateLocalCaches(cacheChunk);
 
             return ReplicatePartitionDocument.newBuilder()
                     .setStatus(true)
                     .build();
         });
+    }
+
+    private <K extends Serializable, V extends Serializable> void updateLocalCaches(CacheChunk cacheChunk) {
+        cacheChunk.cacheEntries().forEach(it -> {
+            Cache<K, V> localCache = getLocalCache(it.getName());
+            localCache.putAll((Map<K, V>) it.allEntries());
+        });
+    }
+
+    private <K extends Serializable, V extends Serializable> Cache<K, V> getLocalCache(String name) {
+        return clusterService.getLocalMember().getCache(name);
     }
 
     private <K extends Serializable, V extends Serializable> DistributedCache<K, V> getDistributedCache(String name) {

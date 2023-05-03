@@ -6,12 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
@@ -37,7 +35,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private final ClusterService clusterService;
 
-    private final PortunusServer localServer;
+    private final LocalPortunusServer localServer;
 
     private final Map<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
 
@@ -95,7 +93,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public PortunusServer localMember() {
+    public LocalPortunusServer localMember() {
         return localServer;
     }
 
@@ -154,17 +152,29 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) {
+    public <K extends Serializable, V extends Serializable> void put(String name, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = getCache(name);
         cache.put(entry);
+    }
 
-        return true;
+    @Override
+    public <K extends Serializable, V extends Serializable> void putAll(String name, Map<K, V> entries) {
+        Cache<K, V> cache = getCache(name);
+        cache.putAll(entries);
     }
 
     @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         Cache<K, V> cache = getCache(name);
         return cache.remove(key);
+    }
+
+    @Override
+    public Set<Cache<? extends Serializable, ? extends Serializable>> getCacheEntries(int partitionId) {
+        Partition partition = clusterService.getPartitionService().getPartition(partitionId);
+        PortunusServer owner = partition.getOwner();
+
+        return owner.getCacheEntries(partitionId);
     }
 
     @Override

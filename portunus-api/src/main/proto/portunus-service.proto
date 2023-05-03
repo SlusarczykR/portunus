@@ -15,10 +15,12 @@ service PortunusService {
   rpc sendPartitionEvent(org.slusarczykr.portunus.cache.api.event.PartitionEvent) returns (google.protobuf.Empty);
   rpc getCache(org.slusarczykr.portunus.cache.api.command.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.command.GetCacheDocument);
   rpc getCacheEntry(org.slusarczykr.portunus.cache.api.command.GetEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.GetEntryDocument);
+  rpc getCacheEntries(org.slusarczykr.portunus.cache.api.command.GetCacheEntriesByPartitionIdCommand) returns (org.slusarczykr.portunus.cache.api.command.GetCacheEntriesByPartitionIdDocument);
   rpc getPartitions(org.slusarczykr.portunus.cache.api.command.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.GetPartitionsDocument);
   rpc anyEntry(org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
   rpc putEntry(org.slusarczykr.portunus.cache.api.command.PutEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
+  rpc putEntries(org.slusarczykr.portunus.cache.api.command.PutEntriesCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntriesDocument);
   rpc removeEntry(org.slusarczykr.portunus.cache.api.command.RemoveEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.RemoveEntryDocument);
   rpc sendRequestVote(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.RequestVoteResponse);
   rpc sendHeartbeats(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);

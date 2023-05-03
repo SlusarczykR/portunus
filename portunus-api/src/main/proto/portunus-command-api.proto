@@ -6,6 +6,14 @@ package org.slusarczykr.portunus.cache.api.command;
 option java_package = "org.slusarczykr.portunus.cache.api.command";
 option java_outer_classname = "PortunusCommandApiProtos";
 
+message GetCacheEntriesByPartitionIdCommand {
+  int64 partitionId = 1;
+}
+
+message GetCacheEntriesByPartitionIdDocument {
+  CacheChunkDTO cacheChunk = 1;
+}
+
 message GetCacheCommand {
   string name = 1;
 }
@@ -40,6 +48,15 @@ message PutEntryDocument {
   bool status = 1;
 }
 
+message PutEntriesCommand {
+  string cacheName = 1;
+  repeated CacheEntryDTO cacheEntries = 2;
+}
+
+message PutEntriesDocument {
+  bool status = 1;
+}
+
 message RemoveEntryCommand {
   string cacheName = 1;
   bytes key = 2;
@@ -50,7 +67,7 @@ message RemoveEntryDocument {
 }
 
 message ReplicatePartitionCommand {
-  PartitionDTO partition = 1;
+  CacheChunkDTO cacheChunk = 1;
 }
 
 message ReplicatePartitionDocument {

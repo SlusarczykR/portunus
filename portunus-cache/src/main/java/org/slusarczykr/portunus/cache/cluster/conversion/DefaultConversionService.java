@@ -2,13 +2,11 @@ package org.slusarczykr.portunus.cache.cluster.conversion;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
@@ -21,8 +19,10 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVo
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DefaultConversionService extends AbstractService implements ConversionService {
 
@@ -57,6 +57,30 @@ public class DefaultConversionService extends AbstractService implements Convers
                 .setOwner(convert(partition.getOwnerAddress()))
                 .addAllReplicaOwners(convertReplicaOwners(partition.getReplicaOwners()))
                 .build();
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> CacheDTO convert(Cache<K, V> cache) {
+        List<CacheEntryDTO> cacheEntries = cache.allEntries().stream()
+                .map(this::convert)
+                .toList();
+
+        return CacheDTO.newBuilder()
+                .setName(cache.getName())
+                .addAllCacheEntries(cacheEntries)
+                .build();
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> Cache<K, V> convert(CacheDTO cache) {
+        Map<K, V> cacheEntries = cache.getCacheEntriesList().stream()
+                .map(it -> (Cache.Entry<K, V>) convert(it))
+                .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
+
+        Cache<K, V> newCache = new DefaultCache<>(cache.getName());
+        newCache.putAll(cacheEntries);
+
+        return newCache;
     }
 
     private List<AddressDTO> convertReplicaOwners(Set<PortunusServer> replicaOwners) {
@@ -139,6 +163,28 @@ public class DefaultConversionService extends AbstractService implements Convers
         Address address = convert(virtualPortunusNode.getPhysicalNodeAddress());
         PortunusNode portunusNode = new PortunusNode(address);
         return new VirtualPortunusNode(portunusNode, (int) virtualPortunusNode.getReplicaIndex());
+    }
+
+    @Override
+    public CacheChunk convert(CacheChunkDTO cacheChunkDTO) {
+        Partition partition = convert(cacheChunkDTO.getPartition());
+        Set<Cache<? extends Serializable, ? extends Serializable>> cacheEntries = cacheChunkDTO.getCachesList().stream()
+                .map(this::convert)
+                .collect(Collectors.toSet());
+
+        return new CacheChunk(partition, cacheEntries);
+    }
+
+    @Override
+    public CacheChunkDTO convert(CacheChunk cacheChunk) {
+        List<CacheDTO> caches = cacheChunk.cacheEntries().stream()
+                .map(this::convert)
+                .toList();
+
+        return CacheChunkDTO.newBuilder()
+                .setPartition(convert(cacheChunk.partition()))
+                .addAllCaches(caches)
+                .build();
     }
 
     @Override

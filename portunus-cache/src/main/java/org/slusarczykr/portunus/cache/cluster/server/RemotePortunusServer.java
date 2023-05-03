@@ -3,12 +3,16 @@ package org.slusarczykr.portunus.cache.cluster.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusGRPCClient;
 import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosClient;
@@ -20,6 +24,7 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVo
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,8 +61,23 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
+        Map<K, V> cacheEntries = getCacheEntries(name).stream()
+                .collect(Collectors.toMap(it -> (K) it.getKey(), it -> (V) it.getValue()));
+        Cache<K, V> cache = newdCache(name);
+        cache.putAll(cacheEntries);
+
+        return cache;
+    }
+
+    private <K extends Serializable, V extends Serializable> Cache<K, V> newdCache(String name) {
+        return new DefaultCache<>(name);
+    }
+
+    @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> getCacheEntry(String name, K key) {
-        return clusterService.getConversionService().convert(portunusClient.getCacheEntry(name, key));
+        CacheEntryDTO cacheEntryDTO = portunusClient.getCacheEntry(name, key);
+        return clusterService.getConversionService().convert(cacheEntryDTO);
     }
 
     @Override
@@ -68,14 +88,32 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> boolean put(String name, Cache.Entry<K, V> entry) {
+    public <K extends Serializable, V extends Serializable> void put(String name, Cache.Entry<K, V> entry) {
         log.info("Sending '{}' operation to {} server", OperationType.SEND_CLUSTER_EVENT, getPlainAddress());
-        return portunusClient.putEntry(name, clusterService.getConversionService().convert(entry));
+        portunusClient.putEntry(name, clusterService.getConversionService().convert(entry));
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> void putAll(String name, Map<K, V> entries) {
+        List<CacheEntryDTO> cacheEntries = entries.entrySet().stream()
+                .map(it -> new DefaultCache.Entry<>(it.getKey(), it.getValue()))
+                .map(it -> clusterService.getConversionService().convert(it))
+                .toList();
+
+        portunusClient.putEntries(name, cacheEntries);
     }
 
     @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         return clusterService.getConversionService().convert(portunusClient.removeEntry(name, key));
+    }
+
+    @Override
+    public Set<Cache<? extends Serializable, ? extends Serializable>> getCacheEntries(int partitionId) {
+        CacheChunkDTO cacheChunkDTO = portunusClient.getCacheChunk(partitionId);
+        CacheChunk cacheChunk = clusterService.getConversionService().convert(cacheChunkDTO);
+
+        return cacheChunk.cacheEntries();
     }
 
     @Override
@@ -90,12 +128,12 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
 
     @Override
     public void replicate(Partition partition) {
-        PartitionDTO partitionDTO = clusterService.getConversionService().convert(partition);
-        portunusClient.replicate(partitionDTO);
-    }
+        Set<Cache<? extends Serializable, ? extends Serializable>> cacheEntries = clusterService.getLocalMember()
+                .getCacheEntries(partition.getPartitionId());
+        CacheChunk cacheChunk = new CacheChunk(partition, cacheEntries);
+        CacheChunkDTO cacheChunkDTO = clusterService.getConversionService().convert(cacheChunk);
 
-    @Override
-    public void shutdown() {
+        portunusClient.replicate(cacheChunkDTO);
     }
 
     @Override
@@ -113,5 +151,9 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
                                                List<VirtualPortunusNodeDTO> partitionOwnerCircleNodes,
                                                List<PartitionDTO> partitions) {
         return paxosClient.syncServerState(serverId, partitionOwnerCircleNodes, partitions);
+    }
+
+    @Override
+    public void shutdown() {
     }
 }

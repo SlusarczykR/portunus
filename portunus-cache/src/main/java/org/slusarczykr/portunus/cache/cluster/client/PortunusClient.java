@@ -1,12 +1,11 @@
 package org.slusarczykr.portunus.cache.cluster.client;
 
 
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
-import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -20,6 +19,8 @@ public interface PortunusClient {
 
     Set<CacheEntryDTO> getCache(String name);
 
+    CacheChunkDTO getCacheChunk(int partitionId);
+
     <K extends Serializable> CacheEntryDTO getCacheEntry(String name, K key);
 
     Collection<PartitionDTO> getPartitions();
@@ -30,7 +31,9 @@ public interface PortunusClient {
 
     boolean putEntry(String cacheName, CacheEntryDTO entry);
 
+    boolean putEntries(String cacheName, Collection<CacheEntryDTO> entry);
+
     <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key);
 
-    boolean replicate(PartitionDTO partition);
+    boolean replicate(CacheChunkDTO cacheChunk);
 }

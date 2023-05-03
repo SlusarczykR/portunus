@@ -12,12 +12,15 @@ import org.slusarczykr.portunus.cache.cluster.leader.election.starter.LeaderElec
 import org.slusarczykr.portunus.cache.cluster.leader.vote.service.RequestVoteService;
 import org.slusarczykr.portunus.cache.cluster.partition.PartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.replica.ReplicaService;
+import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
 
 public interface ClusterService extends ClusterConfigHolder, Service {
 
     PortunusClusterInstance getPortunusClusterInstance();
+
+    LocalPortunusServer getLocalMember();
 
     ServiceManager getServiceManager();
 

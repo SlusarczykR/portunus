@@ -7,22 +7,30 @@ import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
 import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCache<K, V> implements Cache<K, V> {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultCache.class);
 
+    private final String name;
+
     private final Map<K, Cache.Entry<K, V>> cache = new ConcurrentHashMap<>();
     private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
 
-    public DefaultCache(Map<CacheEventType, CacheEventListener> eventListeners) {
+    public DefaultCache(String name) {
+        this(name, new HashMap<>());
+    }
+
+    public DefaultCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
+        this.name = name;
         eventListeners.forEach(cacheEntryObserver::register);
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

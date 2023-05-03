@@ -6,6 +6,8 @@ import java.util.Optional;
 
 public interface Cache<K, V> {
 
+    String getName();
+
     boolean isEmpty();
 
     boolean containsKey(K key);

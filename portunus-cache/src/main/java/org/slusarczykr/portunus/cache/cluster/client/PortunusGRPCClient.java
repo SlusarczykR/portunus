@@ -3,6 +3,7 @@ package org.slusarczykr.portunus.cache.cluster.client;
 import com.google.protobuf.GeneratedMessageV3;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
@@ -86,6 +87,20 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
+    public CacheChunkDTO getCacheChunk(int partitionId) {
+        return withPortunusServiceStub(portunusService -> {
+            GetCacheEntriesByPartitionIdCommand command = createGetEntryCommand(partitionId);
+            return portunusService.getCacheEntries(command);
+        }).getCacheChunk();
+    }
+
+    private GetCacheEntriesByPartitionIdCommand createGetEntryCommand(int partitionId) {
+        return GetCacheEntriesByPartitionIdCommand.newBuilder()
+                .setPartitionId(partitionId)
+                .build();
+    }
+
+    @Override
     public <K extends Serializable> CacheEntryDTO getCacheEntry(String name, K key) {
         return withPortunusServiceStub(portunusService -> {
             GetEntryCommand command = createGetEntryCommand(name, key);
@@ -114,6 +129,11 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
             GetPartitionsCommand command = createGetPartitionsCommand();
             return portunusService.getPartitions(command);
         }).getPartitionsList();
+    }
+
+    private static GetPartitionsCommand createGetPartitionsCommand() {
+        return GetPartitionsCommand.newBuilder()
+                .build();
     }
 
     @Override
@@ -145,8 +165,18 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
                 .build();
     }
 
-    private static GetPartitionsCommand createGetPartitionsCommand() {
-        return GetPartitionsCommand.newBuilder()
+    @Override
+    public boolean putEntries(String cacheName, Collection<CacheEntryDTO> entry) {
+        return withPortunusServiceStub(portunusService -> {
+            PutEntriesCommand command = createPutEntriesCommand(cacheName, entry);
+            return portunusService.putEntries(command);
+        }).getStatus();
+    }
+
+    private PutEntriesCommand createPutEntriesCommand(String cacheName, Collection<CacheEntryDTO> entries) {
+        return PutEntriesCommand.newBuilder()
+                .setCacheName(cacheName)
+                .addAllCacheEntries(entries)
                 .build();
     }
 
@@ -159,16 +189,16 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
-    public boolean replicate(PartitionDTO partition) {
+    public boolean replicate(CacheChunkDTO cacheChunk) {
         return withPortunusServiceStub(portunusService -> {
-            ReplicatePartitionCommand command = createReplicatePartitionCommand(partition);
+            ReplicatePartitionCommand command = createReplicatePartitionCommand(cacheChunk);
             return portunusService.replicate(command);
         }).getStatus();
     }
 
-    private ReplicatePartitionCommand createReplicatePartitionCommand(PartitionDTO partition) {
+    private ReplicatePartitionCommand createReplicatePartitionCommand(CacheChunkDTO cacheChunk) {
         return ReplicatePartitionCommand.newBuilder()
-                .setPartition(partition)
+                .setCacheChunk(cacheChunk)
                 .build();
     }
 
