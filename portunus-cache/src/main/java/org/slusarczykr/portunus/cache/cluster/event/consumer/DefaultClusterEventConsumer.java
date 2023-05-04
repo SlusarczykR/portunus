@@ -4,8 +4,13 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.*;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionCreatedEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionReplicatedEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
@@ -68,7 +73,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void consumeEvent(ClusterEvent event) {
         execute(() -> {
             try {
-                log.info("Received '{}' event. Payload: {}", event.getEventType(), event);
+                log.info("Received '{}' event", event.getEventType());
                 handleClusterEvent(event);
             } catch (Exception e) {
                 log.error("Could not process event: {}", event, e);
@@ -104,7 +109,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void consumeEvent(PartitionEvent event) {
         execute(() -> {
             try {
-                log.info("Received '{}' event. Payload: {}", event.getEventType(), event);
+                log.info("Received '{}' event", event.getEventType());
                 handlePartitionEvent(event);
             } catch (Exception e) {
                 log.error("Could not process event: {}", event, e);

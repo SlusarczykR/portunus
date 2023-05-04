@@ -15,7 +15,12 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -201,10 +206,9 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     private void update(Map<Integer, Partition> partitions) {
-        log.info("Start updating partition map: {}", partitions);
+        log.info("Updating partition map");
         this.partitions.putAll(partitions);
         log.info("Partition map was updated");
-        log.info("Partition map: {}", this.partitions);
     }
 
     @Override
