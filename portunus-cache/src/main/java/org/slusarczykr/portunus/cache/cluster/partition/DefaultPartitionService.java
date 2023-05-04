@@ -107,14 +107,26 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     private Partition getOrCreate(int partitionId) {
-        if (!partitions.containsKey(partitionId)) {
-            log.info("Creating partition for id: {}", partitionId);
-            Partition partition = createPartition(partitionId);
-            partitions.put(partitionId, partition);
-            replicatePartition(partition);
+        if (partitions.containsKey(partitionId)) {
+            Partition partition = partitions.get(partitionId);
+            updatePartitionReplica(partition);
             return partition;
         }
-        return partitions.get(partitionId);
+        return createPartition(partitionId);
+    }
+
+    private void updatePartitionReplica(Partition partition) {
+        log.info("Updating partition with id: {}", partition.getPartitionId());
+        CompletableFuture.runAsync(() -> clusterService.getReplicaService().updatePartitionReplica(partition));
+    }
+
+    private Partition createPartition(int partitionId) {
+        log.info("Creating partition for id: {}", partitionId);
+        Partition partition = newPartition(partitionId);
+        partitions.put(partitionId, partition);
+        replicatePartition(partition);
+
+        return partition;
     }
 
     private void replicatePartition(Partition partition) {
@@ -129,7 +141,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     @SneakyThrows
-    private Partition createPartition(int partitionId) {
+    private Partition newPartition(int partitionId) {
         Address serverAddress = getServerAddress(partitionId);
         PortunusServer server = clusterService.getDiscoveryService().getServerOrThrow(serverAddress);
         Partition partition = new Partition(partitionId, server);

@@ -16,6 +16,7 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVo
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -159,7 +160,8 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
             log.info("Sending heartbeats to followers...");
             //TODO remove this block
             Cache<String, String> sampleCache = clusterService.getPortunusClusterInstance().getCache(randomAlphabetic(10));
-            sampleCache.put(randomAlphabetic(8), randomAlphabetic(8));
+            String entryKey = String.format("%s%d", "test", new Random().nextInt(4));
+            sampleCache.put(entryKey, randomAlphabetic(8));
 
             clusterService.getDiscoveryService().remoteServers().stream()
                     .map(it -> it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions()))
