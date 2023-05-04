@@ -368,12 +368,21 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private <K extends Serializable, V extends Serializable> void updateLocalCaches(CacheChunk cacheChunk) {
         cacheChunk.cacheEntries().forEach(it -> {
-            Cache<K, V> localCache = getLocalCache(it.getName());
-            localCache.putAll((Map<K, V>) it.allEntries());
+            Cache<K, V> localCache = geLocalCache(it.getName());
+            log.info("Updating local cache with replica data. Current cache entries: {}", localCache.allEntries());
+            updateLocalCache(it.getName(), cacheChunk.partition().getPartitionId(), it.allEntries());
+            log.info("Cache entries after the update: {}", localCache.allEntries());
         });
     }
 
-    private <K extends Serializable, V extends Serializable> Cache<K, V> getLocalCache(String name) {
+    private <K extends Serializable, V extends Serializable> void updateLocalCache(String name, int partitionId,
+                                                                                   Collection<Cache.Entry<K, V>> cacheEntries) {
+        Map<K, V> cacheEntriesMap = cacheEntries.stream()
+                .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
+        clusterService.getLocalMember().putAll(name, partitionId, cacheEntriesMap);
+    }
+
+    private <K extends Serializable, V extends Serializable> Cache<K, V> geLocalCache(String name) {
         return clusterService.getLocalMember().getCache(name);
     }
 

@@ -9,6 +9,7 @@ import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class DefaultCache<K, V> implements Cache<K, V> {
 
@@ -85,13 +86,25 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     @Override
+    public void putAll(Set<Cache.Entry<K, V>> entries) {
+        Map<K, V> cacheEntries = entries.stream()
+                .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
+        putAll(cacheEntries);
+    }
+
+    @Override
     public void putAll(Map<K, V> entries) {
-        entries.forEach(this::validate);
+        validate(entries);
+
         entries.forEach((key, value) -> {
             Entry<K, V> entry = new Entry<>(key, value);
             cacheEntryObserver.onAdd(entry);
             cache.put(key, entry);
         });
+    }
+
+    private void validate(Map<K, V> entries) {
+        entries.forEach(this::validate);
     }
 
     @Override

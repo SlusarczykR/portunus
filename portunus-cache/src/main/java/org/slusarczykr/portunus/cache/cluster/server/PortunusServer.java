@@ -35,9 +35,9 @@ public interface PortunusServer {
 
     <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name);
 
-    <K extends Serializable, V extends Serializable> void put(String name, Cache.Entry<K, V> entry);
+    <K extends Serializable, V extends Serializable> void put(String name, int partitionId, Cache.Entry<K, V> entry);
 
-    <K extends Serializable, V extends Serializable> void putAll(String name, Map<K, V> entries);
+    <K extends Serializable, V extends Serializable> void putAll(String name, int partitionId, Map<K, V> entries);
 
     <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key);
 

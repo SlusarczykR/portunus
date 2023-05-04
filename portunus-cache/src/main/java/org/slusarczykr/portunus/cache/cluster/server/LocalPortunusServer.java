@@ -108,15 +108,17 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> void put(String name, Cache.Entry<K, V> entry) {
+    public <K extends Serializable, V extends Serializable> void put(String name, int partitionId, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = cacheManager.getCache(name);
         cache.put(entry);
+        cacheManager.register(partitionId, name, Set.of(entry));
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> void putAll(String name, Map<K, V> entries) {
+    public <K extends Serializable, V extends Serializable> void putAll(String name, int partitionId, Map<K, V> entries) {
         Cache<K, V> cache = cacheManager.getCache(name);
         cache.putAll(entries);
+        cacheManager.register(partitionId, name, entries);
     }
 
     @Override

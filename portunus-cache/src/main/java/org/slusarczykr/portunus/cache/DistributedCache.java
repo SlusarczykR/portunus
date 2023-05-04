@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
@@ -131,14 +132,20 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         });
     }
 
+    @Override
+    public void putAll(Set<Cache.Entry<K, V>> entries) {
+
+    }
+
     private void putEntry(K key, Entry<K, V> entry) {
-        PortunusServer owner = clusterService.getPartitionService().getPartitionForKey(key).getOwner();
-        putEntry(owner, entry);
+        Partition partition = clusterService.getPartitionService().getPartitionForKey(key);
+        putEntry(partition, entry);
     }
 
     @SneakyThrows
-    private void putEntry(PortunusServer owner, Entry<K, V> entry) {
-        owner.put(name, entry);
+    private void putEntry(Partition partition, Entry<K, V> entry) {
+        PortunusServer owner = partition.getOwner();
+        owner.put(name, partition.getPartitionId(), entry);
     }
 
     @Override
@@ -147,9 +154,8 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
             validate(entries);
             entries.forEach((key, value) -> {
                 Entry<K, V> entry = new Entry<>(key, value);
+                putEntry(key, entry);
                 cacheEntryObserver.onAdd(entry);
-                PortunusServer owner = clusterService.getDiscoveryService().localServer();
-                putEntry(owner, entry);
             });
             return entries;
         });
@@ -195,7 +201,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
             Future<T> futureResult = operationExecutor.submit(operation);
             return futureResult.get();
         } catch (Exception e) {
-            log.error("Failed to execute operation: '{}'", operationType.name());
+            log.error("Failed to execute operation: '{}'", operationType.name(), e);
             throw new OperationFailedException(String.format("Operation: '%s' failed", operationType.name()));
         }
     }
