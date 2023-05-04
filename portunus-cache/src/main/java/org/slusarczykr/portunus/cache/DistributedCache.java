@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
-import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
@@ -22,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DistributedCache<K extends Serializable, V extends Serializable> extends AbstractManaged implements Cache<K, V> {
@@ -134,7 +134,9 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @Override
     public void putAll(Set<Cache.Entry<K, V>> entries) {
-
+        Map<K, V> cacheEntries = entries.stream()
+                .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
+        putAll(cacheEntries);
     }
 
     private void putEntry(K key, Entry<K, V> entry) {
