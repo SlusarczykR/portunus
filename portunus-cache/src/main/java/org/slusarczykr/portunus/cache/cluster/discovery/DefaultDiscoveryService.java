@@ -121,10 +121,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public PortunusServer register(Address address) {
-        return withWriteLock(() -> {
-            String plainAddress = address.toPlainAddress();
-            return portunusInstances.computeIfAbsent(plainAddress, it -> registerRemoteServer(address));
-        });
+        return withWriteLock(() -> registerRemoteServer(address));
     }
 
     @Override
