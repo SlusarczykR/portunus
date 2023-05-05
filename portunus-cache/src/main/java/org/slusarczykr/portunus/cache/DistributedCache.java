@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +39,16 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         super();
         this.clusterService = clusterService;
         this.name = name;
-        this.operationExecutor = Executors.newSingleThreadExecutor();
+        this.operationExecutor = newOperationExecutor();
         eventListeners.forEach(cacheEntryObserver::register);
+    }
+
+    private static ExecutorService newOperationExecutor() {
+        return Executors.newSingleThreadExecutor(
+                new ThreadFactoryBuilder()
+                        .setNameFormat("distributed-cache-%d")
+                        .build()
+        );
     }
 
     public boolean anyLocalEntry() {
@@ -124,10 +133,13 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     @Override
     public void put(K key, V value) {
         executeOperation(OperationType.PUT, () -> {
+            log.info("Start executing PUT");
             validate(key, value);
             Entry<K, V> entry = new Entry<>(key, value);
             putEntry(key, entry);
             cacheEntryObserver.onAdd(entry);
+            log.info("PUT execution finished");
+
             return entry;
         });
     }
@@ -146,8 +158,9 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private void putEntry(Partition partition, Entry<K, V> entry) {
+        log.info("Putting entry: {} to server: {}, partition: {}", entry, partition.getOwnerAddress(), partition);
         PortunusServer owner = partition.getOwner();
-        owner.put(name, partition.getPartitionId(), entry);
+        owner.put(name, partition, entry);
     }
 
     @Override
@@ -199,9 +212,11 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     private <T> T executeOperation(OperationType operationType, Callable<T> operation) {
         try {
-            log.debug("Executing operation: '{}'", operationType.name());
+            log.info("Executing operation: '{}'", operationType.name());
             Future<T> futureResult = operationExecutor.submit(operation);
-            return futureResult.get();
+            T result = futureResult.get();
+            log.info("Operation: '{}' execution has finished", operationType.name());
+            return result;
         } catch (Exception e) {
             log.error("Failed to execute operation: '{}'", operationType.name(), e);
             throw new OperationFailedException(String.format("Operation: '%s' failed", operationType.name()));
@@ -253,6 +268,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         PUT_ALL,
         REMOVE,
         REMOVE_ALL,
+        VOTE,
         SEND_CLUSTER_EVENT,
         SEND_PARTITION_EVENT,
         SYNC_STATE,

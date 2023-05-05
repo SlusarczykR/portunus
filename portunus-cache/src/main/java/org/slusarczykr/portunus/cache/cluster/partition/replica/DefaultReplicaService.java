@@ -68,6 +68,7 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     }
 
     private void replicate(Partition partition, RemotePortunusServer portunusServer) {
+        log.info("Replicating partition: {} on server: {}", partition, portunusServer.getPlainAddress());
         portunusServer.replicate(partition);
         partition.addReplicaOwner(portunusServer);
     }

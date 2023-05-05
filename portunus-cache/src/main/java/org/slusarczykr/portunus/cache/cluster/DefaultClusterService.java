@@ -56,7 +56,7 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     }
 
     @Override
-    public LocalPortunusServer getLocalMember() {
+    public LocalPortunusServer getLocalServer() {
         return portunusClusterInstance.localMember();
     }
 

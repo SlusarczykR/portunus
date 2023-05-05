@@ -9,7 +9,6 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface DiscoveryService extends Service {
 
@@ -33,7 +32,9 @@ public interface DiscoveryService extends Service {
 
     void register(PortunusServer server) throws PortunusException;
 
-    void unregister(Address address) throws PortunusException;
+    PortunusServer register(Address address);
 
-    void update(Collection<Address> addresses);
+    List<PortunusServer> register(Collection<Address> addresses);
+
+    void unregister(Address address) throws PortunusException;
 }

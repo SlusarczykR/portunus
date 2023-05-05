@@ -152,13 +152,13 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> void put(String name, int partitionId, Cache.Entry<K, V> entry) {
+    public <K extends Serializable, V extends Serializable> void put(String name, Partition partition, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = getCache(name);
         cache.put(entry);
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> void putAll(String name, int partitionId, Map<K, V> entries) {
+    public <K extends Serializable, V extends Serializable> void putAll(String name, Partition partition, Map<K, V> entries) {
         Cache<K, V> cache = getCache(name);
         cache.putAll(entries);
     }

@@ -88,13 +88,13 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> void put(String name, int partitionId, Cache.Entry<K, V> entry) {
-        log.info("Sending '{}' operation to {} server", OperationType.SEND_CLUSTER_EVENT, getPlainAddress());
+    public <K extends Serializable, V extends Serializable> void put(String name, Partition partition, Cache.Entry<K, V> entry) {
+        log.info("Sending '{}' operation to {} server", OperationType.PUT, getPlainAddress());
         portunusClient.putEntry(name, clusterService.getConversionService().convert(entry));
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> void putAll(String name, int partitionId, Map<K, V> entries) {
+    public <K extends Serializable, V extends Serializable> void putAll(String name, Partition partition, Map<K, V> entries) {
         List<CacheEntryDTO> cacheEntries = entries.entrySet().stream()
                 .map(it -> new DefaultCache.Entry<>(it.getKey(), it.getValue()))
                 .map(it -> clusterService.getConversionService().convert(it))
@@ -128,12 +128,8 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
 
     @Override
     public void replicate(Partition partition) {
-        Set<Cache<? extends Serializable, ? extends Serializable>> cacheEntries = clusterService.getLocalMember()
-                .getCacheEntries(partition.getPartitionId());
-        CacheChunk cacheChunk = new CacheChunk(partition, cacheEntries);
-        CacheChunkDTO cacheChunkDTO = clusterService.getConversionService().convert(cacheChunk);
-
-        portunusClient.replicate(cacheChunkDTO);
+        PartitionDTO partitionDTO = clusterService.getConversionService().convert(partition);
+        portunusClient.replicate(partitionDTO);
     }
 
     @Override
@@ -155,5 +151,12 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
 
     @Override
     public void shutdown() {
+    }
+
+    @Override
+    public String toString() {
+        return "RemotePortunusServer{" +
+                "address=" + serverContext.getPlainAddress() +
+                '}';
     }
 }

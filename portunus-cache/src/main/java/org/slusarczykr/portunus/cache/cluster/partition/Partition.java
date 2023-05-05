@@ -4,6 +4,7 @@ import lombok.Data;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -58,5 +59,14 @@ public class Partition {
     @Override
     public int hashCode() {
         return Objects.hash(partitionId);
+    }
+
+    @Override
+    public String toString() {
+        return "Partition{" +
+                "partitionId=" + partitionId +
+                ", owner=" + owner +
+                ", replicaOwners=" + Arrays.toString(replicaOwners.toArray()) +
+                '}';
     }
 }

@@ -7,10 +7,7 @@ import org.slusarczykr.portunus.cache.cluster.partition.strategy.PartitionKeyStr
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -96,6 +93,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
 
     @Override
     public String getServerAddress(Integer key) throws PortunusException {
+        log.info("Current owner circle: {}", circle);
         validateCircle();
         String nodeHashCode = getNodeHashCode(generateHashCode(String.valueOf(key)));
         VirtualPortunusNode virtualNode = circle.get(nodeHashCode);

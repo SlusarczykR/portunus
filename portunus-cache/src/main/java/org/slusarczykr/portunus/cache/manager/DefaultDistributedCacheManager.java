@@ -18,6 +18,11 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
     private final Map<Integer, Set<Cache<? extends Serializable, ? extends Serializable>>> partitionIdToCache = new ConcurrentHashMap<>();
 
     @Override
+    public boolean anyCacheEntry(int partitionId) {
+        return partitionIdToCache.containsKey(partitionId);
+    }
+
+    @Override
     public Set<Cache<? extends Serializable, ? extends Serializable>> getCacheEntries(int partitionId) {
         return partitionIdToCache.computeIfAbsent(partitionId, it -> ConcurrentHashMap.newKeySet());
     }

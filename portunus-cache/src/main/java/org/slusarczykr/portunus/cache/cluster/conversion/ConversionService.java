@@ -1,7 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.conversion;
 
 import org.slusarczykr.portunus.cache.Cache;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
@@ -13,12 +12,13 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEnt
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public interface ConversionService extends Service {
 
-    Partition convert(PortunusApiProtos.PartitionDTO partition);
+    Partition convert(PartitionDTO partition);
 
-    PortunusApiProtos.PartitionDTO convert(Partition partition);
+    PartitionDTO convert(Partition partition);
 
     <K extends Serializable, V extends Serializable> CacheDTO convert(Cache<K, V> cache);
 
@@ -38,9 +38,9 @@ public interface ConversionService extends Service {
 
     RequestVote convert(AppendEntry appendEntry);
 
-    VirtualPortunusNodeDTO convert(VirtualPortunusNode virtualPortunusNode);
+    VirtualPortunusNodeDTO convert(Map.Entry<String, VirtualPortunusNode> virtualPortunusNodeEntry);
 
-    VirtualPortunusNode convert(VirtualPortunusNodeDTO virtualPortunusNode);
+    Map.Entry<String, VirtualPortunusNode> convert(VirtualPortunusNodeDTO virtualPortunusNode);
 
     CacheChunk convert(CacheChunkDTO cacheChunkDTO);
 

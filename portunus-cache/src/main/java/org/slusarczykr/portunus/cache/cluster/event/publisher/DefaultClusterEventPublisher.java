@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.event.publisher;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +99,11 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
 
     @Override
     public ExecutorService createExecutorService() {
-        return Executors.newSingleThreadExecutor();
+        return Executors.newSingleThreadExecutor(
+                new ThreadFactoryBuilder()
+                        .setNameFormat("event-publisher-%d")
+                        .build()
+        );
     }
 
     @Override

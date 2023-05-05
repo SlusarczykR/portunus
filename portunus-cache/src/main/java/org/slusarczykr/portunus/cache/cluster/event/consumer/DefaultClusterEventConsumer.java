@@ -1,17 +1,15 @@
 package org.slusarczykr.portunus.cache.cluster.event.consumer;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionCreatedEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionReplicatedEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -119,28 +117,50 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     private void handlePartitionEvent(PartitionEvent event) {
         switch (event.getEventType()) {
-            case PartitionCreated -> handlePartitionCreated(event.getPartitionCreated());
-            case PartitionReplicated -> handlePartitionReplicated(event.getPartitionReplicated());
+            case PartitionCreated -> handlePartitionCreatedEvent(event.getPartitionCreatedEvent());
+            case PartitionUpdated -> handlePartitionUpdatedEvent(event.getPartitionUpdatedEvent());
             default -> log.error("Unknown event type");
         }
     }
 
     @SneakyThrows
-    private void handlePartitionCreated(PartitionCreatedEvent event) {
-        Partition partition = clusterService.getConversionService().convert(event.getPartition());
-        clusterService.getPartitionService().register(partition);
-
+    private void handlePartitionCreatedEvent(PartitionCreatedEvent event) {
+        processCacheChunk(event.getCacheChunk(), true);
     }
 
     @SneakyThrows
-    private void handlePartitionReplicated(PartitionReplicatedEvent event) {
-        Partition partition = clusterService.getConversionService().convert(event.getPartition());
-        clusterService.getReplicaService().registerPartitionReplica(partition);
+    private void handlePartitionUpdatedEvent(PartitionUpdatedEvent event) {
+        processCacheChunk(event.getCacheChunk(), false);
+    }
+
+    private void processCacheChunk(CacheChunkDTO cacheChunkDTO, boolean register) {
+        CacheChunk cacheChunk = clusterService.getConversionService().convert(cacheChunkDTO);
+        Partition partition = cacheChunk.partition();
+
+        if (register) {
+            clusterService.getPartitionService().register(partition);
+        }
+        updateLocalCachesIfPartitionOwner(cacheChunk);
+    }
+
+    private void updateLocalCachesIfPartitionOwner(CacheChunk cacheChunk) {
+        if (isPartitionReplicaOwner(cacheChunk.partition())) {
+            clusterService.getLocalServer().update(cacheChunk);
+        }
+    }
+
+    private boolean isPartitionReplicaOwner(Partition partition) {
+        int partitionId = partition.getPartitionId();
+        return clusterService.getReplicaService().isPartitionReplicaOwner(partitionId);
     }
 
     @Override
     public ExecutorService createExecutorService() {
-        return Executors.newSingleThreadExecutor();
+        return Executors.newSingleThreadExecutor(
+                new ThreadFactoryBuilder()
+                        .setNameFormat("event-consumer-%d")
+                        .build()
+        );
     }
 
     @Override

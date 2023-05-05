@@ -35,5 +35,5 @@ public interface PortunusClient {
 
     <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key);
 
-    boolean replicate(CacheChunkDTO cacheChunk);
+    boolean replicate(PartitionDTO partition);
 }

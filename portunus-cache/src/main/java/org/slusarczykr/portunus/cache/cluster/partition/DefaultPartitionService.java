@@ -4,9 +4,6 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionCreatedEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
@@ -15,17 +12,9 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
-import java.util.concurrent.CompletableFuture;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import static org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent.PartitionEventType.PartitionCreated;
 
 public class DefaultPartitionService extends AbstractConcurrentService implements PartitionService {
 
@@ -53,14 +42,10 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     @Override
     public boolean isLocalPartition(Object key) throws PortunusException {
         int partitionId = getPartitionId(key);
-        String partitionOwnerAddress = getServerAddress(partitionId).toPlainAddress();
+        String partitionOwnerAddress = getOwnerAddress(partitionId).toPlainAddress();
         String localServerAddress = clusterService.getClusterConfigService().getLocalServerPlainAddress();
 
         return localServerAddress.equals(partitionOwnerAddress);
-    }
-
-    private Address getServerAddress(int partitionId) {
-        return withReadLock(() -> getOwnerAddress(partitionId));
     }
 
     @Override
@@ -102,35 +87,29 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public Partition getPartitionForKey(Object key) {
+        log.info("Getting partition for key: {}", key);
         int partitionId = getPartitionId(key);
         return withWriteLock(() -> getOrCreate(partitionId));
     }
 
     private Partition getOrCreate(int partitionId) {
         if (partitions.containsKey(partitionId)) {
-            Partition partition = partitions.get(partitionId);
-            updatePartitionReplica(partition);
-            return partition;
+            log.info("Updating partition with id: {}", partitionId);
+            return partitions.get(partitionId);
         }
         return createPartition(partitionId);
-    }
-
-    private void updatePartitionReplica(Partition partition) {
-        log.info("Updating partition with id: {}", partition.getPartitionId());
-        CompletableFuture.runAsync(() -> clusterService.getReplicaService().updatePartitionReplica(partition));
     }
 
     private Partition createPartition(int partitionId) {
         log.info("Creating partition for id: {}", partitionId);
         Partition partition = newPartition(partitionId);
         partitions.put(partitionId, partition);
-        replicatePartition(partition);
+        log.info("Created partition: {}", partition);
 
+        if (partition.isLocal()) {
+            clusterService.getReplicaService().replicatePartition(partition);
+        }
         return partition;
-    }
-
-    private void replicatePartition(Partition partition) {
-        CompletableFuture.runAsync(() -> clusterService.getReplicaService().replicatePartition(partition));
     }
 
     @Override
@@ -142,35 +121,22 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @SneakyThrows
     private Partition newPartition(int partitionId) {
-        Address serverAddress = getServerAddress(partitionId);
+        Address serverAddress = getOwnerAddress(partitionId);
         PortunusServer server = clusterService.getDiscoveryService().getServerOrThrow(serverAddress);
-        Partition partition = new Partition(partitionId, server);
-        sendPartitionCreatedEvent(partition);
+        log.info("Server for address: {}, server: {}", serverAddress, server);
 
-        return partition;
-    }
-
-    private void sendPartitionCreatedEvent(Partition partition) {
-        PartitionDTO partitionDTO = clusterService.getConversionService().convert(partition);
-        PartitionEvent partitionEvent = PartitionEvent.newBuilder()
-                .setEventType(PartitionCreated)
-                .setPartitionCreated(PartitionCreatedEvent.newBuilder()
-                        .setPartition(partitionDTO)
-                        .build()
-                )
-                .build();
-
-        clusterService.getClusterEventPublisher().publishEvent(partitionEvent);
+        return new Partition(partitionId, server);
     }
 
     @Override
     public Address getPartitionOwner(String key) throws PortunusException {
         int partitionId = getPartitionId(key);
-        return getServerAddress(partitionId);
+        return getOwnerAddress(partitionId);
     }
 
     @SneakyThrows
     private Address getOwnerAddress(int partitionId) {
+        log.info("Partition owner circle servers: {}", Arrays.toString(partitionOwnerCircle.getAddresses().toArray()));
         return Address.from(partitionOwnerCircle.getServerAddress(partitionId));
     }
 
@@ -218,9 +184,9 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     private void update(Map<Integer, Partition> partitions) {
-        log.info("Updating partition map");
+        log.info("Updating partition map. Current partitions: {}", this.partitions);
         this.partitions.putAll(partitions);
-        log.info("Partition map was updated");
+        log.info("Partition map was updated. Partitions: {}", this.partitions);
     }
 
     @Override

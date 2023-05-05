@@ -67,10 +67,9 @@ message RemoveEntryDocument {
 }
 
 message ReplicatePartitionCommand {
-  CacheChunkDTO cacheChunk = 1;
+  PartitionDTO partition = 1;
 }
 
 message ReplicatePartitionDocument {
   bool status = 1;
 }
-

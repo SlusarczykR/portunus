@@ -33,19 +33,19 @@ message PartitionEvent {
   enum PartitionEventType {
     Unknown = 0;
     PartitionCreated = 1;
-    PartitionReplicated = 3;
+    PartitionUpdated = 3;
   }
 
   PartitionEventType eventType = 1;
 
-  PartitionCreatedEvent partitionCreated = 2;
-  PartitionReplicatedEvent partitionReplicated = 3;
+  PartitionCreatedEvent partitionCreatedEvent = 2;
+  PartitionUpdatedEvent partitionUpdatedEvent = 3;
 }
 
 message PartitionCreatedEvent {
-  PartitionDTO partition = 1;
+  CacheChunkDTO cacheChunk = 1;
 }
 
-message PartitionReplicatedEvent {
-  PartitionDTO partition = 1;
+message PartitionUpdatedEvent {
+  CacheChunkDTO cacheChunk = 1;
 }

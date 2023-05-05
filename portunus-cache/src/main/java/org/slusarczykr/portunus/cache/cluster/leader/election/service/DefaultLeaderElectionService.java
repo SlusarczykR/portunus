@@ -173,7 +173,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     }
 
     private List<VirtualPortunusNodeDTO> getPartitionOwnerCircle() {
-        return clusterService.getPartitionService().getPartitionOwnerCircle().values().stream()
+        return clusterService.getPartitionService().getPartitionOwnerCircle().entrySet().stream()
                 .map(it -> clusterService.getConversionService().convert(it))
                 .toList();
     }

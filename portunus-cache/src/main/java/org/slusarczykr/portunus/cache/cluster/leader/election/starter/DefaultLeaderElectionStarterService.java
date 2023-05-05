@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.leader.election.starter;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
@@ -25,7 +26,8 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     private static final int INITIAL_HEARTBEAT_DELAY = 10;
 
     private LeaderElectionProperties leaderElectionProps;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService scheduledExecutor;
+
     private final AtomicReference<CompletableFuture<Boolean>> candidacy = new AtomicReference<>();
     private final AtomicReference<Future<?>> heartbeats = new AtomicReference<>();
 
@@ -37,6 +39,15 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     private DefaultLeaderElectionStarterService(ClusterService clusterService) {
         super(clusterService);
+        this.scheduledExecutor = createScheduledExecutor();
+    }
+
+    private static ScheduledExecutorService createScheduledExecutor() {
+        return Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactoryBuilder()
+                        .setNameFormat("leader-election-starter-%d")
+                        .build()
+        );
     }
 
     @Override

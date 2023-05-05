@@ -20,7 +20,7 @@ public interface ClusterService extends ClusterConfigHolder, Service {
 
     PortunusClusterInstance getPortunusClusterInstance();
 
-    LocalPortunusServer getLocalMember();
+    LocalPortunusServer getLocalServer();
 
     ServiceManager getServiceManager();
 

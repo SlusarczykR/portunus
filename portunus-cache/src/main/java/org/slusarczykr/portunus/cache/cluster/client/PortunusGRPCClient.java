@@ -189,16 +189,16 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
-    public boolean replicate(CacheChunkDTO cacheChunk) {
+    public boolean replicate(PartitionDTO partition) {
         return withPortunusServiceStub(portunusService -> {
-            ReplicatePartitionCommand command = createReplicatePartitionCommand(cacheChunk);
+            ReplicatePartitionCommand command = createReplicatePartitionCommand(partition);
             return portunusService.replicate(command);
         }).getStatus();
     }
 
-    private ReplicatePartitionCommand createReplicatePartitionCommand(CacheChunkDTO cacheChunk) {
+    private ReplicatePartitionCommand createReplicatePartitionCommand(PartitionDTO partition) {
         return ReplicatePartitionCommand.newBuilder()
-                .setCacheChunk(cacheChunk)
+                .setPartition(partition)
                 .build();
     }
 

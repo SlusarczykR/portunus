@@ -11,7 +11,6 @@ import org.slusarczykr.portunus.cache.event.CacheEventType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCacheManager implements CacheManager {
@@ -22,8 +21,7 @@ public class DefaultCacheManager implements CacheManager {
 
     @Override
     public <K, V> Cache<K, V> getCache(String name) {
-        return (Optional.ofNullable((Cache<K, V>) caches.get(name))
-                .orElseGet(() -> newCache(name)));
+        return newCache(name);
     }
 
     @Override

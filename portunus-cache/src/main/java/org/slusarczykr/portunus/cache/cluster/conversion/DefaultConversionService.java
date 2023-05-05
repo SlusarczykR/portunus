@@ -20,7 +20,7 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVo
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,16 +37,19 @@ public class DefaultConversionService extends AbstractService implements Convers
     @Override
     public Partition convert(PartitionDTO partition) {
         Address address = convert(partition.getOwner());
-        return clusterService.getDiscoveryService().getServer(address)
-                .map(it -> new Partition((int) partition.getKey(), it, getReplicaOwners(partition)
-                ))
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not find server with address: '%s'", address)));
+        PortunusServer owner = clusterService.getDiscoveryService().register(address);
+
+        return newPartition(partition, owner);
+    }
+
+    private Partition newPartition(PartitionDTO partition, PortunusServer owner) {
+        List<PortunusServer> replicaOwners = getReplicaOwners(partition);
+        return new Partition((int) partition.getKey(), owner, replicaOwners);
     }
 
     private List<PortunusServer> getReplicaOwners(PartitionDTO partition) {
         return partition.getReplicaOwnersList().stream()
-                .map(server -> clusterService.getDiscoveryService().getServer(convert(server)))
-                .flatMap(Optional::stream)
+                .map(server -> clusterService.getDiscoveryService().register(convert(server)))
                 .toList();
     }
 
@@ -148,21 +151,26 @@ public class DefaultConversionService extends AbstractService implements Convers
     }
 
     @Override
-    public VirtualPortunusNodeDTO convert(VirtualPortunusNode virtualPortunusNode) {
+    public VirtualPortunusNodeDTO convert(Entry<String, VirtualPortunusNode> virtualPortunusNodeEntry) {
+        VirtualPortunusNode virtualPortunusNode = virtualPortunusNodeEntry.getValue();
         AddressDTO address = convert(Address.from(virtualPortunusNode.getPhysicalNodeKey()));
 
         return VirtualPortunusNodeDTO.newBuilder()
-                .setHashCode(virtualPortunusNode.getKey())
+                .setHashCode(virtualPortunusNodeEntry.getKey())
                 .setPhysicalNodeAddress(address)
                 .setReplicaIndex(virtualPortunusNode.getReplicaIndex())
                 .build();
     }
 
     @Override
-    public VirtualPortunusNode convert(VirtualPortunusNodeDTO virtualPortunusNode) {
+    public Entry<String, VirtualPortunusNode> convert(VirtualPortunusNodeDTO virtualPortunusNode) {
         Address address = convert(virtualPortunusNode.getPhysicalNodeAddress());
         PortunusNode portunusNode = new PortunusNode(address);
-        return new VirtualPortunusNode(portunusNode, (int) virtualPortunusNode.getReplicaIndex());
+
+        return Map.entry(
+                virtualPortunusNode.getHashCode(),
+                new VirtualPortunusNode(portunusNode, (int) virtualPortunusNode.getReplicaIndex())
+        );
     }
 
     @Override

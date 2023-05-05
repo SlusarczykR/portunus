@@ -24,7 +24,6 @@ import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
 import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
-import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
@@ -227,7 +226,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendRequestVote(AppendEntry request, StreamObserver<RequestVoteResponse> responseObserver) {
-        completeWith(responseObserver, OperationType.SEND_CLUSTER_EVENT, () -> {
+        completeWith(responseObserver, OperationType.VOTE, () -> {
             log.info("Received requestVoteResponse from server with id: {}", request.getServerId());
             stopHeartbeatsOrReset();
             RequestVote.Response requestVoteResponse = voteForLeader(request);
@@ -263,7 +262,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendHeartbeats(AppendEntry request, StreamObserver<AppendEntryResponse> responseObserver) {
-        completeWith(responseObserver, OperationType.SEND_CLUSTER_EVENT, () -> {
+        completeWith(responseObserver, OperationType.SYNC_STATE, () -> {
             log.info("Received heartbeat from leader with id: {}", request.getServerId());
             boolean conflict = false;
 
@@ -308,7 +307,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private void updateServerDiscovery(SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
         Set<Address> portunusNodes = getPhysicalNodeAddresses(virtualPortunusNodeMap);
-        clusterService.getDiscoveryService().update(portunusNodes);
+        clusterService.getDiscoveryService().register(portunusNodes);
     }
 
     private void updatePartitions(List<PartitionDTO> partitions, SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
@@ -326,12 +325,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private SortedMap<String, VirtualPortunusNode> toVirtualPortunusNodeMap(List<VirtualPortunusNodeDTO> virtualPortunusNodes) {
         return virtualPortunusNodes.stream()
-                .collect(Collectors.toMap(
-                        VirtualPortunusNodeDTO::getHashCode,
-                        it -> clusterService.getConversionService().convert(it),
-                        (e1, e2) -> e2,
-                        ConcurrentSkipListMap::new
-                ));
+                .map(it -> clusterService.getConversionService().convert(it))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, ConcurrentSkipListMap::new));
     }
 
     private static Set<Address> getPhysicalNodeAddresses(SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
@@ -356,9 +351,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void replicate(ReplicatePartitionCommand request, StreamObserver<ReplicatePartitionDocument> responseObserver) {
         completeWith(responseObserver, OperationType.REPLICATE_PARTITION, () -> {
-            CacheChunk cacheChunk = clusterService.getConversionService().convert(request.getCacheChunk());
-            clusterService.getReplicaService().registerPartitionReplica(cacheChunk.partition());
-            updateLocalCaches(cacheChunk);
+            Partition partition = clusterService.getConversionService().convert(request.getPartition());
+            clusterService.getReplicaService().registerPartitionReplica(partition);
 
             return ReplicatePartitionDocument.newBuilder()
                     .setStatus(true)
@@ -366,28 +360,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         });
     }
 
-    private <K extends Serializable, V extends Serializable> void updateLocalCaches(CacheChunk cacheChunk) {
-        cacheChunk.cacheEntries().forEach(it -> {
-            Cache<K, V> localCache = geLocalCache(it.getName());
-            log.info("Updating local cache with replica data. Current cache entries: {}", localCache.allEntries());
-            updateLocalCache(it.getName(), cacheChunk.partition().getPartitionId(), it.allEntries());
-            log.info("Cache entries after the update: {}", localCache.allEntries());
-        });
-    }
-
-    private <K extends Serializable, V extends Serializable> void updateLocalCache(String name, int partitionId,
-                                                                                   Collection<Cache.Entry<K, V>> cacheEntries) {
-        Map<K, V> cacheEntriesMap = cacheEntries.stream()
-                .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
-        clusterService.getLocalMember().putAll(name, partitionId, cacheEntriesMap);
-    }
-
-    private <K extends Serializable, V extends Serializable> Cache<K, V> geLocalCache(String name) {
-        return clusterService.getLocalMember().getCache(name);
-    }
-
     private <K extends Serializable, V extends Serializable> DistributedCache<K, V> getDistributedCache(String name) {
-        return (DistributedCache<K, V>) clusterService.getPortunusClusterInstance().getCache(name);
+        log.info("Getting distributed cache: '{}'", name);
+        DistributedCache<K, V> cache = (DistributedCache<K, V>) clusterService.getPortunusClusterInstance().getCache(name);
+        log.info("Distributed cache successfully acquired");
+
+        return cache;
     }
 
     private <T> void completeWith(StreamObserver<T> responseObserver, OperationType operationType, Supplier<T> onNext) {
