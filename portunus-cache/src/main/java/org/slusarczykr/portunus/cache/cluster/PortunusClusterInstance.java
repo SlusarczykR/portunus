@@ -70,6 +70,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private void postInitialize() {
         try {
+            log.info("Post initialize");
             clusterService.getDiscoveryService().register(localServer);
             clusterService.getServiceManager().injectPaxosServer(getPaxosServer());
             clusterService.getLeaderElectionStarter().start();

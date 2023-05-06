@@ -56,7 +56,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     @Override
     public Partition register(Partition partition) {
         return withWriteLock(() -> {
-            log.info("Registering partition: {} for server: '{}'", partition.getPartitionId(), partition.getOwnerPlainAddress());
+            log.info("Registering partition: {}", partition);
             return partitions.put(partition.getPartitionId(), partition);
         });
     }
@@ -94,7 +94,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     private Partition getOrCreate(int partitionId) {
         if (partitions.containsKey(partitionId)) {
-            log.info("Updating partition with id: {}", partitionId);
+            log.info("Getting partition with id: {}", partitionId);
             return partitions.get(partitionId);
         }
         return createPartition(partitionId);
@@ -178,13 +178,24 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     @Override
-    public Map<PortunusServer, Long> getPartitionsCount() {
-        return partitions.values().stream()
-                .collect(Collectors.groupingBy(Partition::getOwner, Collectors.counting()));
+    public Map<PortunusServer, Long> getOwnerPartitionsCount() {
+        return withReadLock(() -> {
+            Map<PortunusServer, Long> ownerToPartitionCount = partitions.values().stream()
+                    .collect(Collectors.groupingBy(Partition::getOwner, Collectors.counting()));
+
+            return clusterService.getDiscoveryService().allServers().stream()
+                    .collect(Collectors.toMap(it -> it, it -> getOwnerPartitionCount(ownerToPartitionCount, it)));
+        });
+    }
+
+    private static Long getOwnerPartitionCount(Map<PortunusServer, Long> ownerToPartitionCount, PortunusServer owner) {
+        return Optional.ofNullable(ownerToPartitionCount.get(owner))
+                .orElse(0L);
     }
 
     private void update(Map<Integer, Partition> partitions) {
         log.info("Updating partition map. Current partitions: {}", this.partitions);
+        log.info("New partitions: {}", partitions);
         this.partitions.putAll(partitions);
         log.info("Partition map was updated. Partitions: {}", this.partitions);
     }

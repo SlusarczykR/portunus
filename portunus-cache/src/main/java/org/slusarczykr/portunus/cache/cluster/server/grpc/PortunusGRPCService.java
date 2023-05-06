@@ -317,10 +317,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private Map<Integer, Partition> toPartitionsMap(List<PartitionDTO> partitions) {
         return partitions.stream()
-                .collect(Collectors.toMap(
-                        it -> (int) it.getKey(),
-                        it -> clusterService.getConversionService().convert(it)
-                ));
+                .map(it -> clusterService.getConversionService().convert(it))
+                .collect(Collectors.toMap(Partition::getPartitionId, it -> it));
     }
 
     private SortedMap<String, VirtualPortunusNode> toVirtualPortunusNodeMap(List<VirtualPortunusNodeDTO> virtualPortunusNodes) {

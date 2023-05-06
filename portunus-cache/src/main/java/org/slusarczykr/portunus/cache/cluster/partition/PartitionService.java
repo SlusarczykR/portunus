@@ -41,5 +41,5 @@ public interface PartitionService extends Service {
     void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes,
                 Map<Integer, Partition> partitions);
 
-    Map<PortunusServer, Long> getPartitionsCount();
+    Map<PortunusServer, Long> getOwnerPartitionsCount();
 }

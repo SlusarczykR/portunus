@@ -9,6 +9,7 @@ import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultReplicaService extends AbstractConcurrentService implements ReplicaService {
@@ -40,7 +41,7 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void registerPartitionReplica(Partition partition) {
-        log.info("Registering partition: {} replica for server: '{}'", partition.getPartitionId(), partition.getOwnerPlainAddress());
+        log.info("Registering partition replica: {}", partition);
         withWriteLock(() -> partitionReplicas.computeIfAbsent(partition.getPartitionId(), it -> partition));
     }
 
@@ -57,14 +58,18 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void replicatePartition(Partition partition) {
-        Map<PortunusServer, Long> portunusServersCount = clusterService.getPartitionService().getPartitionsCount();
+        Map<PortunusServer, Long> ownerToPartitionCount = clusterService.getPartitionService().getOwnerPartitionsCount();
+        Optional<PortunusServer> remoteServer = getRemoteServerByPartitionsCount(ownerToPartitionCount);
 
-        portunusServersCount.entrySet().stream()
+        remoteServer.ifPresent(it -> replicate(partition, (RemotePortunusServer) it));
+    }
+
+    private static Optional<PortunusServer> getRemoteServerByPartitionsCount(Map<PortunusServer, Long> ownerToPartitionCount) {
+        return ownerToPartitionCount.entrySet().stream()
                 .filter(it -> !it.getKey().isLocal())
                 .sorted(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
-                .findFirst()
-                .ifPresent(it -> replicate(partition, (RemotePortunusServer) it));
+                .findFirst();
     }
 
     private void replicate(Partition partition, RemotePortunusServer portunusServer) {
