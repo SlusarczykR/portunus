@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "portunus-api.proto";
 
 package org.slusarczykr.portunus.cache.api.query;
 
@@ -6,7 +7,8 @@ option java_package = "org.slusarczykr.portunus.cache.api.query";
 option java_outer_classname = "PortunusQueryApiProtos";
 
 message ContainsAnyEntryQuery {
-  string cacheName = 1;
+  AddressDTO from = 1;
+  string cacheName = 2;
 }
 
 message ContainsAnyEntryDocument {
@@ -14,9 +16,10 @@ message ContainsAnyEntryDocument {
 }
 
 message ContainsEntryQuery {
-  string cacheName = 1;
-  string entryKeyType = 2;
-  bytes entryKey = 3;
+  AddressDTO from = 1;
+  string cacheName = 2;
+  string entryKeyType = 3;
+  bytes entryKey = 4;
 }
 
 message ContainsEntryDocument {

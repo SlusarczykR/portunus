@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionCreatedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
@@ -176,6 +177,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     @Override
     public void replicate(Partition partition) {
         clusterService.getReplicaService().registerPartitionReplica(partition);
+        partition.addReplicaOwner(this);
     }
 
     public <K extends Serializable, V extends Serializable> void update(CacheChunk cacheChunk) {
@@ -190,6 +192,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private PartitionEvent createPartitionUpdatedEvent(CacheChunkDTO cacheChunkDTO) {
         return PartitionEvent.newBuilder()
+                .setFrom(getAddressDTO())
                 .setEventType(PartitionUpdated)
                 .setPartitionUpdatedEvent(
                         PartitionUpdatedEvent.newBuilder()
@@ -201,6 +204,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private PartitionEvent createPartitionCreatedEvent(CacheChunkDTO cacheChunkDTO) {
         return PartitionEvent.newBuilder()
+                .setFrom(getAddressDTO())
                 .setEventType(PartitionCreated)
                 .setPartitionCreatedEvent(
                         PartitionCreatedEvent.newBuilder()
@@ -231,6 +235,10 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         Map<K, V> cacheEntriesMap = cacheEntries.stream()
                 .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
         putAll(name, partition, cacheEntriesMap);
+    }
+
+    private AddressDTO getAddressDTO() {
+        return clusterService.getConversionService().convert(getAddress());
     }
 
     @Override

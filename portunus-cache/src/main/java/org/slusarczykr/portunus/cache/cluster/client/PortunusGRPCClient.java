@@ -3,6 +3,7 @@ package org.slusarczykr.portunus.cache.cluster.client;
 import com.google.protobuf.GeneratedMessageV3;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
@@ -13,8 +14,10 @@ import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsA
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
+import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
@@ -28,15 +31,18 @@ import java.util.function.Function;
 
 public class PortunusGRPCClient extends AbstractManaged implements PortunusClient {
 
+    private final ClusterService clusterService;
     private final ManagedChannel channel;
 
-    public PortunusGRPCClient(Address address) {
+    public PortunusGRPCClient(ClusterService clusterService, Address address) {
         super();
+        this.clusterService = clusterService;
         this.channel = initializeManagedChannel(address.hostname(), address.port());
     }
 
-    public PortunusGRPCClient(ManagedChannel channel) {
+    public PortunusGRPCClient(ClusterService clusterService, ManagedChannel channel) {
         super();
+        this.clusterService = clusterService;
         this.channel = channel;
     }
 
@@ -56,6 +62,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     private ContainsAnyEntryQuery createContainsAnyEntryQuery(String cacheName) {
         return ContainsAnyEntryQuery.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setCacheName(cacheName)
                 .build();
     }
@@ -72,6 +79,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         Distributed<K> distributed = DistributedWrapper.from(key);
 
         return ContainsEntryQuery.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setCacheName(cacheName)
                 .setEntryKeyType(key.getClass().getCanonicalName())
                 .setEntryKey(distributed.getByteString())
@@ -96,6 +104,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     private GetCacheEntriesByPartitionIdCommand createGetEntryCommand(int partitionId) {
         return GetCacheEntriesByPartitionIdCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setPartitionId(partitionId)
                 .build();
     }
@@ -112,13 +121,15 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         Distributed<K> distributed = Distributed.DistributedWrapper.from(key);
 
         return GetEntryCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setCacheName(cacheName)
                 .setKey(distributed.getByteString())
                 .build();
     }
 
-    private static GetCacheCommand createGetCacheCommand(String name) {
+    private GetCacheCommand createGetCacheCommand(String name) {
         return GetCacheCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setName(name)
                 .build();
     }
@@ -131,8 +142,9 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         }).getPartitionsList();
     }
 
-    private static GetPartitionsCommand createGetPartitionsCommand() {
+    private GetPartitionsCommand createGetPartitionsCommand() {
         return GetPartitionsCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .build();
     }
 
@@ -160,6 +172,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     private PutEntryCommand createPutEntryCommand(String cacheName, CacheEntryDTO entry) {
         return PutEntryCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setCacheName(cacheName)
                 .setCacheEntry(entry)
                 .build();
@@ -175,6 +188,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     private PutEntriesCommand createPutEntriesCommand(String cacheName, Collection<CacheEntryDTO> entries) {
         return PutEntriesCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setCacheName(cacheName)
                 .addAllCacheEntries(entries)
                 .build();
@@ -198,6 +212,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     private ReplicatePartitionCommand createReplicatePartitionCommand(PartitionDTO partition) {
         return ReplicatePartitionCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setPartition(partition)
                 .build();
     }
@@ -206,6 +221,7 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         Distributed<K> distributed = DistributedWrapper.from(key);
 
         return RemoveEntryCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
                 .setCacheName(cacheName)
                 .setKey(distributed.getByteString())
                 .build();
@@ -223,6 +239,11 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
 
     private PortunusServiceBlockingStub newPortunusServiceStub() {
         return PortunusServiceGrpc.newBlockingStub(channel);
+    }
+
+    private AddressDTO getLocalServerAddressDTO() {
+        LocalPortunusServer localServer = clusterService.getLocalServer();
+        return clusterService.getConversionService().convert(localServer.getAddress());
     }
 
     @Override

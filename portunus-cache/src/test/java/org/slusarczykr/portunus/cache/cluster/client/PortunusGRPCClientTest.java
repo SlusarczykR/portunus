@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
@@ -12,6 +13,7 @@ import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPa
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
+import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.extension.GrpcCleanupExtension;
 
 import java.io.IOException;
@@ -19,9 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -34,6 +34,10 @@ class PortunusGRPCClientTest {
     static GrpcCleanupExtension cleanupExtension = new GrpcCleanupExtension();
 
     private PortunusGRPCClient portunusClient;
+
+    @Mock
+    private ClusterService clusterService;
+
     private final PortunusServiceImplBase portunusService = mock(PortunusServiceImplBase.class, delegatesTo(
             new PortunusServiceImplBase() {
                 @Override
@@ -58,7 +62,7 @@ class PortunusGRPCClientTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        portunusClient = new PortunusGRPCClient(cleanupExtension.addService(portunusService));
+        portunusClient = new PortunusGRPCClient(clusterService, cleanupExtension.addService(portunusService));
     }
 
     @Test

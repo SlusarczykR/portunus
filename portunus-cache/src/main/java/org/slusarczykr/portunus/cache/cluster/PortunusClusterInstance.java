@@ -193,12 +193,9 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         clusterService.getClusterEventPublisher().publishEvent(eventSupplier.apply(address));
     }
 
-    private AddressDTO getLocalServerAddressDTO() {
-        return clusterService.getConversionService().convert(localServer.getAddress());
-    }
-
     private ClusterEvent createMemberJoinedEvent(AddressDTO address) {
         return ClusterEvent.newBuilder()
+                .setFrom(address)
                 .setEventType(ClusterEventType.MemberJoinedEvent)
                 .setMemberJoinedEvent(MemberJoinedEvent.newBuilder()
                         .setAddress(address)
@@ -208,10 +205,15 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private ClusterEvent createMemberLeftEvent(AddressDTO address) {
         return ClusterEvent.newBuilder()
+                .setFrom(address)
                 .setEventType(ClusterEventType.MemberLeftEvent)
                 .setMemberLeftEvent(MemberLeftEvent.newBuilder()
                         .setAddress(address)
                         .build())
                 .build();
+    }
+
+    private AddressDTO getLocalServerAddressDTO() {
+        return clusterService.getConversionService().convert(localServer.getAddress());
     }
 }

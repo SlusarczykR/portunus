@@ -14,10 +14,12 @@ message ClusterEvent {
     MemberLeftEvent = 2;
   }
 
-  ClusterEventType eventType = 1;
+  AddressDTO from = 1;
 
-  MemberJoinedEvent memberJoinedEvent = 2;
-  MemberLeftEvent memberLeftEvent = 3;
+  ClusterEventType eventType = 2;
+
+  MemberJoinedEvent memberJoinedEvent = 3;
+  MemberLeftEvent memberLeftEvent = 4;
 }
 
 message MemberJoinedEvent {
@@ -36,10 +38,12 @@ message PartitionEvent {
     PartitionUpdated = 3;
   }
 
-  PartitionEventType eventType = 1;
+  AddressDTO from = 1;
 
-  PartitionCreatedEvent partitionCreatedEvent = 2;
-  PartitionUpdatedEvent partitionUpdatedEvent = 3;
+  PartitionEventType eventType = 2;
+
+  PartitionCreatedEvent partitionCreatedEvent = 3;
+  PartitionUpdatedEvent partitionUpdatedEvent = 4;
 }
 
 message PartitionCreatedEvent {

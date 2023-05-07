@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
@@ -54,7 +55,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void anyEntry(ContainsAnyEntryQuery request, StreamObserver<ContainsAnyEntryDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.IS_EMPTY, () -> createContainsAnyEntryDocument(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.IS_EMPTY, () -> createContainsAnyEntryDocument(request));
     }
 
     private ContainsAnyEntryDocument createContainsAnyEntryDocument(ContainsAnyEntryQuery query) {
@@ -71,7 +72,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void containsEntry(ContainsEntryQuery request, StreamObserver<ContainsEntryDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.CONTAINS_KEY, () -> createContainsEntryDocument(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.CONTAINS_KEY, () -> createContainsEntryDocument(request));
     }
 
     @SneakyThrows
@@ -108,7 +109,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void getCache(GetCacheCommand request, StreamObserver<GetCacheDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.GET_ALL_ENTRIES, () -> getCacheEntries(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ALL_ENTRIES, () -> getCacheEntries(request));
     }
 
     @SneakyThrows
@@ -132,7 +133,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void getCacheEntry(GetEntryCommand request, StreamObserver<GetEntryDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.GET_ENTRY, () -> getCacheEntry(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ENTRY, () -> getCacheEntry(request));
     }
 
     @SneakyThrows
@@ -150,7 +151,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void getPartitions(GetPartitionsCommand request, StreamObserver<GetPartitionsDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.GET_ALL_ENTRIES, this::getLocalPartitions);
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ALL_ENTRIES, this::getLocalPartitions);
     }
 
     private GetPartitionsDocument getLocalPartitions() {
@@ -165,7 +166,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void putEntry(PutEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.PUT, () -> putEntry(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.PUT, () -> putEntry(request));
     }
 
     private <K extends Serializable, V extends Serializable> PutEntryDocument putEntry(PutEntryCommand command) {
@@ -180,7 +181,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void removeEntry(RemoveEntryCommand request, StreamObserver<RemoveEntryDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.REMOVE, () -> removeEntry(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.REMOVE, () -> removeEntry(request));
     }
 
     @SneakyThrows
@@ -206,7 +207,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendClusterEvent(ClusterEvent request, StreamObserver<Empty> responseObserver) {
-        completeWith(responseObserver, OperationType.SEND_CLUSTER_EVENT, () -> handleEvent(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.SEND_CLUSTER_EVENT, () -> handleEvent(request));
     }
 
     private Empty handleEvent(ClusterEvent event) {
@@ -216,7 +217,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendPartitionEvent(PartitionEvent request, StreamObserver<Empty> responseObserver) {
-        completeWith(responseObserver, OperationType.SEND_PARTITION_EVENT, () -> handleEvent(request));
+        completeWith(request.getFrom(), responseObserver, OperationType.SEND_PARTITION_EVENT, () -> handleEvent(request));
     }
 
     private Empty handleEvent(PartitionEvent event) {
@@ -226,8 +227,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendRequestVote(AppendEntry request, StreamObserver<RequestVoteResponse> responseObserver) {
-        completeWith(responseObserver, OperationType.VOTE, () -> {
-            log.info("Received requestVoteResponse from server with id: {}", request.getServerId());
+        completeWith(request.getFrom(), responseObserver, OperationType.VOTE, () -> {
+            log.info("Received request vote from server with id: {}", request.getServerId());
             stopHeartbeatsOrReset();
             RequestVote.Response requestVoteResponse = voteForLeader(request);
 
@@ -262,7 +263,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void sendHeartbeats(AppendEntry request, StreamObserver<AppendEntryResponse> responseObserver) {
-        completeWith(responseObserver, OperationType.SYNC_STATE, () -> {
+        completeWith(request.getFrom(), responseObserver, OperationType.SYNC_STATE, () -> {
             log.info("Received heartbeat from leader with id: {}", request.getServerId());
             boolean conflict = false;
 
@@ -279,7 +280,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void syncServerState(SyncServerStateRequest request, StreamObserver<AppendEntryResponse> responseObserver) {
-        completeWith(responseObserver, OperationType.SYNC_STATE, () -> {
+        completeWith(request.getFrom(), responseObserver, OperationType.SYNC_STATE, () -> {
             boolean conflict = false;
 
             if (syncServerState(request.getVirtualPortunusNodeList(), request.getPartitionList())) {
@@ -348,9 +349,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @Override
     public void replicate(ReplicatePartitionCommand request, StreamObserver<ReplicatePartitionDocument> responseObserver) {
-        completeWith(responseObserver, OperationType.REPLICATE_PARTITION, () -> {
+        completeWith(request.getFrom(), responseObserver, OperationType.REPLICATE_PARTITION, () -> {
             Partition partition = clusterService.getConversionService().convert(request.getPartition());
+            clusterService.getPartitionService().register(partition);
             clusterService.getReplicaService().registerPartitionReplica(partition);
+            partition.addReplicaOwner(clusterService.getLocalServer());
+            log.info("Registered partition replica: {}", partition);
 
             return ReplicatePartitionDocument.newBuilder()
                     .setStatus(true)
@@ -366,9 +370,16 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         return cache;
     }
 
-    private <T> void completeWith(StreamObserver<T> responseObserver, OperationType operationType, Supplier<T> onNext) {
+    private <T> void completeWith(AddressDTO from, StreamObserver<T> responseObserver, OperationType operationType,
+                                  Supplier<T> onNext) {
         log.info("Received '{}' command from remote server", operationType);
+        registerRemoteServerIfAbsent(from);
         responseObserver.onNext(onNext.get());
         responseObserver.onCompleted();
+    }
+
+    private void registerRemoteServerIfAbsent(AddressDTO addressDTO) {
+        Address address = clusterService.getConversionService().convert(addressDTO);
+        clusterService.getDiscoveryService().register(address);
     }
 }

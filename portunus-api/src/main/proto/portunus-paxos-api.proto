@@ -7,14 +7,16 @@ option java_package = "org.slusarczykr.portunus.cache.paxos.api";
 option java_outer_classname = "PortunusPaxosApiProtos";
 
 message SyncServerStateRequest {
-  int64 serverId = 1;
-  repeated org.slusarczykr.portunus.cache.api.PartitionDTO partition = 2;
-  repeated org.slusarczykr.portunus.cache.api.VirtualPortunusNodeDTO virtualPortunusNode = 3;
+  org.slusarczykr.portunus.cache.api.AddressDTO from = 1;
+  int64 serverId = 2;
+  repeated org.slusarczykr.portunus.cache.api.PartitionDTO partition = 3;
+  repeated org.slusarczykr.portunus.cache.api.VirtualPortunusNodeDTO virtualPortunusNode = 4;
 }
 
 message AppendEntry {
-  int64 serverId = 1;
-  int64 term = 2;
+  org.slusarczykr.portunus.cache.api.AddressDTO from = 1;
+  int64 serverId = 2;
+  int64 term = 3;
 }
 
 message AppendEntryResponse {

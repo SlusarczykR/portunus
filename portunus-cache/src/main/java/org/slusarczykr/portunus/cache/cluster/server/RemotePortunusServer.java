@@ -46,8 +46,8 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     @Override
     protected void initialize() throws PortunusException {
         log.info("Initializing gRPC client for '{}' remote server", serverContext.getPlainAddress());
-        this.portunusClient = new PortunusGRPCClient(serverContext.address());
-        this.paxosClient = new PaxosGRPCClient(serverContext.address());
+        this.portunusClient = new PortunusGRPCClient(clusterService, serverContext.address());
+        this.paxosClient = new PaxosGRPCClient(clusterService, serverContext.address());
     }
 
     @Override
@@ -130,6 +130,7 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     public void replicate(Partition partition) {
         PartitionDTO partitionDTO = clusterService.getConversionService().convert(partition);
         portunusClient.replicate(partitionDTO);
+        partition.addReplicaOwner(this);
     }
 
     @Override
