@@ -81,3 +81,12 @@ message ReplicatePartitionCommand {
 message ReplicatePartitionDocument {
   bool status = 1;
 }
+
+message MigratePartitionsCommand {
+  AddressDTO from = 1;
+  repeated CacheChunkDTO cacheChunks = 2;
+}
+
+message MigratePartitionsDocument {
+  bool status = 1;
+}

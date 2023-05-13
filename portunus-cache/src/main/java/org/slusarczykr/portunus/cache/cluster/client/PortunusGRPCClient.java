@@ -22,10 +22,7 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -214,6 +211,21 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         return ReplicatePartitionCommand.newBuilder()
                 .setFrom(getLocalServerAddressDTO())
                 .setPartition(partition)
+                .build();
+    }
+
+    @Override
+    public boolean migrate(List<CacheChunkDTO> cacheChunks) {
+        return withPortunusServiceStub(portunusService -> {
+            MigratePartitionsCommand command = createMigratePartitionsCommand(cacheChunks);
+            return portunusService.migrate(command);
+        }).getStatus();
+    }
+
+    private MigratePartitionsCommand createMigratePartitionsCommand(List<CacheChunkDTO> cacheChunks) {
+        return MigratePartitionsCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
+                .addAllCacheChunks(cacheChunks)
                 .build();
     }
 

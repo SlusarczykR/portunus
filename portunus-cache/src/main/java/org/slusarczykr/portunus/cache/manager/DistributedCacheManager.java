@@ -8,7 +8,7 @@ import java.util.Set;
 
 public interface DistributedCacheManager extends CacheManager {
 
-   boolean anyCacheEntry(int partitionId);
+    boolean anyCacheEntry(int partitionId);
 
     Set<Cache<? extends Serializable, ? extends Serializable>> getCacheEntries(int partitionId);
 
@@ -17,4 +17,6 @@ public interface DistributedCacheManager extends CacheManager {
 
     <K extends Serializable, V extends Serializable> void register(int partitionId, String name,
                                                                    Set<Cache.Entry<K, V>> cacheEntries);
+
+    void remove(int partitionId);
 }

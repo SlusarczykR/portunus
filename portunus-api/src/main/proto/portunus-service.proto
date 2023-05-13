@@ -26,4 +26,5 @@ service PortunusService {
   rpc sendHeartbeats(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
   rpc syncServerState(org.slusarczykr.portunus.cache.paxos.api.SyncServerStateRequest) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
   rpc replicate(org.slusarczykr.portunus.cache.api.command.ReplicatePartitionCommand) returns (org.slusarczykr.portunus.cache.api.command.ReplicatePartitionDocument);
+  rpc migrate(org.slusarczykr.portunus.cache.api.command.MigratePartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.MigratePartitionsDocument);
 }

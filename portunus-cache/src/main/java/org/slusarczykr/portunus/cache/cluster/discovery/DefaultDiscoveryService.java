@@ -146,8 +146,8 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     private void registerServer(PortunusServer server) {
         if (!portunusInstances.containsKey(server.getPlainAddress())) {
             log.info("Registering server with address: '{}'", server.getPlainAddress());
-            clusterService.getPartitionService().register(server.getAddress());
             portunusInstances.put(server.getPlainAddress(), server);
+            clusterService.getPartitionService().register(server);
             log.info("Current portunus instances: '{}'", portunusInstances);
         }
     }

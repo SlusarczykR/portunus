@@ -6,6 +6,7 @@ import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +48,22 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
                 .orElseGet(() -> newCache(caches, name));
 
         cache.putAll(cacheEntries);
+    }
+
+    @Override
+    public void remove(int partitionId) {
+        Set<Cache<? extends Serializable, ? extends Serializable>> caches = getCacheEntries(partitionId);
+        caches.forEach(this::removeCacheChunk);
+        partitionIdToCache.remove(partitionId);
+    }
+
+    private <K extends Serializable, V extends Serializable> void removeCacheChunk(Cache<K, V> cacheChunk) {
+        Cache<K, V> cache = getCache(cacheChunk.getName());
+        List<K> keys = cacheChunk.allEntries().stream()
+                .map(Cache.Entry::getKey)
+                .toList();
+
+        cache.removeAll(keys);
     }
 
     private <K extends Serializable, V extends Serializable> Cache<K, V> newCache(Set<Cache<? extends Serializable, ? extends Serializable>> caches,

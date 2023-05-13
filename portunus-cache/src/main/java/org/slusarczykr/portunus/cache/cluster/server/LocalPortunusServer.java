@@ -215,19 +215,21 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     private void sendPartitionEvent(Partition partition, Function<CacheChunkDTO, PartitionEvent> operation) {
-        CacheChunkDTO cacheChunkDTO = createCacheChunk(partition);
+        CacheChunk cacheChunk = getCacheChunk(partition);
+        CacheChunkDTO cacheChunkDTO = clusterService.getConversionService().convert(cacheChunk);
         PartitionEvent partitionEvent = operation.apply(cacheChunkDTO);
         log.info("Sending cache chunk for '{}'", partitionEvent.getEventType());
 
         clusterService.getClusterEventPublisher().publishEvent(partitionEvent);
     }
 
-    private CacheChunkDTO createCacheChunk(Partition partition) {
-        Set<Cache<? extends Serializable, ? extends Serializable>> cacheEntries = clusterService.getLocalServer()
-                .getCacheEntries(partition.getPartitionId());
-        CacheChunk cacheChunk = new CacheChunk(partition, cacheEntries);
+    public CacheChunk getCacheChunk(Partition partition) {
+        Set<Cache<? extends Serializable, ? extends Serializable>> cacheEntries = getCacheEntries(partition.getPartitionId());
+        return new CacheChunk(partition, cacheEntries);
+    }
 
-        return clusterService.getConversionService().convert(cacheChunk);
+    public void remove(Partition partition) {
+        cacheManager.remove(partition.getPartitionId());
     }
 
     private <K extends Serializable, V extends Serializable> void updateLocalCache(String name, Partition partition,

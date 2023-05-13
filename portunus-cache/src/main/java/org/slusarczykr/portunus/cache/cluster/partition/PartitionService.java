@@ -32,7 +32,7 @@ public interface PartitionService extends Service {
 
     Address getPartitionOwner(String key) throws PortunusException;
 
-    void register(Address address) throws PortunusException;
+    void register(PortunusServer server) throws PortunusException;
 
     void unregister(Address address) throws PortunusException;
 

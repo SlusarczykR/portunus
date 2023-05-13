@@ -23,7 +23,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLeaderElectionStarterService.class);
 
-    private static final int INITIAL_HEARTBEAT_DELAY = 10;
+    private static final int INITIAL_HEARTBEAT_DELAY = 5;
 
     private LeaderElectionProperties leaderElectionProps;
     private final ScheduledExecutorService scheduledExecutor;

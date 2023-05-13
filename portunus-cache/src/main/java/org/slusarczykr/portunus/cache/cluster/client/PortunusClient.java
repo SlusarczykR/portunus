@@ -9,6 +9,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.Partition
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public interface PortunusClient {
@@ -36,4 +37,6 @@ public interface PortunusClient {
     <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key);
 
     boolean replicate(PartitionDTO partition);
+
+    boolean migrate(List<CacheChunkDTO> cacheChunks);
 }

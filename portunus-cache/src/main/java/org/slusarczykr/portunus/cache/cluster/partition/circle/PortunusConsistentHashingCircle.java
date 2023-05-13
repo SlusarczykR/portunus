@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.partition.strategy.PartitionKeyStrategy;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
+import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.List;
@@ -95,7 +96,7 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
     }
 
     @Override
-    public String getServerAddress(Integer key) throws PortunusException {
+    public String getServerAddress(Integer key) {
         validateCircle();
         String nodeHashCode = getNodeHashCode(generateHashCode(String.valueOf(key)));
         VirtualPortunusNode virtualNode = circle.get(nodeHashCode);
@@ -103,9 +104,9 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         return virtualNode.getPhysicalNodeKey();
     }
 
-    private void validateCircle() throws PortunusException {
+    private void validateCircle() {
         if (circle.isEmpty()) {
-            throw new PortunusException("Circle is empty");
+            throw new InvalidPortunusStateException("Circle is empty");
         }
     }
 

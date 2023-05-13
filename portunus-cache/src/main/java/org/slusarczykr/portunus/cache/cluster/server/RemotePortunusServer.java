@@ -133,6 +133,14 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
         partition.addReplicaOwner(this);
     }
 
+    public boolean migrate(List<CacheChunk> cacheChunks) {
+        List<CacheChunkDTO> cacheChunksDTO = cacheChunks.stream()
+                .map(it -> clusterService.getConversionService().convert(it))
+                .toList();
+
+        return portunusClient.migrate(cacheChunksDTO);
+    }
+
     @Override
     public RequestVoteResponse sendRequestVote(long serverId, long term) {
         return paxosClient.sendRequestVote(serverId, term);

@@ -25,11 +25,13 @@ import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
 import org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
+import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
@@ -350,6 +352,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void replicate(ReplicatePartitionCommand request, StreamObserver<ReplicatePartitionDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.REPLICATE_PARTITION, () -> {
+            log.info("Registering partition replica: {}", request.getPartition().getKey());
             Partition partition = clusterService.getConversionService().convert(request.getPartition());
             clusterService.getPartitionService().register(partition);
             clusterService.getReplicaService().registerPartitionReplica(partition);
@@ -360,6 +363,37 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .setStatus(true)
                     .build();
         });
+    }
+
+    @Override
+    public void migrate(MigratePartitionsCommand request, StreamObserver<MigratePartitionsDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.MIGRATE_PARTITIONS, () -> {
+            log.info("Migrating partitions from: {}", clusterService.getConversionService().convert(request.getFrom()));
+            List<CacheChunk> cacheChunks = request.getCacheChunksList().stream()
+                    .map(it -> clusterService.getConversionService().convert(it))
+                    .toList();
+
+            cacheChunks.forEach(this::migrate);
+
+            return MigratePartitionsDocument.newBuilder()
+                    .setStatus(true)
+                    .build();
+        });
+    }
+
+    private void migrate(CacheChunk cacheChunk) {
+        log.info("Start migrating partition: {}", cacheChunk.partition());
+        Partition partition = reassignOwner(cacheChunk.partition());
+
+        clusterService.getPartitionService().register(partition);
+        CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
+        clusterService.getLocalServer().update(reassignedCacheChunk);
+        log.info("Successfully migrated partition: {}", partition);
+    }
+
+    private Partition reassignOwner(Partition partition) {
+        LocalPortunusServer localServer = clusterService.getLocalServer();
+        return new Partition(partition.getPartitionId(), localServer, partition.getReplicaOwners());
     }
 
     private <K extends Serializable, V extends Serializable> DistributedCache<K, V> getDistributedCache(String name) {

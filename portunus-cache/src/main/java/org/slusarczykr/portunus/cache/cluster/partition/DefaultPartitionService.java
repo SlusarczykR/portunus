@@ -141,14 +141,36 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     @Override
-    public void register(Address address) throws PortunusException {
-        withWriteLock(() -> registerAddress(address));
+    public void register(PortunusServer server) throws PortunusException {
+        withWriteLock(() -> {
+            registerAddress(server.getAddress());
+            rebalance();
+        });
     }
 
     @SneakyThrows
     private void registerAddress(Address address) {
         log.info("Registering '{}' server", address);
         partitionOwnerCircle.add(address);
+    }
+
+    private void rebalance() {
+        Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
+        Map<Address, List<Partition>> partitionsByOwner = getOwnerPartitions(localServerAddress).stream()
+                .collect(Collectors.groupingBy(it -> getOwnerAddress(it.getPartitionId())));
+        partitionsByOwner.remove(localServerAddress);
+
+        partitionsByOwner.forEach(this::migrate);
+    }
+
+    private void migrate(Address address, List<Partition> partitions) {
+        clusterService.getMigrationService().migrate(partitions, address);
+    }
+
+    private List<Partition> getOwnerPartitions(Address address) {
+        return partitions.values().stream()
+                .filter(partition -> partition.getOwnerAddress().equals(address))
+                .toList();
     }
 
     @Override
@@ -158,7 +180,16 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @SneakyThrows
     private void unregisterAddress(Address address) {
+        List<Integer> ownerPartitionsIds = getOwnerPartitionsIds(address);
+        ownerPartitionsIds.forEach(partitions.keySet()::remove);
         partitionOwnerCircle.remove(address);
+    }
+
+    private List<Integer> getOwnerPartitionsIds(Address address) {
+        return partitions.entrySet().stream()
+                .filter(it -> it.getValue().getOwnerAddress().equals(address))
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     @Override

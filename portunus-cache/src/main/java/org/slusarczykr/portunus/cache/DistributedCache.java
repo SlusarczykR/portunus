@@ -272,6 +272,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         SEND_CLUSTER_EVENT,
         SEND_PARTITION_EVENT,
         SYNC_STATE,
-        REPLICATE_PARTITION
+        REPLICATE_PARTITION,
+        MIGRATE_PARTITIONS
     }
 }
