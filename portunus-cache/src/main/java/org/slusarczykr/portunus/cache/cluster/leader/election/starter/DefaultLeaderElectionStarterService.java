@@ -11,6 +11,7 @@ import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.*;
@@ -18,18 +19,21 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.slusarczykr.portunus.cache.cluster.leader.election.config.LeaderElectionProperties.INITIAL_HEARTBEATS_DELAY;
+import static org.slusarczykr.portunus.cache.cluster.leader.election.config.LeaderElectionProperties.INITIAL_SYNC_STATE_DELAY;
 
 public class DefaultLeaderElectionStarterService extends AbstractPaxosService implements LeaderElectionStarterService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLeaderElectionStarterService.class);
 
-    private static final int INITIAL_HEARTBEAT_DELAY = 5;
+    private static final String SEND_HEARTBEATS_JOB = "heartbeats";
+    private static final String SYNC_STATE_JOB = "syncState";
 
     private LeaderElectionProperties leaderElectionProps;
     private final ScheduledExecutorService scheduledExecutor;
 
     private final AtomicReference<CompletableFuture<Boolean>> candidacy = new AtomicReference<>();
-    private final AtomicReference<Future<?>> heartbeats = new AtomicReference<>();
+    private final Map<String, Future<?>> leaderScheduledJobs = new ConcurrentHashMap<>();
 
     private final Random random = new Random();
 
@@ -97,6 +101,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         log.info("Processing leader election - leader: {}", leader);
         if (Boolean.TRUE.equals(leader)) {
             scheduleHeartbeats();
+            scheduleSyncState();
         } else {
             startLeaderCandidacy();
         }
@@ -106,30 +111,49 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     private void scheduleHeartbeats() {
         int heartbeatsInterval = leaderElectionProps.getHeartbeatsInterval();
         log.debug("Scheduling heartbeats with interval of {}s", heartbeatsInterval);
-        heartbeats.set(scheduleHeartbeats(heartbeatsInterval));
-    }
-
-    private ScheduledFuture<?> scheduleHeartbeats(int interval) {
-        return scheduledExecutor.scheduleAtFixedRate(
+        ScheduledFuture<?> sendHeartbeatsJob = scheduledExecutor.scheduleAtFixedRate(
                 this::sendHeartbeats,
-                INITIAL_HEARTBEAT_DELAY,
-                interval,
+                INITIAL_HEARTBEATS_DELAY,
+                heartbeatsInterval,
                 SECONDS
         );
+        leaderScheduledJobs.put(SEND_HEARTBEATS_JOB, sendHeartbeatsJob);
     }
 
     private void sendHeartbeats() {
         clusterService.getLeaderElectionService().sendHeartbeats(e -> {
             if (e instanceof PaxosLeaderConflictException) {
-                log.error("Leader conflict detected while sending heartbeats to followers nodes!");
-                stopHeartbeats();
+                log.error("Leader conflict detected while sending heartbeats to follower nodes!");
+                stopLeaderScheduledJobs();
+            }
+        });
+    }
+
+    private void scheduleSyncState() {
+        int heartbeatsInterval = leaderElectionProps.getSyncStateInterval();
+        log.debug("Scheduling sync server state with interval of {}s", heartbeatsInterval);
+        ScheduledFuture<?> syncServerStateJob = scheduledExecutor.scheduleAtFixedRate(
+                this::syncServerState,
+                INITIAL_SYNC_STATE_DELAY,
+                heartbeatsInterval,
+                SECONDS
+        );
+        leaderScheduledJobs.put(SYNC_STATE_JOB, syncServerStateJob);
+    }
+
+    private void syncServerState() {
+        clusterService.getLeaderElectionService().syncServerState(e -> {
+            if (e instanceof PaxosLeaderConflictException) {
+                log.error("Leader conflict detected while syncing server state with follower nodes!");
+                stopLeaderScheduledJobs();
             }
         });
     }
 
     @Override
-    public void stopHeartbeats() {
-        cancelIfPresent(heartbeats.get());
+    public void stopLeaderScheduledJobs() {
+        cancelIfPresent(leaderScheduledJobs.get(SEND_HEARTBEATS_JOB));
+        cancelIfPresent(leaderScheduledJobs.get(SYNC_STATE_JOB));
     }
 
     private void cancelIfPresent(Future<?> task) {

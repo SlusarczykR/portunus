@@ -6,7 +6,7 @@ public interface LeaderElectionStarterService extends Service {
 
     void start();
 
-    void stopHeartbeats();
+    void stopLeaderScheduledJobs();
 
     void reset();
 }

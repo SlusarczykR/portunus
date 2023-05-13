@@ -132,9 +132,10 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public PortunusServer register(Address address) {
-        return withWriteLock(() ->
+        PortunusServer portunusServer = withWriteLock(() ->
                 portunusInstances.computeIfAbsent(address.toPlainAddress(), it -> createRemoteServer(address))
         );
+        return portunusServer;
     }
 
     @Override
@@ -171,11 +172,12 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public List<PortunusServer> register(Collection<Address> addresses) {
-        return withWriteLock(() -> {
+        List<PortunusServer> updatingPortunusInstanceMap = withWriteLock(() -> {
             log.info("Updating portunus instance map");
             Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
             return registerServers(addresses, it -> shouldRegisterServer(localServerAddress, it));
         });
+        return updatingPortunusInstanceMap;
     }
 
     private boolean shouldRegisterServer(Address localServerAddress, Address address) {

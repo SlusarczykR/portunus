@@ -13,6 +13,7 @@ import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -142,16 +143,22 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public void register(PortunusServer server) throws PortunusException {
-        withWriteLock(() -> {
-            registerAddress(server.getAddress());
-            rebalance();
-        });
+        withWriteLock(() -> registerAddress(server.getAddress()));
+        executePartitionsRebalance();
     }
 
     @SneakyThrows
     private void registerAddress(Address address) {
         log.info("Registering '{}' server", address);
         partitionOwnerCircle.add(address);
+    }
+
+    private void executePartitionsRebalance() {
+        CompletableFuture.runAsync(() -> {
+            log.info("Start executing partitions rebalance procedure");
+            withReadLock(this::rebalance);
+            log.info("Partitions rebalance has been finished");
+        });
     }
 
     private void rebalance() {

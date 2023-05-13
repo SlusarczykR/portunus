@@ -231,7 +231,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     public void sendRequestVote(AppendEntry request, StreamObserver<RequestVoteResponse> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.VOTE, () -> {
             log.info("Received request vote from server with id: {}", request.getServerId());
-            stopHeartbeatsOrReset();
+            stopLeaderScheduledJobsOrReset();
             RequestVote.Response requestVoteResponse = voteForLeader(request);
 
             return clusterService.getConversionService().convert(requestVoteResponse);
@@ -269,7 +269,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
             log.info("Received heartbeat from leader with id: {}", request.getServerId());
             boolean conflict = false;
 
-            if (stopHeartbeatsOrReset()) {
+            if (stopLeaderScheduledJobsOrReset()) {
                 log.error("Heartbeat message received while the current server is already the leader!");
                 conflict = true;
             }
@@ -283,29 +283,20 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void syncServerState(SyncServerStateRequest request, StreamObserver<AppendEntryResponse> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.SYNC_STATE, () -> {
-            boolean conflict = false;
+            syncServerState(request.getVirtualPortunusNodeList(), request.getPartitionList());
 
-            if (syncServerState(request.getVirtualPortunusNodeList(), request.getPartitionList())) {
-                log.error("Partition map message received while the current server is already the leader!");
-                conflict = true;
-            }
             return AppendEntryResponse.newBuilder()
                     .setServerId(getPaxosServer().getIdValue())
-                    .setConflict(conflict)
+                    .setConflict(false)
                     .build();
         });
     }
 
-    private boolean syncServerState(List<VirtualPortunusNodeDTO> virtualPortunusNodes,
-                                    List<PartitionDTO> partitions) {
-        if (!stopHeartbeatsOrReset()) {
-            SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap = toVirtualPortunusNodeMap(virtualPortunusNodes);
-            updateServerDiscovery(virtualPortunusNodeMap);
-            updatePartitions(partitions, virtualPortunusNodeMap);
-
-            return false;
-        }
-        return true;
+    private void syncServerState(List<VirtualPortunusNodeDTO> virtualPortunusNodes,
+                                 List<PartitionDTO> partitions) {
+        SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap = toVirtualPortunusNodeMap(virtualPortunusNodes);
+        updateServerDiscovery(virtualPortunusNodeMap);
+        updatePartitions(partitions, virtualPortunusNodeMap);
     }
 
     private void updateServerDiscovery(SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
@@ -337,12 +328,14 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 .collect(Collectors.toSet());
     }
 
-    private boolean stopHeartbeatsOrReset() {
+    private boolean stopLeaderScheduledJobsOrReset() {
+        log.info("Getting current leader status...");
         boolean leader = getPaxosServer().isLeader();
+        log.info("Leader status: {}", leader);
 
         if (leader) {
             log.info("Stopping sending heartbeats...");
-            clusterService.getLeaderElectionStarter().stopHeartbeats();
+            clusterService.getLeaderElectionStarter().stopLeaderScheduledJobs();
         } else {
             clusterService.getLeaderElectionStarter().reset();
         }
@@ -413,7 +406,9 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private void registerRemoteServerIfAbsent(AddressDTO addressDTO) {
+        log.info("calling registerRemoteServerIfAbsent");
         Address address = clusterService.getConversionService().convert(addressDTO);
         clusterService.getDiscoveryService().register(address);
+        log.info("after registerRemoteServerIfAbsent");
     }
 }

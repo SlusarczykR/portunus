@@ -51,6 +51,7 @@ public class PaxosServer {
     }
 
     public int calculateServerId(int serverPort, int numberOfServers) {
+        log.info("Calculating server id - port: {}, number of servers: {}", serverPort, numberOfServers);
         return serverPort % numberOfServers;
     }
 

@@ -11,6 +11,7 @@ import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
+import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.util.List;
@@ -66,7 +67,10 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         paxosServer.setLeader(accepted);
 
         if (accepted) {
-            log.info("Server with id {} has been accepted by the majority and elected as the leader for the current turn!",
+            log.info("Server with id {} has been accepted by the majority and elected as the leader for the current turn",
+                    paxosServer.getIdValue());
+        } else {
+            log.info("Server with id {} has not been elected as the leader",
                     paxosServer.getIdValue());
         }
         return accepted;
@@ -155,21 +159,47 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     }
 
     @Override
+    public void syncServerState(Consumer<Exception> errorHandler) {
+        try {
+            log.info("Syncing server state...");
+
+            withRemoteServers(it -> {
+                AppendEntryResponse appendEntryResponse = it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions());
+                log.info("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
+            });
+        } catch (Exception e) {
+            log.error("Error occurred while syncing state");
+            errorHandler.accept(e);
+        }
+    }
+
+
+    @Override
     public void sendHeartbeats(Consumer<Exception> errorHandler) {
         try {
             log.info("Sending heartbeats to followers...");
             //TODO remove this block
-            Cache<String, String> sampleCache = clusterService.getPortunusClusterInstance().getCache(randomAlphabetic(10));
-            String entryKey = String.format("%s%d", "test", new Random().nextInt(4));
-            sampleCache.put(entryKey, randomAlphabetic(8));
+            generateCacheEntry();
 
-            clusterService.getDiscoveryService().remoteServers().stream()
-                    .map(it -> it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions()))
-                    .forEach(it -> log.info("Received heartbeat reply from follower with id: {}", it.getServerId()));
+            withRemoteServers(it -> {
+                AppendEntryResponse appendEntryResponse = it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue());
+                log.info("Received heartbeat reply from follower with id: {}", appendEntryResponse.getServerId());
+            });
         } catch (Exception e) {
-            log.error("Error occurred while sending heartbeats to followers!");
+            log.error("Error occurred while sending heartbeats to followers");
             errorHandler.accept(e);
         }
+    }
+
+    private void withRemoteServers(Consumer<RemotePortunusServer> operation) {
+        List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
+        remoteServers.forEach(operation);
+    }
+
+    private void generateCacheEntry() {
+        Cache<String, String> sampleCache = clusterService.getPortunusClusterInstance().getCache(randomAlphabetic(10));
+        String entryKey = String.format("%s%d", "test", new Random().nextInt(4));
+        sampleCache.put(entryKey, randomAlphabetic(8));
     }
 
     private List<VirtualPortunusNodeDTO> getPartitionOwnerCircle() {

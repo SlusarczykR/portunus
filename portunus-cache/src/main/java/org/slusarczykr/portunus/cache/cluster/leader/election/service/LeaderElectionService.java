@@ -17,5 +17,7 @@ public interface LeaderElectionService extends Service {
 
     AppendEntry createHeartbeat();
 
+    void syncServerState(Consumer<Exception> errorHandler);
+
     void sendHeartbeats(Consumer<Exception> errorHandler);
 }
