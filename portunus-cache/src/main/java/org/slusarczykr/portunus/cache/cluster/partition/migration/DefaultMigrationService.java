@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
@@ -49,6 +50,33 @@ public class DefaultMigrationService extends AbstractService implements Migratio
         return partitions.stream()
                 .map(it -> clusterService.getLocalServer().getCacheChunk(it))
                 .toList();
+    }
+
+    @Override
+    public void migratePartitionReplicas(Collection<Partition> partitions) {
+        List<CacheChunk> cacheChunks = getCacheChunks(partitions);
+        cacheChunks.forEach(this::migrateToLocalServer);
+    }
+
+    @Override
+    public void migrateToLocalServer(Collection<CacheChunk> cacheChunk) {
+        cacheChunk.forEach(this::migrateToLocalServer);
+    }
+
+    @Override
+    public void migrateToLocalServer(CacheChunk cacheChunk) {
+        log.info("Start migrating partition: {}", cacheChunk.partition());
+        Partition partition = reassignOwner(cacheChunk.partition());
+
+        clusterService.getPartitionService().register(partition);
+        CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
+        clusterService.getLocalServer().update(reassignedCacheChunk);
+        log.info("Successfully migrated partition: {}", partition);
+    }
+
+    private Partition reassignOwner(Partition partition) {
+        LocalPortunusServer localServer = clusterService.getLocalServer();
+        return new Partition(partition.getPartitionId(), localServer, partition.getReplicaOwners());
     }
 
     @Override

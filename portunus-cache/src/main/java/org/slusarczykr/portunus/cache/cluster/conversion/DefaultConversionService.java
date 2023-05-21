@@ -2,7 +2,12 @@ package org.slusarczykr.portunus.cache.cluster.conversion;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
@@ -43,14 +48,15 @@ public class DefaultConversionService extends AbstractService implements Convers
     }
 
     private Partition newPartition(PartitionDTO partition, PortunusServer owner) {
-        List<PortunusServer> replicaOwners = getReplicaOwners(partition);
+        Set<Address> replicaOwners = getReplicaOwners(partition);
         return new Partition((int) partition.getKey(), owner, replicaOwners);
     }
 
-    private List<PortunusServer> getReplicaOwners(PartitionDTO partition) {
+    private Set<Address> getReplicaOwners(PartitionDTO partition) {
         return partition.getReplicaOwnersList().stream()
                 .map(server -> clusterService.getDiscoveryService().register(convert(server)))
-                .toList();
+                .map(PortunusServer::getAddress)
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -86,9 +92,8 @@ public class DefaultConversionService extends AbstractService implements Convers
         return newCache;
     }
 
-    private List<AddressDTO> convertReplicaOwners(Set<PortunusServer> replicaOwners) {
+    private List<AddressDTO> convertReplicaOwners(Set<Address> replicaOwners) {
         return replicaOwners.stream()
-                .map(PortunusServer::getAddress)
                 .map(it -> clusterService.getConversionService().convert(it))
                 .toList();
     }

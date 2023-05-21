@@ -53,7 +53,10 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void updatePartitionReplica(Partition partition) {
-        partition.getReplicaOwners().forEach(it -> it.replicate(partition));
+        partition.getReplicaOwners().stream()
+                .map(it -> clusterService.getDiscoveryService().getServer(it))
+                .flatMap(Optional::stream)
+                .forEach(it -> it.replicate(partition));
     }
 
     @Override

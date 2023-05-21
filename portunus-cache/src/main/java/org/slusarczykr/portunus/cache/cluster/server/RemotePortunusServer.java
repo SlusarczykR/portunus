@@ -130,7 +130,7 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     public void replicate(Partition partition) {
         PartitionDTO partitionDTO = clusterService.getConversionService().convert(partition);
         portunusClient.replicate(partitionDTO);
-        partition.addReplicaOwner(this);
+        partition.addReplicaOwner(getAddress());
     }
 
     public boolean migrate(List<CacheChunk> cacheChunks) {

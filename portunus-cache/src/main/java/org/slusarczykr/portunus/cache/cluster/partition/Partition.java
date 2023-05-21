@@ -15,9 +15,9 @@ public class Partition {
 
     private final int partitionId;
     private final PortunusServer owner;
-    private final Set<PortunusServer> replicaOwners;
+    private final Set<Address> replicaOwners;
 
-    public Partition(int partitionId, PortunusServer owner, Collection<PortunusServer> replicaOwners) {
+    public Partition(int partitionId, PortunusServer owner, Collection<Address> replicaOwners) {
         this.partitionId = partitionId;
         this.owner = owner;
         this.replicaOwners = ConcurrentHashMap.newKeySet();
@@ -36,16 +36,20 @@ public class Partition {
         return owner.getPlainAddress();
     }
 
-    public void addReplicaOwner(PortunusServer replicaOwner) {
+    public void addReplicaOwner(Address replicaOwner) {
         replicaOwners.add(replicaOwner);
     }
 
-    public void removeReplicaOwner(PortunusServer replicaOwner) {
+    public void removeReplicaOwner(Address replicaOwner) {
         replicaOwners.remove(replicaOwner);
     }
 
     public boolean isLocal() {
         return getOwner().isLocal();
+    }
+
+    public boolean isReplicaOwner(Address address) {
+        return getReplicaOwners().contains(address);
     }
 
     @Override

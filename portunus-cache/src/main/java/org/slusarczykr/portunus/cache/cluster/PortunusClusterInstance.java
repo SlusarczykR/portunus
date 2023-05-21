@@ -21,7 +21,12 @@ import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -190,7 +195,9 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private void publishMemberEvent(Function<AddressDTO, ClusterEvent> eventSupplier) {
         AddressDTO address = getLocalServerAddressDTO();
-        clusterService.getClusterEventPublisher().publishEvent(eventSupplier.apply(address));
+        ClusterEvent event = eventSupplier.apply(address);
+
+        clusterService.getClusterEventPublisher().publishEvent(event);
     }
 
     private ClusterEvent createMemberJoinedEvent(AddressDTO address) {

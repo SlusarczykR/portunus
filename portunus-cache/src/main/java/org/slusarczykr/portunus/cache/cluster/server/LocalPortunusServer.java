@@ -177,7 +177,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     @Override
     public void replicate(Partition partition) {
         clusterService.getReplicaService().registerPartitionReplica(partition);
-        partition.addReplicaOwner(this);
+        partition.addReplicaOwner(getAddress());
     }
 
     public <K extends Serializable, V extends Serializable> void update(CacheChunk cacheChunk) {

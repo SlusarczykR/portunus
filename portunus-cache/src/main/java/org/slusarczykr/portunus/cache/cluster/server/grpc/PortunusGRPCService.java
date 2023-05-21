@@ -13,7 +13,20 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetEntryDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.MigratePartitionsCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.MigratePartitionsDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryDocument;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.ReplicatePartitionCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.ReplicatePartitionDocument;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
@@ -31,7 +44,6 @@ import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
-import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
@@ -40,7 +52,11 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVo
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.SyncServerStateRequest;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -349,7 +365,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
             Partition partition = clusterService.getConversionService().convert(request.getPartition());
             clusterService.getPartitionService().register(partition);
             clusterService.getReplicaService().registerPartitionReplica(partition);
-            partition.addReplicaOwner(clusterService.getLocalServer());
+            partition.addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
             log.info("Registered partition replica: {}", partition);
 
             return ReplicatePartitionDocument.newBuilder()
@@ -366,27 +382,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .map(it -> clusterService.getConversionService().convert(it))
                     .toList();
 
-            cacheChunks.forEach(this::migrate);
+            clusterService.getMigrationService().migrateToLocalServer(cacheChunks);
 
             return MigratePartitionsDocument.newBuilder()
                     .setStatus(true)
                     .build();
         });
-    }
-
-    private void migrate(CacheChunk cacheChunk) {
-        log.info("Start migrating partition: {}", cacheChunk.partition());
-        Partition partition = reassignOwner(cacheChunk.partition());
-
-        clusterService.getPartitionService().register(partition);
-        CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
-        clusterService.getLocalServer().update(reassignedCacheChunk);
-        log.info("Successfully migrated partition: {}", partition);
-    }
-
-    private Partition reassignOwner(Partition partition) {
-        LocalPortunusServer localServer = clusterService.getLocalServer();
-        return new Partition(partition.getPartitionId(), localServer, partition.getReplicaOwners());
     }
 
     private <K extends Serializable, V extends Serializable> DistributedCache<K, V> getDistributedCache(String name) {
