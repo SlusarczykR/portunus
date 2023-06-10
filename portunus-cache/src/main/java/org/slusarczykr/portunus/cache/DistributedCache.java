@@ -16,7 +16,14 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -183,18 +190,13 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     @Override
     public Cache.Entry<K, V> remove(K key) {
         return executeOperation(OperationType.REMOVE, () ->
-                Optional.ofNullable(removeEntry(key))
+                Optional.ofNullable((Cache.Entry<K, V>) executeLocalOrDistributed(key, it -> it.remove(name, key)))
                         .map(it -> {
                             cacheEntryObserver.onRemove(it);
                             return it;
                         })
                         .orElseThrow(() -> new PortunusException("Entry is not present"))
         );
-    }
-
-    @SneakyThrows
-    private Cache.Entry<K, V> removeEntry(K key) {
-        return clusterService.getDiscoveryService().localServer().remove(name, key);
     }
 
     @Override
