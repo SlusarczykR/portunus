@@ -24,7 +24,11 @@ import org.slusarczykr.portunus.cache.manager.DistributedCacheManager;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -166,6 +170,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         Cache<K, V> cache = cacheManager.getCache(name);
+        //TODO unregister cache entries from partition
         return cache.remove(key);
     }
 
