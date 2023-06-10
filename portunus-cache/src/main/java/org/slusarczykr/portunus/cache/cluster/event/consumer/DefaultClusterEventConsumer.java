@@ -6,8 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.*;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionCreatedEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionUpdatedEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
@@ -46,20 +51,20 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         if (clusterService.getClusterConfig().isMulticast()) {
             int multicastPort = clusterService.getClusterConfig().getMulticastPort();
             log.info("Initializing multicast receiver on port: {}", multicastPort);
-            new MulticastReceiver(multicastPort, this::handleMulticastEvent).start();
+            new MulticastReceiver(multicastPort, this::handleMulticastClusterEvent).start();
             log.info("Multicast receiver was started");
         } else {
             log.info("Multicast is not enabled. Multicast receiver will not be started");
         }
     }
 
-    private void handleMulticastEvent(MemberJoinedEvent event) {
-        Address address = clusterService.getConversionService().convert(event.getAddress());
+    private void handleMulticastClusterEvent(ClusterEvent event) {
+        Address address = clusterService.getConversionService().convert(event.getFrom());
 
         if (!isLocalAddress(address)) {
-            handleMemberJoinedEvent(event);
+            handleClusterEvent(event);
         } else {
-            log.info("Skipping self {} event", ClusterEventType.MemberJoinedEvent);
+            log.info("Skipping self {} event", event.getEventType());
         }
     }
 
@@ -83,7 +88,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         switch (event.getEventType()) {
             case MemberJoinedEvent -> handleMemberJoinedEvent(event.getMemberJoinedEvent());
             case MemberLeftEvent -> handleMemberLeftEvent(event.getMemberLeftEvent());
-            default -> log.error("Unknown event type");
+            default -> log.error("Unknown cluster event type");
         }
     }
 
@@ -171,9 +176,9 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     private static class MulticastReceiver extends Thread {
 
         private final int port;
-        private final Consumer<MemberJoinedEvent> operation;
+        private final Consumer<ClusterEvent> operation;
 
-        public MulticastReceiver(int port, Consumer<MemberJoinedEvent> operation) {
+        public MulticastReceiver(int port, Consumer<ClusterEvent> operation) {
             this.port = port;
             this.operation = operation;
         }
@@ -199,14 +204,25 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
                     if (received.endsWith(MESSAGE_MARKER)) {
                         log.info("Received multicast message: {}", received);
                         Address address = parseAddress(received);
-                        operation.accept(createMemberJoinedEvent(address));
+                        boolean left = received.contains(ClusterEventType.MemberLeftEvent.name());
+
+                        operation.accept(createClusterEvent(address, left));
                     }
                 }
             }
         }
 
+        private ClusterEvent createClusterEvent(Address address, boolean left) {
+            if (left) {
+                return createMemberLeftEvent(address);
+            }
+            return createMemberJoinedEvent(address);
+        }
+
         private static Address parseAddress(String source) {
-            String address = source.split("@")[0];
+            String addressToEventType = source.split("@")[0];
+            String address = addressToEventType.split("#")[0];
+
             return Address.from(address);
         }
 
@@ -217,10 +233,24 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
             return new String(packet.getData(), 0, packet.getLength());
         }
 
-        private MemberJoinedEvent createMemberJoinedEvent(Address address) {
-            return MemberJoinedEvent.newBuilder()
-                    .setAddress(toAddressDTO(address))
-                    .build();
+        private ClusterEvent createMemberJoinedEvent(Address address) {
+            return ClusterEvent.newBuilder()
+                    .setEventType(ClusterEventType.MemberJoinedEvent)
+                    .setMemberJoinedEvent(
+                            MemberJoinedEvent.newBuilder()
+                                    .setAddress(toAddressDTO(address))
+                                    .build()
+                    ).build();
+        }
+
+        private ClusterEvent createMemberLeftEvent(Address address) {
+            return ClusterEvent.newBuilder()
+                    .setEventType(ClusterEventType.MemberLeftEvent)
+                    .setMemberLeftEvent(
+                            MemberLeftEvent.newBuilder()
+                                    .setAddress(toAddressDTO(address))
+                                    .build()
+                    ).build();
         }
 
         private static AddressDTO toAddressDTO(Address address) {

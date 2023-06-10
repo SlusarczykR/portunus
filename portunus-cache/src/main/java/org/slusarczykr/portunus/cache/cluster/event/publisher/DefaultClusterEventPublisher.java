@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -46,7 +45,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     public void publishEvent(ClusterEvent event) {
         execute(() -> {
             if (isMulticastEvent(event)) {
-                sendMulticastEvent(event.getMemberJoinedEvent());
+                sendMulticastEvent(event);
             } else {
                 log.info("Sending '{}' to remote cluster members", event.getEventType());
                 withClusterMembers(it -> {
@@ -72,10 +71,10 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     }
 
     @SneakyThrows
-    private void sendMulticastEvent(MemberJoinedEvent event) {
-        log.info("Sending '{}' to multicast channel", ClusterEventType.MemberJoinedEvent);
-        AddressDTO address = event.getAddress();
-        String message = String.format("%s:%d", address.getHostname(), address.getPort());
+    private void sendMulticastEvent(ClusterEvent event) {
+        log.info("Sending '{}' to multicast channel", event.getEventType());
+        AddressDTO address = event.getFrom();
+        String message = String.format("%s:%d#%s", address.getHostname(), address.getPort(), event.getEventType().name());
         multicastPublisher.publish(message);
     }
 
