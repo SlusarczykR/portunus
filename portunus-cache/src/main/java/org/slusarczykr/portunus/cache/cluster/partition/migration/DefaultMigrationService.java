@@ -54,6 +54,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
     @Override
     public void migratePartitionReplicas(Collection<Partition> partitions) {
+        log.info("Start migration partitions to local server: '{}'", partitions.size());
         List<CacheChunk> cacheChunks = getCacheChunks(partitions);
         cacheChunks.forEach(this::migrateToLocalServer);
     }
