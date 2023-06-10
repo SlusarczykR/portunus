@@ -170,7 +170,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     @Override
     public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
         Cache<K, V> cache = cacheManager.getCache(name);
-        //TODO unregister cache entries from partition
+        //TODO unregister cache entries from partition and send partition event
         return cache.remove(key);
     }
 
