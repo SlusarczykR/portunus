@@ -81,7 +81,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     @Override
     public boolean containsKey(K key) {
         return executeOperation(OperationType.CONTAINS_KEY, () ->
-                executeLocalOrDistributed(key, it -> it.containsEntry(name, key))
+                executeLocalOrDistributed(key, true, it -> it.containsEntry(name, key))
         );
     }
 
@@ -95,7 +95,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     public Optional<Cache.Entry<K, V>> getEntry(K key) {
         return executeOperation(OperationType.GET_ENTRY, () ->
-                executeLocalOrDistributed(key, it -> Optional.ofNullable(it.getCacheEntry(name, key)))
+                executeLocalOrDistributed(key, true, it -> Optional.ofNullable(it.getCacheEntry(name, key)))
         );
     }
 
@@ -189,20 +189,23 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @Override
     public Cache.Entry<K, V> remove(K key) {
-        return executeOperation(OperationType.REMOVE, () ->
-                Optional.ofNullable((Cache.Entry<K, V>) executeLocalOrDistributed(key, it -> it.remove(name, key)))
-                        .map(it -> {
-                            cacheEntryObserver.onRemove(it);
-                            return it;
-                        })
-                        .orElseThrow(() -> new PortunusException("Entry is not present"))
-        );
+        return executeOperation(OperationType.REMOVE, () -> removeEntry(key));
+    }
+
+    @SneakyThrows
+    private Cache.Entry<K, V> removeEntry(K key) {
+        return Optional.ofNullable((Cache.Entry<K, V>) executeLocalOrDistributed(key, it -> it.remove(name, key)))
+                .map(it -> {
+                    cacheEntryObserver.onRemove(it);
+                    return it;
+                })
+                .orElseThrow(() -> new PortunusException("Entry is not present"));
     }
 
     @Override
     public void removeAll(Collection<K> keys) {
         executeOperation(OperationType.REMOVE_ALL, () -> {
-            keys.forEach(this::remove);
+            keys.forEach(this::removeEntry);
             return keys;
         });
     }
@@ -227,14 +230,23 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private <T> T executeLocalOrDistributed(K key, Function<PortunusServer, T> operation) {
+        return executeLocalOrDistributed(key, false, operation);
+    }
+
+    @SneakyThrows
+    private <T> T executeLocalOrDistributed(K key, boolean executeOnReplicaOwner, Function<PortunusServer, T> operation) {
         String objectKey = key.toString();
         Partition partition = clusterService.getPartitionService().getPartitionForKey(objectKey);
         PortunusServer owner = partition.getOwner();
 
-        if (clusterService.getReplicaService().isPartitionReplicaOwner(partition.getPartitionId())) {
+        if (executeOnReplicaOwner && isPartitionReplicaOwner(partition)) {
             owner = clusterService.getPortunusClusterInstance().localMember();
         }
         return operation.apply(owner);
+    }
+
+    private boolean isPartitionReplicaOwner(Partition partition) {
+        return clusterService.getReplicaService().isPartitionReplicaOwner(partition.getPartitionId());
     }
 
     @Override
