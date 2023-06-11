@@ -11,7 +11,10 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance.DEFAULT_PORT;
 
 class PortunusClusterInstanceIntegrationTest {
@@ -120,7 +123,7 @@ class PortunusClusterInstanceIntegrationTest {
         List<String> clusterMembers = List.of(remoteAddress.toPlainAddress());
         ClusterConfig clusterConfig = createClusterConfig(localAddress.port(), clusterMembers);
 
-        return PortunusClusterInstance.newInstance(clusterConfig);
+        return PortunusClusterInstance.getInstance(clusterConfig);
     }
 
     private ClusterConfig createClusterConfig(int port, List<String> members) {
