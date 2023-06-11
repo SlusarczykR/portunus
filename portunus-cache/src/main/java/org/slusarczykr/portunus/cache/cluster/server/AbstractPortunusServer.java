@@ -16,7 +16,7 @@ public abstract class AbstractPortunusServer extends AbstractManaged implements 
     protected final PaxosServer paxosServer;
 
     protected AbstractPortunusServer(ClusterService clusterService, ClusterMemberContext serverContext) {
-        super();
+        super(clusterService.getManagedService());
         try {
             this.clusterService = clusterService;
             this.serverContext = serverContext;

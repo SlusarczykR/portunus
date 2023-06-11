@@ -12,15 +12,13 @@ public class DefaultManagedService implements ManagedService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultManagedService.class);
 
-    private static final DefaultManagedService INSTANCE = new DefaultManagedService();
-
-    private static final Set<Managed> allManaged = ConcurrentHashMap.newKeySet();
+    private final Set<Managed> allManaged = ConcurrentHashMap.newKeySet();
 
     private DefaultManagedService() {
     }
 
-    public static DefaultManagedService getInstance() {
-        return INSTANCE;
+    public static DefaultManagedService newInstance() {
+        return new DefaultManagedService();
     }
 
     @Override

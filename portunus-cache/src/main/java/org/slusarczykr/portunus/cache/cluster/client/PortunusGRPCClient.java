@@ -7,7 +7,15 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetCacheEntriesByPartitionIdCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.GetPartitionsCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.MigratePartitionsCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntriesCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.PutEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.RemoveEntryCommand;
+import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.ReplicatePartitionCommand;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
@@ -22,7 +30,11 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -32,13 +44,13 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     private final ManagedChannel channel;
 
     public PortunusGRPCClient(ClusterService clusterService, Address address) {
-        super();
+        super(clusterService.getManagedService());
         this.clusterService = clusterService;
         this.channel = initializeManagedChannel(address.hostname(), address.port());
     }
 
     public PortunusGRPCClient(ClusterService clusterService, ManagedChannel channel) {
-        super();
+        super(clusterService.getManagedService());
         this.clusterService = clusterService;
         this.channel = channel;
     }

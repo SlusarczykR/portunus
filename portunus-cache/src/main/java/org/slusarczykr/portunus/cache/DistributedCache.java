@@ -43,7 +43,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     private final DefaultCacheEntryObserver<K, V> cacheEntryObserver = new DefaultCacheEntryObserver<>();
 
     public DistributedCache(ClusterService clusterService, String name, Map<CacheEventType, CacheEventListener> eventListeners) {
-        super();
+        super(clusterService.getManagedService());
         this.clusterService = clusterService;
         this.name = name;
         this.operationExecutor = newOperationExecutor();

@@ -31,13 +31,13 @@ public class PaxosGRPCClient extends AbstractManaged implements PaxosClient {
     private final ManagedChannel channel;
 
     public PaxosGRPCClient(ClusterService clusterService, Address address) {
-        super();
+        super(clusterService.getManagedService());
         this.clusterService = clusterService;
         this.channel = initializeManagedChannel(address.hostname(), address.port());
     }
 
     public PaxosGRPCClient(ClusterService clusterService, ManagedChannel channel) {
-        super();
+        super(clusterService.getManagedService());
         this.clusterService = clusterService;
         this.channel = channel;
     }

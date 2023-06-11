@@ -19,6 +19,7 @@ import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
+import org.slusarczykr.portunus.cache.maintenance.ManagedService;
 
 public class DefaultClusterService extends AbstractManaged implements ClusterService {
 
@@ -31,6 +32,7 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     }
 
     private DefaultClusterService(PortunusClusterInstance portunusClusterInstance, ClusterConfig clusterConfig) {
+        super(portunusClusterInstance.getManagedService());
         try {
             this.portunusClusterInstance = portunusClusterInstance;
             this.serviceManager = DefaultServiceManager.newInstance(this);
@@ -54,6 +56,11 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     @Override
     public PortunusClusterInstance getPortunusClusterInstance() {
         return portunusClusterInstance;
+    }
+
+    @Override
+    public ManagedService getManagedService() {
+        return portunusClusterInstance.getManagedService();
     }
 
     @Override

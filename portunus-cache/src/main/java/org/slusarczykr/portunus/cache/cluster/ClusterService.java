@@ -16,10 +16,13 @@ import org.slusarczykr.portunus.cache.cluster.partition.replica.ReplicaService;
 import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
+import org.slusarczykr.portunus.cache.maintenance.ManagedService;
 
 public interface ClusterService extends ClusterConfigHolder, Service {
 
     PortunusClusterInstance getPortunusClusterInstance();
+
+    ManagedService getManagedService();
 
     LocalPortunusServer getLocalServer();
 

@@ -3,6 +3,7 @@ package org.slusarczykr.portunus.cache.cluster.service;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
+import org.slusarczykr.portunus.cache.maintenance.ManagedService;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -13,7 +14,7 @@ public abstract class AbstractService extends AbstractManaged implements Service
     private final AtomicBoolean initialized;
 
     protected AbstractService(ClusterService clusterService) {
-        super();
+        super(clusterService.getManagedService());
         this.clusterService = clusterService;
         this.initialized = new AtomicBoolean(false);
     }

@@ -19,6 +19,7 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
+import org.slusarczykr.portunus.cache.maintenance.ManagedService;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -37,9 +38,8 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     public static final int DEFAULT_PORT = 8091;
 
     private static PortunusClusterInstance instance;
-
+    private ManagedService managedService;
     private final ClusterService clusterService;
-
     private final LocalPortunusServer localServer;
 
     private final Map<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
@@ -53,6 +53,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
         log.info("Portunus instance is starting on port: '{}'", getPort(clusterConfig));
+        this.managedService = DefaultManagedService.newInstance();
         preInitialize();
         this.clusterService = DefaultClusterService.newInstance(this, clusterConfig);
         this.localServer = LocalPortunusServer.newInstance(clusterService, clusterConfig);
@@ -86,12 +87,16 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Portunus cluster is shutting down");
             onShutdown();
-            DefaultManagedService.getInstance().shutdownAll();
+            managedService.shutdownAll();
         }));
     }
 
     private void onShutdown() {
         publishMemberEvent(this::createMemberLeftEvent);
+    }
+
+    public ManagedService getManagedService() {
+        return managedService;
     }
 
     @Override
