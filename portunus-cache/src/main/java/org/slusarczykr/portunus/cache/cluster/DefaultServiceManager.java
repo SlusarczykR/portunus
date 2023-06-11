@@ -79,7 +79,6 @@ public class DefaultServiceManager implements ServiceManager {
         initializeService(DefaultClusterEventConsumer.newInstance(clusterService));
         initializeService(DefaultLeaderElectionService.newInstance(clusterService));
         initializeService(DefaultLeaderElectionStarterService.newInstance(clusterService));
-        initializeService(DefaultLeaderElectionStarterService.newInstance(clusterService));
         initializeService(DefaultRequestVoteService.newInstance(clusterService));
     }
 
