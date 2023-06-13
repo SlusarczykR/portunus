@@ -172,17 +172,16 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
 
         if (memberJoined) {
-            rebalanceOnMemberJoined(localServerAddress);
+            rebalanceOnMemberJoined(remoteServerAddress, localServerAddress);
         } else {
             rebalanceOnMemberLeft(remoteServerAddress, localServerAddress);
         }
     }
 
-    private void rebalanceOnMemberJoined(Address localServerAddress) {
+    private void rebalanceOnMemberJoined(Address remoteServerAddress, Address localServerAddress) {
         Map<Address, List<Partition>> partitionsByOwner = groupOwnerPartition(localServerAddress, it -> getOwnerAddress(it.getPartitionId()));
-        partitionsByOwner.remove(localServerAddress);
-
-        partitionsByOwner.forEach(this::migrate);
+        List<Partition> remoteServerPartitions = partitionsByOwner.get(remoteServerAddress);
+        Optional.ofNullable(remoteServerPartitions).ifPresent(it -> migrate(remoteServerAddress, it));
     }
 
     private <T> Map<T, List<Partition>> groupOwnerPartition(Address owner, Function<Partition, T> classifier) {
