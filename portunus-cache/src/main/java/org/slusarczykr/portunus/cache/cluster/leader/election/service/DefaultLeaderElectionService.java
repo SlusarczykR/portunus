@@ -67,8 +67,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         paxosServer.setLeader(accepted);
 
         if (accepted) {
-            log.debug("Server with id {} has been accepted by the majority and elected as the leader for the current turn",
-                    paxosServer.getIdValue());
+            log.info("Server has been accepted by the majority and elected as the leader for the current turn");
         } else {
             log.debug("Server with id {} has not been elected as the leader",
                     paxosServer.getIdValue());

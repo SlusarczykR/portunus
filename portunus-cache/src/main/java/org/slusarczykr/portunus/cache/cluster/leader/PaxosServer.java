@@ -27,7 +27,7 @@ public class PaxosServer {
     private void initServerId(int serverPort, int numberOfServers) {
         int serverId = calculateServerId(serverPort, numberOfServers);
         id.set(serverId);
-        log.info("Id {} has been assigned to the server", serverId);
+        log.debug("Id {} has been assigned to the server", serverId);
     }
 
     public void incrementTerm(int numberOfServers) {
