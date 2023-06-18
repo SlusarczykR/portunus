@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -44,7 +43,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     @Override
     public void publishEvent(ClusterEvent event) {
         execute(() -> {
-            if (isMulticastEvent(event)) {
+            if (isMulticastEnabled()) {
                 sendMulticastEvent(event);
             } else {
                 log.info("Sending '{}' to remote cluster members", event.getEventType());
@@ -65,9 +64,8 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
         });
     }
 
-    private boolean isMulticastEvent(ClusterEvent event) {
-        return event.getEventType() == ClusterEventType.MemberJoinedEvent
-                && clusterService.getClusterConfig().isMulticast();
+    private boolean isMulticastEnabled() {
+        return clusterService.getClusterConfig().isMulticast();
     }
 
     @SneakyThrows
