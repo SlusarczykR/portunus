@@ -61,7 +61,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     @Override
     public void start() {
-        log.info("Initializing leader election procedure...");
+        log.debug("Initializing leader election procedure...");
 
         if (validateLeaderElectionConfig()) {
             log.warn("Invalid leader election config. detected! Resetting leader election properties to default values...");
@@ -83,7 +83,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     }
 
     private CompletableFuture<Boolean> startLeaderCandidacy(int timeout) {
-        log.info("Follower will start leader candidacy for {} ms", timeout);
+        log.debug("Follower will start leader candidacy for {} ms", timeout);
         Executor delayedExecutor = CompletableFuture.delayedExecutor(timeout, MILLISECONDS);
         return CompletableFuture.supplyAsync(this::candidateForLeadership, delayedExecutor);
     }
@@ -98,7 +98,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     }
 
     private void processLeaderElection(boolean leader) {
-        log.info("Processing leader election - leader: {}", leader);
+        log.debug("Processing leader election - leader: {}", leader);
         if (Boolean.TRUE.equals(leader)) {
             scheduleHeartbeats();
             scheduleSyncState();
@@ -152,6 +152,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     @Override
     public void stopLeaderScheduledJobs() {
+        log.debug("Stopping cluster leader jobs");
         cancelIfPresent(leaderScheduledJobs.get(SEND_HEARTBEATS_JOB));
         cancelIfPresent(leaderScheduledJobs.get(SYNC_STATE_JOB));
     }
@@ -165,7 +166,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     @Override
     public void reset() {
-        log.info("Resetting leader candidacy starting timeout...");
+        log.trace("Resetting leader candidacy starting timeout...");
         cancelIfPresent(candidacy.get());
         startLeaderCandidacy();
     }

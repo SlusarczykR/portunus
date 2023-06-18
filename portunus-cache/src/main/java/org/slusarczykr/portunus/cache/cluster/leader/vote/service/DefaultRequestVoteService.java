@@ -33,10 +33,10 @@ public class DefaultRequestVoteService extends AbstractPaxosService implements R
 
     @Override
     public RequestVote.Response vote(RequestVote requestVote) {
-        log.info("Start voting procedure for leader election of candidate server with id {}...", requestVote.getServerId());
+        log.debug("Start voting procedure for leader election of candidate server with id {}...", requestVote.getServerId());
         long candidateTerm = requestVote.getTerm();
         boolean accepted = vote(candidateTerm);
-        log.info(getServerCandidacyVotingStatusMessage(accepted, requestVote.getServerId()));
+        log.debug(getServerCandidacyVotingStatusMessage(accepted, requestVote.getServerId()));
 
         return requestVoteFactory.create(requestVote.getServerId(), paxosServer.getTermValue(), toResponseStatus(accepted));
     }
@@ -66,7 +66,7 @@ public class DefaultRequestVoteService extends AbstractPaxosService implements R
 
     private boolean voteForCandidate(long candidateTerm) {
         long currentTerm = paxosServer.getTermValue();
-        log.info("Current term: {}, candidate term: {}", currentTerm, candidateTerm);
+        log.trace("Current term: {}, candidate term: {}", currentTerm, candidateTerm);
         boolean accepted = candidateTerm > currentTerm;
 
         return accepted;

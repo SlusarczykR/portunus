@@ -29,7 +29,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     @Override
     public void migrate(Collection<Partition> partitions, Address address) {
         try {
-            log.info("Start migration of {} partitions to server: '{}'", partitions.size(), address);
+            log.debug("Start migration of {} partitions to server: '{}'", partitions.size(), address);
             RemotePortunusServer remotePortunusServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServerOrThrow(address);
             List<CacheChunk> cacheChunks = getCacheChunks(partitions);
 
@@ -42,7 +42,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     }
 
     private void removeLocalCachesEntries(Collection<Partition> partitions) {
-        log.info("Removing local caches entries");
+        log.debug("Removing local caches entries");
         partitions.forEach(it -> clusterService.getLocalServer().remove(it));
     }
 
@@ -54,7 +54,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
     @Override
     public void migratePartitionReplicas(Collection<Partition> partitions) {
-        log.info("Start migration partitions to local server: '{}'", partitions.size());
+        log.debug("Start migration partitions to local server: '{}'", partitions.size());
         List<CacheChunk> cacheChunks = getCacheChunks(partitions);
         cacheChunks.forEach(this::migrateToLocalServer);
     }
@@ -66,13 +66,13 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
     @Override
     public void migrateToLocalServer(CacheChunk cacheChunk) {
-        log.info("Start migrating partition: {}", cacheChunk.partition());
+        log.debug("Start migrating partition: {}", cacheChunk.partition());
         Partition partition = reassignOwner(cacheChunk.partition());
 
         clusterService.getPartitionService().register(partition);
         CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
         clusterService.getLocalServer().update(reassignedCacheChunk);
-        log.info("Successfully migrated partition: {}", partition);
+        log.debug("Successfully migrated partition: {}", partition);
     }
 
     private Partition reassignOwner(Partition partition) {

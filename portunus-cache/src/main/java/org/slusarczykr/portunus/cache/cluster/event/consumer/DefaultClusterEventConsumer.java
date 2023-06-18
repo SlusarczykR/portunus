@@ -50,7 +50,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void onInitialization() throws PortunusException {
         if (clusterService.getClusterConfig().isMulticast()) {
             int multicastPort = clusterService.getClusterConfig().getMulticastPort();
-            log.info("Initializing multicast receiver on port: {}", multicastPort);
+            log.info("Initializing multicast receiver on port {}", multicastPort);
             new MulticastReceiver(multicastPort, this::handleMulticastClusterEvent).start();
             log.info("Multicast receiver was started");
         } else {
@@ -64,7 +64,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         if (!isLocalAddress(address)) {
             handleClusterEvent(event);
         } else {
-            log.info("Skipping self {} event", event.getEventType());
+            log.debug("Skipping self {} event", event.getEventType());
         }
     }
 
@@ -76,7 +76,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void consumeEvent(ClusterEvent event) {
         execute(() -> {
             try {
-                log.info("Received '{}' event", event.getEventType());
+                log.debug("Received '{}' event", event.getEventType());
                 handleClusterEvent(event);
             } catch (Exception e) {
                 log.error("Could not process event: {}", event, e);
@@ -112,7 +112,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void consumeEvent(PartitionEvent event) {
         execute(() -> {
             try {
-                log.info("Received '{}' event", event.getEventType());
+                log.debug("Received '{}' event", event.getEventType());
                 handlePartitionEvent(event);
             } catch (Exception e) {
                 log.error("Could not process event: {}", event, e);
@@ -202,7 +202,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
                     String received = receive(socket, buf);
 
                     if (received.endsWith(MESSAGE_MARKER)) {
-                        log.info("Received multicast message: {}", received);
+                        log.debug("Received multicast message: {}", received);
                         Address address = parseAddress(received);
                         boolean left = received.contains(ClusterEventType.MemberLeftEvent.name());
 

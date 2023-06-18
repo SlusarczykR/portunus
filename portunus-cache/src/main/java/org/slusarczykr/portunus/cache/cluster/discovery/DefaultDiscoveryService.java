@@ -148,7 +148,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
             log.info("Registering server with address: '{}'", server.getPlainAddress());
             portunusInstances.put(server.getPlainAddress(), server);
             clusterService.getPartitionService().register(server);
-            log.info("Current portunus instances: '{}'", portunusInstances);
+            log.debug("Current portunus instances: '{}'", portunusInstances);
         }
     }
 
@@ -172,7 +172,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     @Override
     public List<PortunusServer> register(Collection<Address> addresses) {
         return withWriteLock(() -> {
-            log.info("Updating portunus instance map");
+            log.debug("Updating portunus cluster members");
             Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
             return registerServers(addresses, it -> shouldRegisterServer(localServerAddress, it));
         });

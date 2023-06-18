@@ -246,7 +246,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void sendRequestVote(AppendEntry request, StreamObserver<RequestVoteResponse> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.VOTE, () -> {
-            log.info("Received request vote from server with id: {}", request.getServerId());
+            log.debug("Received request vote from server with id: {}", request.getServerId());
             stopLeaderScheduledJobsOrReset();
             RequestVote.Response requestVoteResponse = voteForLeader(request);
 
@@ -282,7 +282,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void sendHeartbeats(AppendEntry request, StreamObserver<AppendEntryResponse> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.SYNC_STATE, () -> {
-            log.info("Received heartbeat from leader with id: {}", request.getServerId());
+            log.trace("Received heartbeat from leader with id: {}", request.getServerId());
             boolean conflict = false;
 
             if (stopLeaderScheduledJobsOrReset()) {
@@ -345,12 +345,11 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private boolean stopLeaderScheduledJobsOrReset() {
-        log.info("Getting current leader status...");
+        log.trace("Getting current leader status");
         boolean leader = getPaxosServer().isLeader();
-        log.info("Leader status: {}", leader);
+        log.trace("Leader status: {}", leader);
 
         if (leader) {
-            log.info("Stopping sending heartbeats...");
             clusterService.getLeaderElectionStarter().stopLeaderScheduledJobs();
         } else {
             clusterService.getLeaderElectionStarter().reset();
@@ -361,12 +360,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void replicate(ReplicatePartitionCommand request, StreamObserver<ReplicatePartitionDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.REPLICATE_PARTITION, () -> {
-            log.info("Registering partition replica: {}", request.getPartition().getKey());
+            log.debug("Registering partition replica: {}", request.getPartition().getKey());
             Partition partition = clusterService.getConversionService().convert(request.getPartition());
             clusterService.getPartitionService().register(partition);
             clusterService.getReplicaService().registerPartitionReplica(partition);
             partition.addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
-            log.info("Registered partition replica: {}", partition);
+            log.debug("Partition replica: {} was successfully registered", partition);
 
             return ReplicatePartitionDocument.newBuilder()
                     .setStatus(true)
@@ -377,7 +376,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void migrate(MigratePartitionsCommand request, StreamObserver<MigratePartitionsDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.MIGRATE_PARTITIONS, () -> {
-            log.info("Migrating partitions from: {}", clusterService.getConversionService().convert(request.getFrom()));
+            log.debug("Migrating partitions from: {}", clusterService.getConversionService().convert(request.getFrom()));
             List<CacheChunk> cacheChunks = request.getCacheChunksList().stream()
                     .map(it -> clusterService.getConversionService().convert(it))
                     .toList();
@@ -391,25 +390,20 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private <K extends Serializable, V extends Serializable> DistributedCache<K, V> getDistributedCache(String name) {
-        log.info("Getting distributed cache: '{}'", name);
-        DistributedCache<K, V> cache = (DistributedCache<K, V>) clusterService.getPortunusClusterInstance().getCache(name);
-        log.info("Distributed cache successfully acquired");
-
-        return cache;
+        log.trace("Getting distributed cache: '{}'", name);
+        return (DistributedCache<K, V>) clusterService.getPortunusClusterInstance().getCache(name);
     }
 
     private <T> void completeWith(AddressDTO from, StreamObserver<T> responseObserver, OperationType operationType,
                                   Supplier<T> onNext) {
-        log.info("Received '{}' command from remote server", operationType);
+        log.debug("Received '{}' command from remote server", operationType);
         registerRemoteServerIfAbsent(from);
         responseObserver.onNext(onNext.get());
         responseObserver.onCompleted();
     }
 
     private void registerRemoteServerIfAbsent(AddressDTO addressDTO) {
-        log.info("calling registerRemoteServerIfAbsent");
         Address address = clusterService.getConversionService().convert(addressDTO);
         clusterService.getDiscoveryService().register(address);
-        log.info("after registerRemoteServerIfAbsent");
     }
 }

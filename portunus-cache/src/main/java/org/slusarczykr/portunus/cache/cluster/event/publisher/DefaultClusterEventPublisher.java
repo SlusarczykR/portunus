@@ -36,7 +36,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     public DefaultClusterEventPublisher(ClusterService clusterService) {
         super(clusterService);
         int multicastPort = clusterService.getClusterConfig().getMulticastPort();
-        log.info("Initializing multicast publisher for port: {}", multicastPort);
+        log.info("Initializing multicast publisher for port {}", multicastPort);
         this.multicastPublisher = new MulticastPublisher(multicastPort);
     }
 
@@ -46,9 +46,9 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
             if (isMulticastEnabled()) {
                 sendMulticastEvent(event);
             } else {
-                log.info("Sending '{}' to remote cluster members", event.getEventType());
+                log.debug("Sending '{}' to remote cluster members", event.getEventType());
                 withClusterMembers(it -> {
-                    log.info("Sending '{}' to '{}'", event.getEventType(), it.getPlainAddress());
+                    log.debug("Sending '{}' to '{}'", event.getEventType(), it.getPlainAddress());
                     it.sendEvent(event);
                 });
             }
@@ -57,9 +57,9 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
 
     @Override
     public void publishEvent(PartitionEvent event) {
-        log.info("Sending '{}' to remote cluster members", event.getEventType());
+        log.debug("Sending '{}' to remote cluster members", event.getEventType());
         withClusterMembers(it -> {
-            log.info("Sending '{}' to '{}'", event.getEventType(), it.getPlainAddress());
+            log.debug("Sending '{}' to '{}'", event.getEventType(), it.getPlainAddress());
             it.sendEvent(event);
         });
     }
@@ -70,7 +70,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
 
     @SneakyThrows
     private void sendMulticastEvent(ClusterEvent event) {
-        log.info("Sending '{}' to multicast channel", event.getEventType());
+        log.debug("Sending '{}' to multicast channel", event.getEventType());
         AddressDTO address = event.getFrom();
         String message = String.format("%s:%d#%s", address.getHostname(), address.getPort(), event.getEventType().name());
         multicastPublisher.publish(message);
@@ -82,7 +82,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
         if (!remoteServers.isEmpty()) {
             remoteServers.forEach(it -> sendEvent(it, operation));
         } else {
-            log.info("No remote cluster members registered");
+            log.debug("No remote cluster members registered");
         }
     }
 

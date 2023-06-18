@@ -32,7 +32,7 @@ public class PaxosServer {
 
     public void incrementTerm(int numberOfServers) {
         long nextTerm = calculateNextTerm(numberOfServers);
-        log.info("New term: {}", nextTerm);
+        log.debug("New term: {}", nextTerm);
         updateTerm(nextTerm);
     }
 
@@ -51,7 +51,7 @@ public class PaxosServer {
     }
 
     public int calculateServerId(int serverPort, int numberOfServers) {
-        log.info("Calculating server id - port: {}, number of servers: {}", serverPort, numberOfServers);
+        log.debug("Calculating server id - port: {}, number of servers: {}", serverPort, numberOfServers);
         return serverPort % numberOfServers;
     }
 

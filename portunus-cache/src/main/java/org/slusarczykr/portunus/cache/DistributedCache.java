@@ -140,12 +140,10 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     @Override
     public void put(K key, V value) {
         executeOperation(OperationType.PUT, () -> {
-            log.info("Start executing PUT");
             validate(key, value);
             Entry<K, V> entry = new Entry<>(key, value);
             putEntry(key, entry);
             cacheEntryObserver.onAdd(entry);
-            log.info("PUT execution finished");
 
             return entry;
         });
@@ -165,7 +163,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private void putEntry(Partition partition, Entry<K, V> entry) {
-        log.info("Putting entry: {} to server: {}, partition: {}", entry, partition.getOwnerAddress(), partition);
+        log.debug("Putting entry: {} to server: {}, partition: {}", entry, partition.getOwnerAddress(), partition);
         PortunusServer owner = partition.getOwner();
         owner.put(name, partition, entry);
     }
@@ -217,10 +215,10 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     private <T> T executeOperation(OperationType operationType, Callable<T> operation) {
         try {
-            log.info("Executing operation: '{}'", operationType.name());
+            log.debug("Executing operation: '{}'", operationType.name());
             Future<T> futureResult = operationExecutor.submit(operation);
             T result = futureResult.get();
-            log.info("Operation: '{}' execution has finished", operationType.name());
+            log.debug("Operation: '{}' execution has finished", operationType.name());
             return result;
         } catch (Exception e) {
             log.error("Failed to execute operation: '{}'", operationType.name(), e);

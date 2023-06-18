@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
-import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
@@ -89,7 +88,6 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
 
     @Override
     public <K extends Serializable, V extends Serializable> void put(String name, Partition partition, Cache.Entry<K, V> entry) {
-        log.info("Sending '{}' operation to {} server", OperationType.PUT, getPlainAddress());
         portunusClient.putEntry(name, clusterService.getConversionService().convert(entry));
     }
 

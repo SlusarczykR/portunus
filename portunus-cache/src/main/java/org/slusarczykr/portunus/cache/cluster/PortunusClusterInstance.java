@@ -52,7 +52,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
-        log.info("Portunus instance is starting on port: '{}'", getPort(clusterConfig));
+        log.info("Portunus instance is starting on port {}", getPort(clusterConfig));
         this.managedService = DefaultManagedService.newInstance();
         preInitialize();
         this.clusterService = DefaultClusterService.newInstance(this, clusterConfig);
@@ -67,12 +67,13 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     private void preInitialize() {
+        log.debug("Executing pre initialize procedure");
         registerShutdownHook();
     }
 
     private void postInitialize() {
         try {
-            log.info("Post initialize");
+            log.debug("Executing post initialize procedure");
             clusterService.getDiscoveryService().register(localServer);
             clusterService.getServiceManager().injectPaxosServer(getPaxosServer());
             clusterService.getLeaderElectionStarter().start();

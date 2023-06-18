@@ -50,27 +50,27 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     @Override
     public boolean startLeaderCandidacy() {
         int numberOfServers = clusterService.getDiscoveryService().getNumberOfServers();
-        log.info("Starting validation of leader candidacy. Current number of servers: {}", numberOfServers);
+        log.debug("Starting validation of leader candidacy. Current number of servers: {}", numberOfServers);
         paxosServer.incrementTerm(numberOfServers);
 
         if (shouldCandidateForLeader()) {
             return candidateForLeader();
         }
-        log.info("Server cannot candidate in the current term: {}", paxosServer.getTermValue());
+        log.debug("Server cannot candidate in the current term: {}", paxosServer.getTermValue());
         return false;
     }
 
     private boolean candidateForLeader() {
-        log.info("Starting the candidacy of the server with id {} for the leader...", paxosServer.getIdValue());
+        log.debug("Starting the candidacy of the server with id {} for the leader...", paxosServer.getIdValue());
         List<RequestVote.Response> responseRequestVotes = sendRequestVoteToFollowers();
         boolean accepted = checkAcceptanceMajority(responseRequestVotes);
         paxosServer.setLeader(accepted);
 
         if (accepted) {
-            log.info("Server with id {} has been accepted by the majority and elected as the leader for the current turn",
+            log.debug("Server with id {} has been accepted by the majority and elected as the leader for the current turn",
                     paxosServer.getIdValue());
         } else {
-            log.info("Server with id {} has not been elected as the leader",
+            log.debug("Server with id {} has not been elected as the leader",
                     paxosServer.getIdValue());
         }
         return accepted;
@@ -96,7 +96,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     private <T extends RequestVote.Response> boolean checkAcceptanceMajority(List<T> responseRequestVotes) {
         Map<Boolean, List<T>> candidatesResponsesByAcceptance = getCandidatesResponsesByAcceptance(responseRequestVotes);
         boolean acceptedByMajority = isAcceptedByMajority(candidatesResponsesByAcceptance);
-        log.info(getServerCandidacyVotingStatusMessage(acceptedByMajority));
+        log.debug(getServerCandidacyVotingStatusMessage(acceptedByMajority));
 
         return acceptedByMajority;
     }
@@ -148,7 +148,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
             return true;
         }
         boolean candidateForLeader = calculateCurrentTermModulo() == paxosServer.getIdValue();
-        log.info(getShouldCandidateForLeaderMessage(candidateForLeader));
+        log.debug(getShouldCandidateForLeaderMessage(candidateForLeader));
 
         return candidateForLeader;
     }
@@ -161,11 +161,11 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     @Override
     public void syncServerState(Consumer<Exception> errorHandler) {
         try {
-            log.info("Syncing server state...");
+            log.trace("Syncing server state...");
 
             withRemoteServers(it -> {
                 AppendEntryResponse appendEntryResponse = it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions());
-                log.info("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
+                log.trace("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
             });
         } catch (Exception e) {
             log.error("Error occurred while syncing state");
@@ -177,13 +177,13 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     @Override
     public void sendHeartbeats(Consumer<Exception> errorHandler) {
         try {
-            log.info("Sending heartbeats to followers...");
+            log.trace("Sending heartbeat to followers...");
             //TODO remove this block
             generateCacheEntry();
 
             withRemoteServers(it -> {
                 AppendEntryResponse appendEntryResponse = it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue());
-                log.info("Received heartbeat reply from follower with id: {}", appendEntryResponse.getServerId());
+                log.trace("Received heartbeat reply from follower with id: {}", appendEntryResponse.getServerId());
             });
         } catch (Exception e) {
             log.error("Error occurred while sending heartbeats to followers");
@@ -222,7 +222,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     private long calculateCurrentTermModulo() {
         long serverTerm = paxosServer.getTermValue();
         int numberOfAvailableServers = clusterService.getDiscoveryService().getNumberOfServers();
-        log.info("Number of available servers: {}, current server term: {}", numberOfAvailableServers, serverTerm);
+        log.debug("Number of available servers: {}, current server term: {}", numberOfAvailableServers, serverTerm);
 
         return serverTerm % numberOfAvailableServers;
     }

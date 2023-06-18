@@ -41,13 +41,13 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void registerPartitionReplica(Partition partition) {
-        log.info("Registering partition replica: {}", partition);
+        log.debug("Registering partition replica: {}", partition);
         withWriteLock(() -> partitionReplicas.put(partition.getPartitionId(), partition));
     }
 
     @Override
     public void unregisterPartitionReplica(int partitionId) {
-        log.info("Unregistering partition: {}", partitionId);
+        log.debug("Unregistering partition: {}", partitionId);
         withWriteLock(() -> partitionReplicas.remove(partitionId));
     }
 
@@ -62,7 +62,7 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     @Override
     public void replicatePartition(Partition partition) {
         Map<PortunusServer, Long> ownerToPartitionCount = clusterService.getPartitionService().getOwnerPartitionsCount();
-        log.info("Owner to partition count: {}", ownerToPartitionCount.entrySet());
+        log.debug("Owner to partition count: {}", ownerToPartitionCount.entrySet());
         Optional<PortunusServer> remoteServer = getRemoteServerByPartitionsCount(ownerToPartitionCount);
 
         remoteServer.ifPresent(it -> replicate(partition, (RemotePortunusServer) it));
@@ -77,7 +77,7 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     }
 
     private void replicate(Partition partition, RemotePortunusServer portunusServer) {
-        log.info("Replicating partition: {} on server: {}", partition, portunusServer.getPlainAddress());
+        log.debug("Replicating partition: {} on server: {}", partition, portunusServer.getPlainAddress());
         portunusServer.replicate(partition);
     }
 

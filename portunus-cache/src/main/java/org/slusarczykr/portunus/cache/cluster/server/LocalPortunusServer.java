@@ -155,7 +155,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     @Override
     public <K extends Serializable, V extends Serializable> void putAll(String name, Partition partition, Map<K, V> entries) {
         Cache<K, V> cache = cacheManager.getCache(name);
-        log.info("Updating local cache: entries amount: {}. Current cache entries: {}", entries.size(), cache.allEntries());
+        log.trace("Updating local cache: entries amount: {}. Current cache entries: {}", entries.size(), cache.allEntries());
         cache.putAll(entries);
         Set<Cache.Entry<K, V>> cacheEntries = toEntrySet(entries);
         registerCacheEntry(name, partition, cacheEntries);
