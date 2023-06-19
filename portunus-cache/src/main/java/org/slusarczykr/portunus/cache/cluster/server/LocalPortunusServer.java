@@ -127,11 +127,11 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     private <K extends Serializable, V extends Serializable> void registerCacheEntry(String name, Partition partition, Set<Cache.Entry<K, V>> entries) {
-        boolean newPartition = cacheManager.anyCacheEntry(partition.getPartitionId());
+        boolean partitionExists = cacheManager.anyCacheEntry(partition.getPartitionId());
         register(name, partition, entries);
 
         if (partition.isLocal()) {
-            sendPartitionEvent(partition, newPartition);
+            sendPartitionEvent(partition, !partitionExists);
         }
     }
 
@@ -199,6 +199,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         return PartitionEvent.newBuilder()
                 .setFrom(getAddressDTO())
                 .setEventType(PartitionUpdated)
+                .setPartitionId(cacheChunkDTO.getPartition().getKey())
                 .setPartitionUpdatedEvent(
                         PartitionUpdatedEvent.newBuilder()
                                 .setCacheChunk(cacheChunkDTO)
@@ -211,6 +212,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         return PartitionEvent.newBuilder()
                 .setFrom(getAddressDTO())
                 .setEventType(PartitionCreated)
+                .setPartitionId(cacheChunkDTO.getPartition().getKey())
                 .setPartitionCreatedEvent(
                         PartitionCreatedEvent.newBuilder()
                                 .setCacheChunk(cacheChunkDTO)

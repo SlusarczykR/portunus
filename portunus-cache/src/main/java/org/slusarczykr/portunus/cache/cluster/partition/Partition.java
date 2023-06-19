@@ -1,8 +1,11 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
+import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Data
 public class Partition {
+
+    private static final Logger log = LoggerFactory.getLogger(Partition.class);
 
     private final int partitionId;
     private final PortunusServer owner;
@@ -37,6 +42,7 @@ public class Partition {
     }
 
     public void addReplicaOwner(Address replicaOwner) {
+        log.debug("[{}] Adding replica owner: '{}'", partitionId, replicaOwner);
         replicaOwners.add(replicaOwner);
     }
 

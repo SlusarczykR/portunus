@@ -41,9 +41,10 @@ message PartitionEvent {
   AddressDTO from = 1;
 
   PartitionEventType eventType = 2;
+  int64 partitionId = 3;
 
-  PartitionCreatedEvent partitionCreatedEvent = 3;
-  PartitionUpdatedEvent partitionUpdatedEvent = 4;
+  PartitionCreatedEvent partitionCreatedEvent = 4;
+  PartitionUpdatedEvent partitionUpdatedEvent = 5;
 }
 
 message PartitionCreatedEvent {

@@ -57,9 +57,9 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
 
     @Override
     public void publishEvent(PartitionEvent event) {
-        log.debug("Sending '{}' to remote cluster members", event.getEventType());
+        log.debug("Sending '{}' [{}] to remote cluster members", event.getEventType(), event.getPartitionId());
         withClusterMembers(it -> {
-            log.debug("Sending '{}' to '{}'", event.getEventType(), it.getPlainAddress());
+            log.debug("Sending '{}' [{}] to '{}'", event.getEventType(), event.getPartitionId(), it.getPlainAddress());
             it.sendEvent(event);
         });
     }

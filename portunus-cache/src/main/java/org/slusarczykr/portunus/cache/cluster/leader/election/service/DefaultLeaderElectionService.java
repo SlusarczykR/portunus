@@ -197,7 +197,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     private void generateCacheEntry() {
         Cache<String, String> sampleCache = clusterService.getPortunusClusterInstance().getCache(randomAlphabetic(10));
-        String entryKey = String.format("%s%d", "test", new Random().nextInt(4));
+        String entryKey = String.format("%s%d", "test", new Random().nextInt(6));
         sampleCache.put(entryKey, randomAlphabetic(8));
     }
 

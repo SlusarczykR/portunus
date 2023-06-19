@@ -8,7 +8,7 @@ public class LeaderElectionProperties {
     public static final int DEFAULT_MIN_AWAIT_TIME = 15;
     public static final int DEFAULT_MAX_AWAIT_TIME = 30;
     public static final int INITIAL_HEARTBEATS_DELAY = 5;
-    public static final int DEFAULT_HEARTBEATS_INTERVAL = 5;
+    public static final int DEFAULT_HEARTBEATS_INTERVAL = 3;
     public static final int INITIAL_SYNC_STATE_DELAY = 10;
     public static final int DEFAULT_SYNC_STATE_INTERVAL = 10;
 
