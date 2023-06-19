@@ -69,7 +69,9 @@ public class DefaultMigrationService extends AbstractService implements Migratio
         log.debug("Start migrating partition: {}", cacheChunk.partition());
         Partition partition = reassignOwner(cacheChunk.partition());
 
-        clusterService.getPartitionService().register(partition);
+        clusterService.getPartitionService().register(partition, true);
+        clusterService.getReplicaService().replicatePartition(partition);
+
         CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
         clusterService.getLocalServer().update(reassignedCacheChunk);
         log.debug("Successfully migrated partition: {}", partition);

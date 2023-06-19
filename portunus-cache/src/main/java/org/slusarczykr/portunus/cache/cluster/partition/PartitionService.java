@@ -20,6 +20,8 @@ public interface PartitionService extends Service {
 
     Partition register(Partition partition);
 
+    Partition register(Partition partition, boolean replicate);
+
     Partition getPartition(int partitionId);
 
     Partition getPartitionForKey(Object key);

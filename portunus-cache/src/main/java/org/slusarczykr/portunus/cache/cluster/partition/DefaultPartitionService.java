@@ -62,9 +62,19 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public Partition register(Partition partition) {
+        return register(partition, false);
+    }
+
+    @Override
+    public Partition register(Partition partition, boolean replicate) {
         return withWriteLock(() -> {
             log.debug("Registering partition: {}", partition);
-            return partitions.put(partition.getPartitionId(), partition);
+            partitions.put(partition.getPartitionId(), partition);
+
+            if (replicate) {
+                replicateIfLocal(partition);
+            }
+            return partition;
         });
     }
 
@@ -112,11 +122,14 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         Partition partition = newPartition(partitionId);
         partitions.put(partitionId, partition);
         log.debug("Created partition: {}", partition);
+        replicateIfLocal(partition);
+        return partition;
+    }
 
+    private void replicateIfLocal(Partition partition) {
         if (partition.isLocal()) {
             clusterService.getReplicaService().replicatePartition(partition);
         }
-        return partition;
     }
 
     @Override
