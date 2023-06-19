@@ -188,10 +188,10 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     public <K extends Serializable, V extends Serializable> void update(CacheChunk cacheChunk) {
         cacheChunk.cacheEntries().forEach(it -> {
             Cache<K, V> localCache = getCache(it.getName());
-            log.info("Updating local cache with partition replica: {}, entries amount: {}. Current cache entries: {}",
+            log.debug("Updating local cache with partition replica: {}, entries amount: {}. Current cache entries: {}",
                     cacheChunk.partition().getPartitionId(), it.allEntries().size(), localCache.allEntries());
             updateLocalCache(it.getName(), cacheChunk.partition(), it.allEntries());
-            log.info("Cache entries after the update: {}", localCache.allEntries());
+            log.debug("Cache entries after the update: {}", localCache.allEntries());
         });
     }
 
@@ -223,7 +223,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         CacheChunk cacheChunk = getCacheChunk(partition);
         CacheChunkDTO cacheChunkDTO = clusterService.getConversionService().convert(cacheChunk);
         PartitionEvent partitionEvent = operation.apply(cacheChunkDTO);
-        log.info("Sending cache chunk for '{}'", partitionEvent.getEventType());
+        log.debug("Sending cache chunk for '{}'", partitionEvent.getEventType());
 
         clusterService.getClusterEventPublisher().publishEvent(partitionEvent);
     }
