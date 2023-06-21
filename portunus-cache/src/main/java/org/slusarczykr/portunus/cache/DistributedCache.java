@@ -163,7 +163,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private void putEntry(Partition partition, Entry<K, V> entry) {
-        log.debug("Putting entry: {} to server: {}, partition: {}", entry, partition.getOwnerAddress(), partition);
+        log.debug("Putting entry: {} on: '{}', partition: {}", entry, partition.getOwnerAddress(), partition);
         PortunusServer owner = partition.getOwner();
         owner.put(name, partition, entry);
     }

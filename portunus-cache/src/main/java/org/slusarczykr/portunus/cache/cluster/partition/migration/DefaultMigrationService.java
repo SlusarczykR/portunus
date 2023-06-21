@@ -29,7 +29,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     @Override
     public void migrate(Collection<Partition> partitions, Address address) {
         try {
-            log.debug("Start migration of {} partitions to server: '{}'", partitions.size(), address);
+            log.debug("Migrating {} partitions to: '{}'", partitions.size(), address);
             RemotePortunusServer remotePortunusServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServerOrThrow(address);
             List<CacheChunk> cacheChunks = getCacheChunks(partitions);
 
@@ -37,7 +37,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
             removeLocalCachesEntries(partitions);
         } catch (PortunusException e) {
-            log.error(String.format("Could not migrate partitions to the server: '%s'", address), e);
+            log.error(String.format("Could not migrate partitions to: '%s'", address), e);
         }
     }
 
@@ -54,7 +54,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
     @Override
     public void migratePartitionReplicas(Collection<Partition> partitions) {
-        log.debug("Start migration partitions to local server: '{}'", partitions.size());
+        log.debug("Recreating {} partitions from local replicas", partitions.size());
         List<CacheChunk> cacheChunks = getCacheChunks(partitions);
         cacheChunks.forEach(this::migrateToLocalServer);
     }
@@ -66,7 +66,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
     @Override
     public void migrateToLocalServer(CacheChunk cacheChunk) {
-        log.debug("Start migrating partition: {}", cacheChunk.partition());
+        log.debug("Migrating partition [{}] to local server", cacheChunk.partition().getPartitionId());
         Partition partition = reassignOwner(cacheChunk.partition());
 
         clusterService.getPartitionService().register(partition, true);

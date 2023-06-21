@@ -112,7 +112,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     public void consumeEvent(PartitionEvent event) {
         execute(() -> {
             try {
-                log.debug("Received '{}' event", event.getEventType());
+                log.debug("Received '{}' [{}] event", event.getEventType(), event.getPartitionId());
                 handlePartitionEvent(event);
             } catch (Exception e) {
                 log.error("Could not process event: {}", event, e);

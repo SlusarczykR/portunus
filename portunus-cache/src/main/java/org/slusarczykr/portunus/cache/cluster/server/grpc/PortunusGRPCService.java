@@ -173,7 +173,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private GetPartitionsDocument getLocalPartitions() {
-        List<PartitionDTO> partitions = clusterService.getPartitionService().getLocalPartitions().stream()
+        List<PartitionDTO> partitions = clusterService.getPartitionService().getPartitions().stream()
                 .map(it -> clusterService.getConversionService().convert(it))
                 .toList();
 
@@ -360,12 +360,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void replicate(ReplicatePartitionCommand request, StreamObserver<ReplicatePartitionDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.REPLICATE_PARTITION, () -> {
-            log.debug("Registering partition replica: {}", request.getPartition().getKey());
+            log.debug("Received replicate partition [{}] command", request.getPartition().getKey());
             Partition partition = clusterService.getConversionService().convert(request.getPartition());
             clusterService.getPartitionService().register(partition);
             clusterService.getReplicaService().registerPartitionReplica(partition);
             partition.addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
-            log.debug("Partition replica: {} was successfully registered", partition);
+            log.debug("Replicated partition: {}", partition);
 
             return ReplicatePartitionDocument.newBuilder()
                     .setStatus(true)

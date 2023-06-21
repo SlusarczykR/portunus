@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,6 +59,8 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     @Override
     public void publishEvent(PartitionEvent event) {
         log.debug("Sending '{}' [{}] to remote cluster members", event.getEventType(), event.getPartitionId());
+        log.debug("Owner partitions: {}", Arrays.toString(clusterService.getPartitionService().getLocalPartitionsKeys().toArray()));
+        log.debug("Partitions: {}", clusterService.getPartitionService().getPartitions());
         withClusterMembers(it -> {
             log.debug("Sending '{}' [{}] to '{}'", event.getEventType(), event.getPartitionId(), it.getPlainAddress());
             it.sendEvent(event);

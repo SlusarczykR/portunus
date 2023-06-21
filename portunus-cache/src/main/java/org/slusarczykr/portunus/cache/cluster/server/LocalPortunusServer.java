@@ -225,7 +225,6 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         CacheChunk cacheChunk = getCacheChunk(partition);
         CacheChunkDTO cacheChunkDTO = clusterService.getConversionService().convert(cacheChunk);
         PartitionEvent partitionEvent = operation.apply(cacheChunkDTO);
-        log.debug("Sending cache chunk for '{}'", partitionEvent.getEventType());
 
         clusterService.getClusterEventPublisher().publishEvent(partitionEvent);
     }

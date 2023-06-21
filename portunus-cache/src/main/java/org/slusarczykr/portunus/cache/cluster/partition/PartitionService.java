@@ -30,7 +30,13 @@ public interface PartitionService extends Service {
 
     Map<Integer, Partition> getPartitionMap();
 
+    List<Partition> getPartitions();
+
+    List<Integer> getPartitionsKeys();
+
     List<Partition> getLocalPartitions();
+
+    List<Integer> getLocalPartitionsKeys();
 
     Address getPartitionOwner(String key) throws PortunusException;
 

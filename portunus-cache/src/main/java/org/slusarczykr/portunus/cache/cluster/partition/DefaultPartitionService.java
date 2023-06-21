@@ -13,6 +13,7 @@ import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class DefaultPartitionService extends AbstractConcurrentService implements PartitionService {
@@ -133,10 +135,32 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     @Override
+    public List<Partition> getPartitions() {
+        return getPartitions(it -> true, Map.Entry::getValue);
+    }
+
+    @Override
+    public List<Integer> getPartitionsKeys() {
+        return getPartitions(it -> true, Map.Entry::getKey);
+    }
+
+    @Override
     public List<Partition> getLocalPartitions() {
-        return withReadLock(() -> {
-            return new ArrayList<>(partitions.values());
-        });
+        return getPartitions(Partition::isLocal, Map.Entry::getValue);
+    }
+
+    @Override
+    public List<Integer> getLocalPartitionsKeys() {
+        return getPartitions(Partition::isLocal, Map.Entry::getKey);
+    }
+
+    private <T> List<T> getPartitions(Predicate<Partition> partitionFilter, Function<Map.Entry<Integer, Partition>, T> partitionEntryMapper) {
+        return withReadLock(() ->
+                partitions.entrySet().stream()
+                        .filter(it -> partitionFilter.test(it.getValue()))
+                        .map(partitionEntryMapper)
+                        .toList()
+        );
     }
 
     @SneakyThrows
@@ -160,8 +184,10 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public void register(PortunusServer server) throws PortunusException {
-        withWriteLock(() -> registerAddress(server.getAddress()));
-        executePartitionsRebalance(server.getAddress(), true);
+        withWriteLock(() -> {
+            registerAddress(server.getAddress());
+            executePartitionsRebalance(new ArrayList<>(partitions.values()), server.getAddress(), true);
+        });
     }
 
     @SneakyThrows
@@ -170,52 +196,52 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         partitionOwnerCircle.add(address);
     }
 
-    private void executePartitionsRebalance(Address remoteServerAddress, boolean memberJoined) {
-        CompletableFuture.runAsync(() -> {
-            log.debug("Start executing partitions rebalance procedure");
-            rebalance(remoteServerAddress, memberJoined);
-            log.debug("Partitions rebalance has been finished");
-        });
+    private void executePartitionsRebalance(Collection<Partition> partitions, Address remoteServerAddress, boolean memberJoined) {
+        log.debug("Executing partitions rebalance procedure");
+        rebalance(partitions, remoteServerAddress, memberJoined);
     }
 
-    private void rebalance(Address remoteServerAddress, boolean memberJoined) {
+    private void rebalance(Collection<Partition> partitions, Address remoteServerAddress, boolean memberJoined) {
         Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
 
         if (memberJoined) {
-            rebalanceOnMemberJoined(remoteServerAddress, localServerAddress);
+            CompletableFuture.runAsync(() -> rebalanceOnMemberJoined(partitions, remoteServerAddress, localServerAddress));
         } else {
-            rebalanceOnMemberLeft(remoteServerAddress, localServerAddress);
+            rebalanceOnMemberLeft(partitions, remoteServerAddress, localServerAddress);
         }
     }
 
-    private void rebalanceOnMemberJoined(Address remoteServerAddress, Address localServerAddress) {
-        Map<Address, List<Partition>> partitionsByOwner = groupOwnerPartition(localServerAddress, it -> getOwnerAddress(it.getPartitionId()));
+    private void rebalanceOnMemberJoined(Collection<Partition> partitions, Address remoteServerAddress, Address localServerAddress) {
+        Map<Address, List<Partition>> partitionsByOwner = groupOwnerPartition(partitions, localServerAddress, it -> getOwnerAddress(it.getPartitionId()));
         List<Partition> remoteServerPartitions = partitionsByOwner.get(remoteServerAddress);
         Optional.ofNullable(remoteServerPartitions).ifPresent(it -> migrate(remoteServerAddress, it));
+        log.debug("Partitions rebalance after member joined finished");
     }
 
-    private <T> Map<T, List<Partition>> groupOwnerPartition(Address owner, Function<Partition, T> classifier) {
-        return withReadLock(() -> getOwnerPartitions(owner).stream()
-                .collect(Collectors.groupingBy(classifier::apply)));
+    private <T> Map<T, List<Partition>> groupOwnerPartition(Collection<Partition> partitions, Address owner, Function<Partition, T> classifier) {
+        return withReadLock(() -> getOwnerPartitions(partitions, owner).stream()
+                .collect(Collectors.groupingBy(classifier)));
     }
 
     private void migrate(Address address, List<Partition> partitions) {
-        clusterService.getMigrationService().migrate(partitions, address);
+        log.debug("Migrating to '{}' partitions: {}", address, partitions);
         withWriteLock(() -> partitions.forEach(it -> createPartition(it.getPartitionId())));
+        clusterService.getMigrationService().migrate(partitions, address);
     }
 
-    private List<Partition> getOwnerPartitions(Address address) {
-        return partitions.values().stream()
+    private List<Partition> getOwnerPartitions(Collection<Partition> partitions, Address address) {
+        return partitions.stream()
                 .filter(partition -> partition.getOwnerAddress().equals(address))
                 .toList();
     }
 
-    private void rebalanceOnMemberLeft(Address remoteServerAddress, Address localServerAddress) {
+    private void rebalanceOnMemberLeft(Collection<Partition> partitions, Address remoteServerAddress, Address localServerAddress) {
         Map<Boolean, List<Partition>> partitionsByReplicaOwner =
-                groupOwnerPartition(remoteServerAddress, it -> it.isReplicaOwner(localServerAddress));
-        List<Partition> partitionsWithReplicaOwners = partitionsByReplicaOwner.get(true);
+                groupOwnerPartition(partitions, remoteServerAddress, it -> it.isReplicaOwner(localServerAddress));
+        List<Partition> partitionsWithReplicaOwners = partitionsByReplicaOwner.getOrDefault(true, new ArrayList<>());
 
         migratePartitionReplicas(partitionsWithReplicaOwners, localServerAddress);
+        log.debug("Partitions rebalance after member left finished");
     }
 
     private void migratePartitionReplicas(List<Partition> partitions, Address localServerAddress) {
@@ -237,8 +263,11 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public void unregister(Address address) throws PortunusException {
-        withWriteLock(() -> unregisterAddress(address));
-        executePartitionsRebalance(address, false);
+        withWriteLock(() -> {
+            Collection<Partition> currentPartitions = new ArrayList<>(partitions.values());
+            unregisterAddress(address);
+            executePartitionsRebalance(currentPartitions, address, false);
+        });
     }
 
     @SneakyThrows

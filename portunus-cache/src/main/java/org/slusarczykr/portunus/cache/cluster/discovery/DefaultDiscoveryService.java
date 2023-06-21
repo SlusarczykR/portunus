@@ -165,8 +165,8 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
             throw new PortunusException(String.format("Server with address %s does not exists", address));
         }
         log.info("Unregistering remote server with address: '{}'", address);
-        clusterService.getPartitionService().unregister(address);
         portunusInstances.remove(plainAddress);
+        clusterService.getPartitionService().unregister(address);
     }
 
     @Override
