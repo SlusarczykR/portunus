@@ -215,7 +215,25 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         Map<Address, List<Partition>> partitionsByOwner = groupOwnerPartition(partitions, localServerAddress, it -> getOwnerAddress(it.getPartitionId()));
         List<Partition> remoteServerPartitions = partitionsByOwner.get(remoteServerAddress);
         Optional.ofNullable(remoteServerPartitions).ifPresent(it -> migrate(remoteServerAddress, it));
+        replicatePartitionsWithoutReplica();
         log.debug("Partitions rebalance after member joined finished");
+    }
+
+    private void replicatePartitionsWithoutReplica() {
+        withReadLock(() -> {
+            List<Partition> localPartitionsWithoutReplica = getLocalPartitionsWithoutReplica();
+
+            if (!localPartitionsWithoutReplica.isEmpty()) {
+                log.debug("Replicating {} partitions without replica", localPartitionsWithoutReplica.size());
+                localPartitionsWithoutReplica.forEach(it -> clusterService.getReplicaService().replicatePartition(it));
+            }
+        });
+    }
+
+    private List<Partition> getLocalPartitionsWithoutReplica() {
+        return getLocalPartitions().stream()
+                .filter(it -> !it.hasAnyReplicaOwner())
+                .toList();
     }
 
     private <T> Map<T, List<Partition>> groupOwnerPartition(Collection<Partition> partitions, Address owner, Function<Partition, T> classifier) {
@@ -241,7 +259,25 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         List<Partition> partitionsWithReplicaOwners = partitionsByReplicaOwner.getOrDefault(true, new ArrayList<>());
 
         migratePartitionReplicas(partitionsWithReplicaOwners, localServerAddress);
+        removeReplicaOwnerFromLinkedPartitions(remoteServerAddress);
         log.debug("Partitions rebalance after member left finished");
+    }
+
+    private void removeReplicaOwnerFromLinkedPartitions(Address remoteServerAddress) {
+        withWriteLock(() -> {
+            List<Partition> localPartitionsByReplicaOwner = getLocalPartitionsByReplicaOwner(remoteServerAddress);
+
+            if (!localPartitionsByReplicaOwner.isEmpty()) {
+                log.debug("Removing '{}' replica owner from {} local partitions", remoteServerAddress, localPartitionsByReplicaOwner.size());
+                localPartitionsByReplicaOwner.forEach(it -> it.removeReplicaOwner(remoteServerAddress));
+            }
+        });
+    }
+
+    private List<Partition> getLocalPartitionsByReplicaOwner(Address remoteServerAddress) {
+        return getLocalPartitions().stream()
+                .filter(it -> it.containsReplicaOwner(remoteServerAddress))
+                .toList();
     }
 
     private void migratePartitionReplicas(List<Partition> partitions, Address localServerAddress) {

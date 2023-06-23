@@ -5,11 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
-import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,11 +26,19 @@ public class Partition {
         this.partitionId = partitionId;
         this.owner = owner;
         this.replicaOwners = ConcurrentHashMap.newKeySet();
-        this.replicaOwners.addAll(replicaOwners);
+        Optional.ofNullable(replicaOwners).ifPresent(this.replicaOwners::addAll);
     }
 
     public Partition(int partitionId, PortunusServer owner) {
         this(partitionId, owner, ConcurrentHashMap.newKeySet());
+    }
+
+    public boolean hasAnyReplicaOwner() {
+        return !replicaOwners.isEmpty();
+    }
+
+    public boolean containsReplicaOwner(Address remoteServerAddress) {
+        return replicaOwners.contains(remoteServerAddress);
     }
 
     public Address getOwnerAddress() {

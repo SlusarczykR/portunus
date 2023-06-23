@@ -13,6 +13,8 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DefaultMigrationService extends AbstractService implements MigrationService {
 
@@ -68,9 +70,9 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     public void migrateToLocalServer(CacheChunk cacheChunk) {
         log.debug("Migrating partition [{}] to local server", cacheChunk.partition().getPartitionId());
         Partition partition = reassignOwner(cacheChunk.partition());
+        log.debug("Reassigned partition: {}", partition);
 
         clusterService.getPartitionService().register(partition, true);
-        clusterService.getReplicaService().replicatePartition(partition);
 
         CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
         clusterService.getLocalServer().update(reassignedCacheChunk);
@@ -79,7 +81,11 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
     private Partition reassignOwner(Partition partition) {
         LocalPortunusServer localServer = clusterService.getLocalServer();
-        return new Partition(partition.getPartitionId(), localServer, partition.getReplicaOwners());
+        Set<Address> replicaOwners = partition.getReplicaOwners().stream()
+                .filter(it -> !it.equals(localServer.getAddress()))
+                .collect(Collectors.toSet());
+
+        return new Partition(partition.getPartitionId(), localServer, replicaOwners);
     }
 
     @Override
