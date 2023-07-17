@@ -24,11 +24,7 @@ import org.slusarczykr.portunus.cache.manager.DistributedCacheManager;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,11 +50,15 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     @SneakyThrows
     private static ClusterMemberContext createServerContext(ClusterService clusterService, ClusterConfig clusterConfig) {
-        clusterConfig = Optional.ofNullable(clusterConfig).orElseGet(() -> getClusterConfig(clusterService));
+        clusterConfig = getDefaultClusterConfigIfAbsent(clusterService, clusterConfig);
         Address address = clusterConfig.getLocalServerAddress();
         int numberOfServers = clusterConfig.getMembers().size() + 1;
 
         return new ClusterMemberContext(address, numberOfServers);
+    }
+
+    private static ClusterConfig getDefaultClusterConfigIfAbsent(ClusterService clusterService, ClusterConfig clusterConfig) {
+        return Optional.ofNullable(clusterConfig).orElseGet(() -> getClusterConfig(clusterService));
     }
 
     private static ClusterConfig getClusterConfig(ClusterService clusterService) {

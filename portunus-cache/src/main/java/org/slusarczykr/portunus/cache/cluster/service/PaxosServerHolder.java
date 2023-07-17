@@ -2,7 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.service;
 
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 
-public interface PaxosService {
+public interface PaxosServerHolder {
 
     void setPaxosServer(PaxosServer paxosServer);
 }

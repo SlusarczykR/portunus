@@ -13,7 +13,7 @@ import org.slusarczykr.portunus.cache.cluster.leader.vote.service.DefaultRequest
 import org.slusarczykr.portunus.cache.cluster.partition.DefaultPartitionService;
 import org.slusarczykr.portunus.cache.cluster.partition.migration.DefaultMigrationService;
 import org.slusarczykr.portunus.cache.cluster.partition.replica.DefaultReplicaService;
-import org.slusarczykr.portunus.cache.cluster.service.PaxosService;
+import org.slusarczykr.portunus.cache.cluster.service.PaxosServerHolder;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
 import org.slusarczykr.portunus.cache.cluster.service.ServiceManager;
 import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
@@ -90,8 +90,8 @@ public class DefaultServiceManager implements ServiceManager {
     @Override
     public void injectPaxosServer(PaxosServer paxosServer) {
         getServices().stream()
-                .filter(PaxosService.class::isInstance)
-                .forEach(it -> ((PaxosService) it).setPaxosServer(paxosServer));
+                .filter(PaxosServerHolder.class::isInstance)
+                .forEach(it -> ((PaxosServerHolder) it).setPaxosServer(paxosServer));
     }
 
     @Override
