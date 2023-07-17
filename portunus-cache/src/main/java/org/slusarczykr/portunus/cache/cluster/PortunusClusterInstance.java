@@ -22,12 +22,7 @@ import org.slusarczykr.portunus.cache.maintenance.DefaultManagedService;
 import org.slusarczykr.portunus.cache.maintenance.ManagedService;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -38,7 +33,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     public static final int DEFAULT_PORT = 8091;
 
     private static PortunusClusterInstance instance;
-    private ManagedService managedService;
+    private final ManagedService managedService;
     private final ClusterService clusterService;
     private final LocalPortunusServer localServer;
 
@@ -58,12 +53,6 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         this.clusterService = DefaultClusterService.newInstance(this, clusterConfig);
         this.localServer = LocalPortunusServer.newInstance(clusterService, clusterConfig);
         postInitialize();
-    }
-
-    private int getPort(ClusterConfig clusterConfig) {
-        return Optional.ofNullable(clusterConfig)
-                .map(ClusterConfig::getPort)
-                .orElse(DEFAULT_PORT);
     }
 
     private void preInitialize() {
@@ -92,6 +81,12 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         }));
     }
 
+    private int getPort(ClusterConfig clusterConfig) {
+        return Optional.ofNullable(clusterConfig)
+                .map(ClusterConfig::getPort)
+                .orElse(DEFAULT_PORT);
+    }
+
     private void onShutdown() {
         publishMemberEvent(this::createMemberLeftEvent);
     }
@@ -100,12 +95,10 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         return managedService;
     }
 
-    @Override
     public LocalPortunusServer localMember() {
         return localServer;
     }
 
-    @Override
     public List<RemotePortunusServer> remoteMembers() {
         return clusterService.getDiscoveryService().remoteServers();
     }

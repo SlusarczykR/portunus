@@ -61,13 +61,6 @@ public class DefaultServiceManager implements ServiceManager {
         }
     }
 
-    @Override
-    public void injectPaxosServer(PaxosServer paxosServer) {
-        getServices().stream()
-                .filter(PaxosService.class::isInstance)
-                .forEach(it -> ((PaxosService) it).setPaxosServer(paxosServer));
-    }
-
     private void initializeServices() {
         initializeService(DefaultClusterConfigService.newInstance(clusterService));
         initializeService(DefaultPartitionService.newInstance(clusterService));
@@ -92,6 +85,13 @@ public class DefaultServiceManager implements ServiceManager {
     public List<Service> getServices() {
         return services.values().stream()
                 .toList();
+    }
+
+    @Override
+    public void injectPaxosServer(PaxosServer paxosServer) {
+        getServices().stream()
+                .filter(PaxosService.class::isInstance)
+                .forEach(it -> ((PaxosService) it).setPaxosServer(paxosServer));
     }
 
     @Override

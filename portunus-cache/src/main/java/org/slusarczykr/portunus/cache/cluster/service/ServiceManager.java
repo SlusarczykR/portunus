@@ -10,9 +10,9 @@ public interface ServiceManager {
 
     void loadServices();
 
-    void injectPaxosServer(PaxosServer paxosServer);
-
     List<Service> getServices();
 
     <T extends Service> T getService(Class<T> clazz);
+
+    void injectPaxosServer(PaxosServer paxosServer);
 }
