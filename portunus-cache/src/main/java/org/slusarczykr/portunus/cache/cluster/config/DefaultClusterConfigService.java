@@ -36,10 +36,36 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
     }
 
     private ClusterConfig readClusterConfig() {
-        ClusterConfig clusterConfig = readPropertyClusterConfig().orElseGet(this::readFileClusterConfig);
+        ClusterConfig clusterConfig = readEnvironmentClusterConfig().orElseGet(this::readFileClusterConfig);
         clusterService.overrideClusterConfig(clusterConfig);
 
         return clusterConfig;
+    }
+
+    private Optional<ClusterConfig> readEnvironmentClusterConfig() {
+        return Optional.ofNullable(System.getProperty(PORTUNUS_PORT_PROPERTY_NAME))
+                .map(it -> ClusterConfig.builder()
+                        .port(Integer.parseInt(it))
+                        .members(readPropertyClusterMembers())
+                        .multicast(DEFAULT_MULTICAST_ENABLED)
+                        .multicastPort(DEFAULT_MULTICAST_PORT)
+                        .build());
+    }
+
+    private List<String> readPropertyClusterMembers() {
+        return Optional.ofNullable(System.getProperty(PORTUNUS_MEMBERS_PROPERTY_NAME))
+                .map(it -> List.of(it.split(",")))
+                .orElseGet(ArrayList::new);
+    }
+
+    @SneakyThrows
+    private ClusterConfig readFileClusterConfig() {
+        try {
+            YamlResourceLoader resourceLoader = YamlResourceLoader.getInstance();
+            return resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterConfig.class);
+        } catch (IOException e) {
+            throw new PortunusException(String.format("Could not real cluster configuration from: '%s'", DEFAULT_CONFIG_PATH));
+        }
     }
 
     @Override
@@ -80,32 +106,6 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
     @Override
     public int getNumberOfClusterMembers() {
         return getClusterMembers().size();
-    }
-
-    private Optional<ClusterConfig> readPropertyClusterConfig() {
-        return Optional.ofNullable(System.getProperty(PORTUNUS_PORT_PROPERTY_NAME))
-                .map(it -> ClusterConfig.builder()
-                        .port(Integer.parseInt(it))
-                        .members(readPropertyClusterMembers())
-                        .multicast(DEFAULT_MULTICAST_ENABLED)
-                        .multicastPort(DEFAULT_MULTICAST_PORT)
-                        .build());
-    }
-
-    private List<String> readPropertyClusterMembers() {
-        return Optional.ofNullable(System.getProperty(PORTUNUS_MEMBERS_PROPERTY_NAME))
-                .map(it -> List.of(it.split(",")))
-                .orElseGet(ArrayList::new);
-    }
-
-    @SneakyThrows
-    private ClusterConfig readFileClusterConfig() {
-        try {
-            YamlResourceLoader resourceLoader = YamlResourceLoader.getInstance();
-            return resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterConfig.class);
-        } catch (IOException e) {
-            throw new PortunusException(String.format("Could not real cluster configuration from: '%s'", DEFAULT_CONFIG_PATH));
-        }
     }
 
     @Override
