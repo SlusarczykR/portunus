@@ -10,6 +10,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
@@ -179,8 +180,8 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public void replicate(Partition partition) {
-        clusterService.getReplicaService().replicatePartition(partition);
+    public void replicate(CacheChunk cacheChunk) {
+        clusterService.getReplicaService().replicatePartition(cacheChunk.partition());
     }
 
     @Override

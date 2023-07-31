@@ -75,7 +75,7 @@ message RemoveEntryDocument {
 
 message ReplicatePartitionCommand {
   AddressDTO from = 1;
-  PartitionDTO partition = 2;
+  CacheChunkDTO cacheChunk = 2;
 }
 
 message ReplicatePartitionDocument {

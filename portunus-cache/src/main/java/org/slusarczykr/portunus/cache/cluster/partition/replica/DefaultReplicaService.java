@@ -3,6 +3,7 @@ package org.slusarczykr.portunus.cache.cluster.partition.replica;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -54,10 +55,12 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void updatePartitionReplica(Partition partition) {
+        CacheChunk cacheChunk = clusterService.getLocalServer().getCacheChunk(partition);
+
         partition.getReplicaOwners().stream()
                 .map(it -> clusterService.getDiscoveryService().getServer(it))
                 .flatMap(Optional::stream)
-                .forEach(it -> it.replicate(partition));
+                .forEach(it -> it.replicate(cacheChunk));
     }
 
     @Override
@@ -65,11 +68,10 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
         Map<PortunusServer, Long> ownerToPartitionCount = clusterService.getPartitionService().getOwnerPartitionsCount();
         log.trace("Owner to partition count: {}", ownerToPartitionCount.entrySet());
         Optional<PortunusServer> remoteServer = getRemoteServerByPartitionsCount(ownerToPartitionCount);
-
         remoteServer.ifPresent(it -> replicate(partition, (RemotePortunusServer) it));
     }
 
-    private static Optional<PortunusServer> getRemoteServerByPartitionsCount(Map<PortunusServer, Long> ownerToPartitionCount) {
+    private Optional<PortunusServer> getRemoteServerByPartitionsCount(Map<PortunusServer, Long> ownerToPartitionCount) {
         return ownerToPartitionCount.entrySet().stream()
                 .filter(it -> !it.getKey().isLocal())
                 .sorted(Map.Entry.comparingByValue())
@@ -79,7 +81,8 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     private void replicate(Partition partition, RemotePortunusServer portunusServer) {
         log.debug("Replicating partition [{}] on server: '{}'", partition.getPartitionId(), portunusServer.getPlainAddress());
-        portunusServer.replicate(partition);
+        CacheChunk cacheChunk = clusterService.getLocalServer().getCacheChunk(partition);
+        portunusServer.replicate(cacheChunk);
         log.trace("Replicated partition: {}", partition);
     }
 

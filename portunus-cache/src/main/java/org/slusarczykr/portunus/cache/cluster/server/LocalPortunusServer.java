@@ -180,9 +180,9 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
-    public void replicate(Partition partition) {
-        clusterService.getReplicaService().registerPartitionReplica(partition);
-        partition.addReplicaOwner(getAddress());
+    public void replicate(CacheChunk cacheChunk) {
+        clusterService.getReplicaService().registerPartitionReplica(cacheChunk.partition());
+        cacheChunk.partition().addReplicaOwner(getAddress());
     }
 
     public <K extends Serializable, V extends Serializable> void update(CacheChunk cacheChunk) {
