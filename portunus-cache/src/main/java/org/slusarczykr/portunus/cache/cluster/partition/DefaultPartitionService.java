@@ -12,13 +12,7 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMembe
 import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -207,8 +201,10 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         }
     }
 
-    private void rebalanceOnMemberJoined(Collection<Partition> partitions, Address remoteServerAddress, Address localServerAddress) {
-        Map<Address, List<Partition>> partitionsByOwner = groupOwnerPartition(partitions, localServerAddress, it -> getOwnerAddress(it.getPartitionId()));
+    private void rebalanceOnMemberJoined(Collection<Partition> partitions, Address remoteServerAddress,
+                                         Address localServerAddress) {
+        Map<Address, List<Partition>> partitionsByOwner =
+                groupOwnerPartition(partitions, localServerAddress, it -> getOwnerAddress(it.getPartitionId()));
         List<Partition> remoteServerPartitions = partitionsByOwner.get(remoteServerAddress);
         Optional.ofNullable(remoteServerPartitions).ifPresent(it -> migrate(remoteServerAddress, it));
         replicatePartitionsWithoutReplica();
@@ -232,7 +228,8 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
                 .toList();
     }
 
-    private <T> Map<T, List<Partition>> groupOwnerPartition(Collection<Partition> partitions, Address owner, Function<Partition, T> classifier) {
+    private <T> Map<T, List<Partition>> groupOwnerPartition(Collection<Partition> partitions, Address owner,
+                                                            Function<Partition, T> classifier) {
         return withReadLock(() -> getOwnerPartitions(partitions, owner).stream()
                 .collect(Collectors.groupingBy(classifier)));
     }
@@ -249,7 +246,8 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
                 .toList();
     }
 
-    private void rebalanceOnMemberLeft(Collection<Partition> partitions, Address remoteServerAddress, Address localServerAddress) {
+    private void rebalanceOnMemberLeft(Collection<Partition> partitions, Address remoteServerAddress,
+                                       Address localServerAddress) {
         Map<Boolean, List<Partition>> partitionsByReplicaOwner =
                 groupOwnerPartition(partitions, remoteServerAddress, it -> it.isReplicaOwner(localServerAddress));
         List<Partition> partitionsWithReplicaOwners = partitionsByReplicaOwner.getOrDefault(true, new ArrayList<>());
@@ -264,7 +262,8 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
             List<Partition> localPartitionsByReplicaOwner = getLocalPartitionsByReplicaOwner(remoteServerAddress);
 
             if (!localPartitionsByReplicaOwner.isEmpty()) {
-                log.debug("Removing '{}' replica owner from {} local partitions", remoteServerAddress, localPartitionsByReplicaOwner.size());
+                log.debug("Removing '{}' replica owner from {} local partitions",
+                        remoteServerAddress, localPartitionsByReplicaOwner.size());
                 localPartitionsByReplicaOwner.forEach(it -> it.removeReplicaOwner(remoteServerAddress));
             }
         });
