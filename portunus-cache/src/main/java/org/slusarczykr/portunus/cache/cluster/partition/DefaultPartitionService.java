@@ -186,7 +186,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     public void register(PortunusServer server) throws PortunusException {
         withWriteLock(() -> {
             registerAddress(server.getAddress());
-            executePartitionsRebalance(new ArrayList<>(partitions.values()), server.getAddress(), true);
+            rebalance(new ArrayList<>(partitions.values()), server.getAddress(), true);
         });
     }
 
@@ -196,12 +196,8 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         partitionOwnerCircle.add(address);
     }
 
-    private void executePartitionsRebalance(Collection<Partition> partitions, Address remoteServerAddress, boolean memberJoined) {
-        log.debug("Executing partitions rebalance procedure");
-        rebalance(partitions, remoteServerAddress, memberJoined);
-    }
-
     private void rebalance(Collection<Partition> partitions, Address remoteServerAddress, boolean memberJoined) {
+        log.debug("Executing partitions rebalance procedure");
         Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
 
         if (memberJoined) {
@@ -302,7 +298,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         withWriteLock(() -> {
             Collection<Partition> currentPartitions = new ArrayList<>(partitions.values());
             unregisterAddress(address);
-            executePartitionsRebalance(currentPartitions, address, false);
+            rebalance(currentPartitions, address, false);
         });
     }
 
