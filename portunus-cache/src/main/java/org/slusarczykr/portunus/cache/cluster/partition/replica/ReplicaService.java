@@ -13,7 +13,5 @@ public interface ReplicaService extends Service {
 
     void unregisterPartitionReplica(int partitionId);
 
-    void updatePartitionReplica(Partition partition);
-
     void replicatePartition(Partition partition);
 }

@@ -54,16 +54,6 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     }
 
     @Override
-    public void updatePartitionReplica(Partition partition) {
-        CacheChunk cacheChunk = clusterService.getLocalServer().getCacheChunk(partition);
-
-        partition.getReplicaOwners().stream()
-                .map(it -> clusterService.getDiscoveryService().getServer(it))
-                .flatMap(Optional::stream)
-                .forEach(it -> it.replicate(cacheChunk));
-    }
-
-    @Override
     public void replicatePartition(Partition partition) {
         Map<PortunusServer, Long> ownerToPartitionCount = clusterService.getPartitionService().getOwnerPartitionsCount();
         log.trace("Owner to partition count: {}", ownerToPartitionCount.entrySet());
