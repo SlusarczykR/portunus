@@ -6,11 +6,9 @@ import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.leader.api.AppendEntry;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
@@ -33,18 +31,6 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     private DefaultLeaderElectionService(ClusterService clusterService) {
         super(clusterService);
-    }
-
-    @Override
-    protected void onInitialization() throws PortunusException {
-    }
-
-    @Override
-    public RequestVote createElectionVote() {
-        return new RequestVote(
-                paxosServer.getIdValue(),
-                paxosServer.getTermValue()
-        );
     }
 
     @Override
@@ -150,11 +136,6 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         log.debug(getShouldCandidateForLeaderMessage(candidateForLeader));
 
         return candidateForLeader;
-    }
-
-    @Override
-    public AppendEntry createHeartbeat() {
-        return new AppendEntry(paxosServer.getIdValue(), paxosServer.getTermValue());
     }
 
     @Override
