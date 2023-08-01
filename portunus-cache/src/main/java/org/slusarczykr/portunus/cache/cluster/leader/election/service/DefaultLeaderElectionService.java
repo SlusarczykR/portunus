@@ -146,7 +146,6 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         withRemoteServers(it -> {
             AppendEntryResponse appendEntryResponse = it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions());
             log.trace("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
-            validateLeaderConflictStatus(appendEntryResponse);
         }, errorHandler);
     }
 
