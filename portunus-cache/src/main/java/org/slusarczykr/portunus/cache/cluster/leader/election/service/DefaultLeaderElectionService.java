@@ -62,16 +62,16 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     }
 
     private List<RequestVote.Response> sendRequestVoteToFollowers() {
-        return clusterService.getDiscoveryService().remoteServers().stream()
+        return clusterService.getDiscoveryService().remoteServers().parallelStream()
                 .map(this::sendRequestVoteResponse)
                 .flatMap(Optional::stream)
                 .map(it -> clusterService.getConversionService().convert(it))
                 .toList();
     }
 
-    private Optional<RequestVoteResponse> sendRequestVoteResponse(RemotePortunusServer it) {
+    private Optional<RequestVoteResponse> sendRequestVoteResponse(RemotePortunusServer portunusServer) {
         try {
-            return Optional.of(it.sendRequestVote(paxosServer.getIdValue(), paxosServer.getTermValue()));
+            return Optional.of(portunusServer.sendRequestVote(paxosServer.getIdValue(), paxosServer.getTermValue()));
         } catch (Exception e) {
             log.error("Could not reach remote server", e);
             return Optional.empty();
