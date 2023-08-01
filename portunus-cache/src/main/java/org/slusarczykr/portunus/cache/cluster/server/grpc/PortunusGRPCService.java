@@ -335,9 +335,9 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
         if (leader) {
             clusterService.getLeaderElectionStarter().stopLeaderScheduledJobs();
-        } else {
-            clusterService.getLeaderElectionStarter().reset();
         }
+        clusterService.getLeaderElectionStarter().reset();
+
         return leader;
     }
 
