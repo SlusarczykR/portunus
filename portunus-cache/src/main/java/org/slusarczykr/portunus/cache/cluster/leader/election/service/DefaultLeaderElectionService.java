@@ -141,42 +141,40 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     @Override
     public void syncServerState(Consumer<Exception> errorHandler) {
-        try {
-            log.trace("Syncing server state...");
+        log.trace("Syncing server state...");
 
-            withRemoteServers(it -> {
-                AppendEntryResponse appendEntryResponse = it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions());
-                log.trace("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
-                validateLeaderConflictStatus(appendEntryResponse);
-            });
-        } catch (Exception e) {
-            log.error("Error occurred while syncing state");
-            errorHandler.accept(e);
-        }
+        withRemoteServers(it -> {
+            AppendEntryResponse appendEntryResponse = it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions());
+            log.trace("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
+            validateLeaderConflictStatus(appendEntryResponse);
+        }, errorHandler);
     }
-
 
     @Override
     public void sendHeartbeats(Consumer<Exception> errorHandler) {
-        try {
-            log.trace("Sending heartbeat to followers...");
-            //TODO remove this block
-            generateCacheEntry();
+        //TODO remove this block
+        generateCacheEntry();
 
-            withRemoteServers(it -> {
-                AppendEntryResponse appendEntryResponse = it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue());
-                log.trace("Received heartbeat reply from follower with id: {}", appendEntryResponse.getServerId());
-                validateLeaderConflictStatus(appendEntryResponse);
-            });
-        } catch (Exception e) {
-            log.error("Error occurred while sending heartbeats to followers");
-            errorHandler.accept(e);
-        }
+        log.trace("Sending heartbeat to followers...");
+        withRemoteServers(it -> {
+            AppendEntryResponse appendEntryResponse = it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue());
+            log.trace("Received heartbeat reply from follower with id: {}", appendEntryResponse.getServerId());
+            validateLeaderConflictStatus(appendEntryResponse);
+        }, errorHandler);
     }
 
     private void validateLeaderConflictStatus(AppendEntryResponse appendEntryResponse) {
         if (appendEntryResponse.getConflict()) {
             throw new PaxosLeaderConflictException("Leader conflict detected while syncing server state with follower nodes!");
+        }
+    }
+
+    private void withRemoteServers(Consumer<RemotePortunusServer> operation, Consumer<Exception> errorHandler) {
+        try {
+            withRemoteServers(operation);
+        } catch (Exception e) {
+            log.error("Error occurred while sending request to remote servers");
+            errorHandler.accept(e);
         }
     }
 
