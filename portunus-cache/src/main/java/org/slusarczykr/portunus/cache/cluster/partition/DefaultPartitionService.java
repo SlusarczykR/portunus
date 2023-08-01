@@ -331,6 +331,13 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         });
     }
 
+    private void update(Map<Integer, Partition> partitions) {
+        log.trace("Current partitions: {}", this.partitions);
+        log.trace("New partitions: {}", partitions);
+        this.partitions.putAll(partitions);
+        log.trace("Partitions were updated: {}", this.partitions);
+    }
+
     @Override
     public Map<PortunusServer, Long> getOwnerPartitionsCount() {
         return withReadLock(() -> {
@@ -345,13 +352,6 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     private static Long getOwnerPartitionCount(Map<PortunusServer, Long> ownerToPartitionCount, PortunusServer owner) {
         return Optional.ofNullable(ownerToPartitionCount.get(owner))
                 .orElse(0L);
-    }
-
-    private void update(Map<Integer, Partition> partitions) {
-        log.trace("Current partitions: {}", this.partitions);
-        log.trace("New partitions: {}", partitions);
-        this.partitions.putAll(partitions);
-        log.trace("Partitions were updated: {}", this.partitions);
     }
 
     @Override
