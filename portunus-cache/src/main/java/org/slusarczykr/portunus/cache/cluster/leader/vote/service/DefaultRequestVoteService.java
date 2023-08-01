@@ -67,9 +67,8 @@ public class DefaultRequestVoteService extends AbstractPaxosService implements R
     private boolean voteForCandidate(long candidateTerm) {
         long currentTerm = paxosServer.getTermValue();
         log.trace("Current term: {}, candidate term: {}", currentTerm, candidateTerm);
-        boolean accepted = candidateTerm > currentTerm;
 
-        return accepted;
+        return candidateTerm > currentTerm;
     }
 
     @Override
