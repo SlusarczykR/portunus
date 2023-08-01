@@ -9,4 +9,6 @@ public interface LeaderElectionStarterService extends Service {
     void stopLeaderScheduledJobs();
 
     void reset();
+
+    boolean stopLeaderScheduledJobsOrReset();
 }

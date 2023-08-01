@@ -7,6 +7,7 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
+import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderConflictException;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
@@ -146,6 +147,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
             withRemoteServers(it -> {
                 AppendEntryResponse appendEntryResponse = it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions());
                 log.trace("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
+                validateLeaderConflictStatus(appendEntryResponse);
             });
         } catch (Exception e) {
             log.error("Error occurred while syncing state");
@@ -164,6 +166,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
             withRemoteServers(it -> {
                 AppendEntryResponse appendEntryResponse = it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue());
                 log.trace("Received heartbeat reply from follower with id: {}", appendEntryResponse.getServerId());
+                validateLeaderConflictStatus(appendEntryResponse);
             });
         } catch (Exception e) {
             log.error("Error occurred while sending heartbeats to followers");
@@ -171,9 +174,15 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         }
     }
 
+    private void validateLeaderConflictStatus(AppendEntryResponse appendEntryResponse) {
+        if (appendEntryResponse.getConflict()) {
+            throw new PaxosLeaderConflictException("Leader conflict detected while syncing server state with follower nodes!");
+        }
+    }
+
     private void withRemoteServers(Consumer<RemotePortunusServer> operation) {
         List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
-        remoteServers.forEach(operation);
+        remoteServers.parallelStream().forEach(operation);
     }
 
     private void generateCacheEntry() {

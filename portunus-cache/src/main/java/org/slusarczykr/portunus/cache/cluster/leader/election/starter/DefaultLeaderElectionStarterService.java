@@ -171,6 +171,20 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         startLeaderCandidacy();
     }
 
+    @Override
+    public boolean stopLeaderScheduledJobsOrReset() {
+        log.trace("Getting current leader status");
+        boolean leader = paxosServer.isLeader();
+        log.trace("Leader status: {}", leader);
+
+        if (leader) {
+            clusterService.getLeaderElectionStarter().stopLeaderScheduledJobs();
+        }
+        clusterService.getLeaderElectionStarter().reset();
+
+        return leader;
+    }
+
     private int awaitLeaderElectionTime() {
         return generateRandom(leaderElectionProps.getMinAwaitTime(), leaderElectionProps.getMaxAwaitTime()) * 1000;
     }

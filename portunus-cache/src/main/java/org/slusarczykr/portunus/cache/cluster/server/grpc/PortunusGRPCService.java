@@ -231,7 +231,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     public void sendRequestVote(AppendEntry request, StreamObserver<RequestVoteResponse> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.VOTE, () -> {
             log.debug("Received request vote from server with id: {}", request.getServerId());
-            stopLeaderScheduledJobsOrReset();
+            clusterService.getLeaderElectionStarter().stopLeaderScheduledJobsOrReset();
             RequestVote.Response requestVoteResponse = voteForLeader(request);
 
             return clusterService.getConversionService().convert(requestVoteResponse);
@@ -269,7 +269,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
             log.trace("Received heartbeat from leader with id: {}", request.getServerId());
             boolean conflict = false;
 
-            if (stopLeaderScheduledJobsOrReset()) {
+            if (clusterService.getLeaderElectionStarter().stopLeaderScheduledJobsOrReset()) {
                 log.error("Heartbeat message received while the current server is already the leader!");
                 conflict = true;
             }
@@ -326,19 +326,6 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 .map(VirtualPortunusNode::getPhysicalNodeKey)
                 .map(Address::from)
                 .collect(Collectors.toSet());
-    }
-
-    private boolean stopLeaderScheduledJobsOrReset() {
-        log.trace("Getting current leader status");
-        boolean leader = getPaxosServer().isLeader();
-        log.trace("Leader status: {}", leader);
-
-        if (leader) {
-            clusterService.getLeaderElectionStarter().stopLeaderScheduledJobs();
-        }
-        clusterService.getLeaderElectionStarter().reset();
-
-        return leader;
     }
 
     @Override
