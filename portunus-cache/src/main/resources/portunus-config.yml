@@ -1,1 +1,4 @@
-port: 8090
+port: 8091
+multicast:
+  enabled: true
+  port: 4321
