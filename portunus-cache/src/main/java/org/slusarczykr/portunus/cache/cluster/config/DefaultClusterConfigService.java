@@ -64,7 +64,7 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
             YamlResourceLoader resourceLoader = YamlResourceLoader.getInstance();
             return resourceLoader.load(DEFAULT_CONFIG_PATH, ClusterConfig.class);
         } catch (IOException e) {
-            throw new PortunusException(String.format("Could not real cluster configuration from: '%s'", DEFAULT_CONFIG_PATH));
+            throw new PortunusException(String.format("Could not read cluster configuration from: '%s'", DEFAULT_CONFIG_PATH));
         }
     }
 

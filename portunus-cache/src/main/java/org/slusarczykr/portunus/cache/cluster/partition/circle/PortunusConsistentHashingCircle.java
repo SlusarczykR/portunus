@@ -91,10 +91,6 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         });
     }
 
-    private String generateHashCode(String key) {
-        return DigestUtils.sha256Hex(key);
-    }
-
     @Override
     public String getServerAddress(Integer key) {
         validateCircle();
@@ -102,6 +98,10 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
         VirtualPortunusNode virtualNode = circle.get(nodeHashCode);
 
         return virtualNode.getPhysicalNodeKey();
+    }
+
+    private String generateHashCode(String key) {
+        return DigestUtils.sha256Hex(key);
     }
 
     private void validateCircle() {
