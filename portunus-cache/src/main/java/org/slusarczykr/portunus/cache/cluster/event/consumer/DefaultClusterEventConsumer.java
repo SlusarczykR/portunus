@@ -48,8 +48,8 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     @Override
     public void onInitialization() throws PortunusException {
-        if (clusterService.getClusterConfig().isMulticast()) {
-            int multicastPort = clusterService.getClusterConfig().getMulticastPort();
+        if (clusterService.getClusterConfig().getMulticast().isEnabled()) {
+            int multicastPort = clusterService.getClusterConfig().getMulticast().getPort();
             log.info("Initializing multicast receiver on port {}", multicastPort);
             new MulticastReceiver(multicastPort, this::handleMulticastClusterEvent).start();
             log.info("Multicast receiver was started");

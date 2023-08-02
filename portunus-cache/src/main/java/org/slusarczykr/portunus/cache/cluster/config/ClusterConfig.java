@@ -1,10 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 
@@ -27,11 +24,7 @@ public class ClusterConfig {
     private int port;
 
     @JsonProperty
-    private boolean multicast = true;
-
-    @JsonProperty
-    private int multicastPort = 4321;
-
+    private Multicast multicast = new Multicast();
     @JsonProperty
     private List<String> members = new ArrayList<>();
 
@@ -42,5 +35,18 @@ public class ClusterConfig {
         } catch (UnknownHostException e) {
             throw new InvalidPortunusStateException("Could not identify the host");
         }
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Multicast {
+
+        @JsonProperty
+        private boolean enabled = true;
+
+        @JsonProperty
+        private int port = 4321;
     }
 }

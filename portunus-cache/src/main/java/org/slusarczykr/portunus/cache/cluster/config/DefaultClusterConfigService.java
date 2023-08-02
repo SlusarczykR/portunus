@@ -47,8 +47,7 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
                 .map(it -> ClusterConfig.builder()
                         .port(Integer.parseInt(it))
                         .members(readPropertyClusterMembers())
-                        .multicast(DEFAULT_MULTICAST_ENABLED)
-                        .multicastPort(DEFAULT_MULTICAST_PORT)
+                        .multicast(new Multicast(DEFAULT_MULTICAST_ENABLED, DEFAULT_MULTICAST_PORT))
                         .build());
     }
 
@@ -90,7 +89,7 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
 
     @Override
     public boolean isMulticastEnabled() {
-        return clusterConfig.isMulticast();
+        return clusterConfig.getMulticast().isEnabled();
     }
 
     @Override

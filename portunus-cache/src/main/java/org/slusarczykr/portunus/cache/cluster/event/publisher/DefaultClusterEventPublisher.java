@@ -36,7 +36,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
 
     public DefaultClusterEventPublisher(ClusterService clusterService) {
         super(clusterService);
-        int multicastPort = clusterService.getClusterConfig().getMulticastPort();
+        int multicastPort = clusterService.getClusterConfig().getMulticast().getPort();
         log.info("Initializing multicast publisher for port {}", multicastPort);
         this.multicastPublisher = new MulticastPublisher(multicastPort);
     }
@@ -66,7 +66,7 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     }
 
     private boolean isMulticastEnabled() {
-        return clusterService.getClusterConfig().isMulticast();
+        return clusterService.getClusterConfig().getMulticast().isEnabled();
     }
 
     @SneakyThrows
