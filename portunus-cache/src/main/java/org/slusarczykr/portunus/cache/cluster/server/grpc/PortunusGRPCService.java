@@ -283,6 +283,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void syncServerState(SyncServerStateRequest request, StreamObserver<AppendEntryResponse> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.SYNC_STATE, () -> {
+            log.trace("Received sync server state from leader with id: {}", request.getServerId());
             syncServerState(request.getVirtualPortunusNodeList(), request.getPartitionList());
 
             return AppendEntryResponse.newBuilder()

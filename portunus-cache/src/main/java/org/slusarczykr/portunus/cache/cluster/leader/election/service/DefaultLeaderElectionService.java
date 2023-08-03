@@ -144,6 +144,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         log.trace("Syncing server state...");
 
         withRemoteServers(it -> {
+            log.trace("Syncing server state to server: {}", it.getAddress());
             AppendEntryResponse appendEntryResponse = it.syncServerState(paxosServer.getIdValue(), getPartitionOwnerCircle(), getPartitions());
             log.trace("Received sync state reply from follower with id: {}", appendEntryResponse.getServerId());
         }, errorHandler);
@@ -157,6 +158,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         generateCacheEntry();
 
         withRemoteServers(it -> {
+            log.trace("Syncing heartbeat to server: {}", it.getAddress());
             AppendEntryResponse appendEntryResponse = it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue());
             log.trace("Received heartbeat reply from follower with id: {}", appendEntryResponse.getServerId());
             validateLeaderConflictStatus(appendEntryResponse);
