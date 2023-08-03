@@ -5,7 +5,6 @@ import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
-import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -95,6 +94,4 @@ public interface PortunusServer {
         }
 
     }
-
-    PaxosServer getPaxosServer();
 }

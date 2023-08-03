@@ -15,6 +15,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.Partition
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
+import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.grpc.PortunusGRPCService;
@@ -37,10 +38,13 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private DistributedCacheManager cacheManager;
 
+    private final PaxosServer paxosServer;
+
     private Server gRPCServer;
 
     private LocalPortunusServer(ClusterService clusterService, ClusterMemberContext context) {
         super(clusterService, context);
+        this.paxosServer = new PaxosServer(context.getPort());
     }
 
     public static LocalPortunusServer newInstance(ClusterService clusterService, ClusterConfig clusterConfig) {
@@ -80,6 +84,10 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         return ServerBuilder.forPort(serverContext.getPort())
                 .addService(new PortunusGRPCService(clusterService))
                 .build();
+    }
+
+    public PaxosServer getPaxosServer() {
+        return paxosServer;
     }
 
     public void updatePaxosServerId(int numberOfServers) {

@@ -15,13 +15,13 @@ public class PaxosServer {
 
     private final AtomicInteger id = new AtomicInteger(0);
     private final AtomicLong term = new AtomicLong(0);
-    private final AtomicLong commitIndex = new AtomicLong(0);
 
     private final AtomicBoolean leader = new AtomicBoolean(false);
 
     public PaxosServer(int serverPort) {
         updateServerId(serverPort, 1);
         incrementTerm(1);
+        log.debug("Paxos context created for server: {} with id: {}", serverPort, getIdValue());
     }
 
     public void updateServerId(int serverPort, int numberOfServers) {
@@ -56,7 +56,6 @@ public class PaxosServer {
     }
 
     public int calculateServerId(int serverPort, int numberOfServers) {
-        log.trace("Calculating server id for port: {}", serverPort);
         return serverPort % numberOfServers;
     }
 
@@ -66,10 +65,6 @@ public class PaxosServer {
 
     public long getTermValue() {
         return getTerm().get();
-    }
-
-    public long getCommitIndexValue() {
-        return getCommitIndex().get();
     }
 
     public boolean isLeader() {

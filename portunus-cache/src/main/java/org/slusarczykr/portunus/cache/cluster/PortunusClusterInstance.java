@@ -12,7 +12,6 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoi
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
-import org.slusarczykr.portunus.cache.cluster.leader.PaxosServer;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
@@ -66,7 +65,7 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
         try {
             log.debug("Executing post initialize procedure");
             clusterService.getDiscoveryService().register(localServer);
-            clusterService.getServiceManager().injectPaxosServer(getPaxosServer());
+            clusterService.getServiceManager().injectPaxosServer(localServer.getPaxosServer());
             clusterService.getLeaderElectionStarter().start();
 
             publishMemberEvent(this::createMemberJoinedEvent);
@@ -183,11 +182,6 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     @Override
     public void replicate(CacheChunk cacheChunk) {
         clusterService.getReplicaService().replicatePartition(cacheChunk.partition());
-    }
-
-    @Override
-    public PaxosServer getPaxosServer() {
-        return localServer.getPaxosServer();
     }
 
     private void publishMemberEvent(Function<AddressDTO, ClusterEvent> eventSupplier) {
