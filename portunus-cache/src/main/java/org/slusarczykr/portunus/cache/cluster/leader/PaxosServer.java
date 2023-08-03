@@ -25,12 +25,14 @@ public class PaxosServer {
     }
 
     public void updateServerId(int serverPort, int numberOfServers) {
+        numberOfServers = Math.max(numberOfServers, 1);
         int serverId = calculateServerId(serverPort, numberOfServers);
         id.set(serverId);
         log.debug("Id {} has been assigned to the server", serverId);
     }
 
     public void incrementTerm(int numberOfServers) {
+        numberOfServers = Math.max(numberOfServers, 1);
         long nextTerm = calculateNextTerm(numberOfServers);
         log.debug("New term: {}", nextTerm);
         updateTerm(nextTerm);
