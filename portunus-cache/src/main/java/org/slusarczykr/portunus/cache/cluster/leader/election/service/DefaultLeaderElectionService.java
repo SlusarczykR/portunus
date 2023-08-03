@@ -50,16 +50,17 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     private boolean candidateForLeader() {
         log.debug("Starting the candidacy of the server with id {} for the leader...", paxosServer.getIdValue());
         List<RequestVote.Response> responseRequestVotes = sendRequestVoteToFollowers();
-        boolean accepted = checkAcceptanceMajority(responseRequestVotes);
-        paxosServer.setLeader(accepted);
+        VotingResult votingResult = checkAcceptanceMajority(responseRequestVotes);
+        paxosServer.setLeader(votingResult.accepted);
 
-        if (accepted) {
-            log.info("Server has been accepted by the majority and elected as the leader for the current turn");
+        if (votingResult.accepted) {
+            log.info("Server leader candidacy has been accepted by the majority and elected as the new leader ({} of {})",
+                    paxosServer.getIdValue(), votingResult.numberOfAcceptedVotes, votingResult.numberOfVoters);
         } else {
-            log.debug("Server with id {} has not been elected as the leader",
-                    paxosServer.getIdValue());
+            log.debug("Server has not been elected as the leader ({} of {})",
+                    paxosServer.getIdValue(), votingResult.numberOfAcceptedVotes, votingResult.numberOfVoters);
         }
-        return accepted;
+        return votingResult.accepted;
     }
 
     private List<RequestVote.Response> sendRequestVoteToFollowers() {
@@ -79,12 +80,21 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         }
     }
 
-    private <T extends RequestVote.Response> boolean checkAcceptanceMajority(List<T> responseRequestVotes) {
+    private <T extends RequestVote.Response> VotingResult checkAcceptanceMajority(List<T> responseRequestVotes) {
         Map<Boolean, List<T>> candidatesResponsesByAcceptance = getCandidatesResponsesByAcceptance(responseRequestVotes);
         boolean acceptedByMajority = isAcceptedByMajority(candidatesResponsesByAcceptance);
         log.debug(getServerCandidacyVotingStatusMessage(acceptedByMajority));
 
-        return acceptedByMajority;
+        return createVotingResult(acceptedByMajority, candidatesResponsesByAcceptance);
+    }
+
+    private static <T extends RequestVote.Response> VotingResult createVotingResult(boolean acceptedByMajority,
+                                                                                    Map<Boolean, List<T>> candidatesResponsesByAcceptance) {
+        int numberOfVoters = (int) candidatesResponsesByAcceptance.values().stream().flatMap(List::stream).count();
+        int candidateRequestVote = 1;
+        int numberOfAcceptedVotes = candidatesResponsesByAcceptance.get(true).size() + candidateRequestVote;
+
+        return new VotingResult(acceptedByMajority, numberOfVoters, numberOfAcceptedVotes);
     }
 
     private String getServerCandidacyVotingStatusMessage(boolean acceptedByMajority) {
@@ -216,5 +226,8 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     @Override
     public String getName() {
         return LeaderElectionService.class.getSimpleName();
+    }
+
+    private record VotingResult(boolean accepted, int numberOfVoters, int numberOfAcceptedVotes) {
     }
 }
