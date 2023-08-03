@@ -48,7 +48,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     }
 
     private boolean candidateForLeader() {
-        log.debug("Starting the candidacy of the server with id {} for the leader...", paxosServer.getIdValue());
+        log.debug("Starting the candidacy of the server with id {} for the leader", paxosServer.getIdValue());
         List<RequestVote.Response> responseRequestVotes = sendRequestVoteToFollowers();
         VotingResult votingResult = checkAcceptanceMajority(responseRequestVotes);
         paxosServer.setLeader(votingResult.accepted);
@@ -140,7 +140,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     @Override
     public boolean shouldCandidateForLeader() {
         if (!clusterService.getDiscoveryService().anyRemoteServerAvailable()) {
-            log.debug("No servers available...");
+            log.debug("No servers available");
             return true;
         }
         boolean candidateForLeader = calculateCurrentTermModulo() == paxosServer.getIdValue();
@@ -151,7 +151,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     @Override
     public void syncServerState(Consumer<Exception> errorHandler) {
-        log.trace("Syncing server state...");
+        log.trace("Syncing server state");
 
         withRemoteServers(it -> {
             log.trace("Syncing server state to server: {}", it.getAddress());
@@ -162,7 +162,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     @Override
     public void sendHeartbeats(Consumer<Exception> errorHandler) {
-        log.trace("Sending heartbeat to followers...");
+        log.trace("Sending heartbeat to followers");
 
         withRemoteServers(it -> {
             log.trace("Syncing heartbeat to server: {}", it.getAddress());
@@ -212,7 +212,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     private String getShouldCandidateForLeaderMessage(boolean candidateForLeader) {
         String ableness = candidateForLeader ? "can" : "cannot";
-        return String.format("Server %s candidate for a leader in the current turn...", ableness);
+        return String.format("Server %s candidate for a leader in the current turn", ableness);
     }
 
     private long calculateCurrentTermModulo() {

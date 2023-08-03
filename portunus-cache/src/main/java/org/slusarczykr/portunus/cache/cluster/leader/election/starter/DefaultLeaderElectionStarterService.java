@@ -54,11 +54,11 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     @Override
     public void start() {
-        log.debug("Initializing leader election procedure...");
+        log.debug("Initializing leader election procedure");
         ClusterConfig.LeaderElection leaderElectionConfig = clusterService.getClusterConfig().getLeaderElection();
 
         if (validateLeaderElectionConfig(leaderElectionConfig)) {
-            log.warn("Invalid leader election config. detected! Resetting leader election properties to default values...");
+            log.warn("Invalid leader election config. detected! Resetting leader election properties to default values");
             clusterService.getClusterConfig().getLeaderElection().reset();
         }
         startLeaderCandidacy();
@@ -160,7 +160,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     @Override
     public void reset() {
-        log.trace("Resetting leader candidacy starting timeout...");
+        log.trace("Resetting leader candidacy starting timeout");
         cancelIfPresent(candidacy.get());
         startLeaderCandidacy();
     }

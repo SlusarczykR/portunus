@@ -33,7 +33,7 @@ public class DefaultRequestVoteService extends AbstractPaxosService implements R
 
     @Override
     public RequestVote.Response vote(RequestVote requestVote) {
-        log.debug("Start voting procedure for leader election of candidate server with id {}...", requestVote.getServerId());
+        log.debug("Start voting procedure for leader election of candidate server with id {}", requestVote.getServerId());
         long candidateTerm = requestVote.getTerm();
         boolean accepted = vote(candidateTerm);
         log.debug(getServerCandidacyVotingStatusMessage(accepted, requestVote.getServerId()));
