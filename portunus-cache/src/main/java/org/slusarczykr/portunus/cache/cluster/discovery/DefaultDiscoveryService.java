@@ -194,4 +194,9 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     public String getName() {
         return DiscoveryService.class.getSimpleName();
     }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
 }

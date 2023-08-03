@@ -55,6 +55,16 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
         remoteServer.ifPresent(it -> replicate(partition, (RemotePortunusServer) it));
     }
 
+    @Override
+    public void registerPartitionReplica(CacheChunk cacheChunk) {
+        clusterService.getPartitionService().register(cacheChunk.partition());
+        registerPartitionReplica(cacheChunk.partition());
+        cacheChunk.partition().addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
+
+        clusterService.getLocalServer().update(cacheChunk);
+        log.debug("Replicated partition: {}", cacheChunk.partition());
+    }
+
     private Optional<PortunusServer> getRemoteServerByPartitionsCount(Map<PortunusServer, Long> ownerToPartitionCount) {
         return ownerToPartitionCount.entrySet().stream()
                 .filter(it -> !it.getKey().isLocal())
@@ -79,5 +89,10 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     @Override
     public String getName() {
         return ReplicaService.class.getSimpleName();
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 }

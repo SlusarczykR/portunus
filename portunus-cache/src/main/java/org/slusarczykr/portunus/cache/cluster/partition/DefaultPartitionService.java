@@ -358,4 +358,9 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     public String getName() {
         return PartitionService.class.getSimpleName();
     }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
 }

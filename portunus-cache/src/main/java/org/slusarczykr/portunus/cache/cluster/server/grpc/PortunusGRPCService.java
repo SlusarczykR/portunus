@@ -334,21 +334,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         completeWith(request.getFrom(), responseObserver, OperationType.REPLICATE_PARTITION, () -> {
             CacheChunk cacheChunk = clusterService.getConversionService().convert(request.getCacheChunk());
             log.debug("Received replicate partition [{}] command", cacheChunk.getPartitionId());
-            registerPartitionReplica(cacheChunk);
-            log.debug("Replicated partition: {}", cacheChunk.partition());
+            clusterService.getReplicaService().registerPartitionReplica(cacheChunk);
 
             return ReplicatePartitionDocument.newBuilder()
                     .setStatus(true)
                     .build();
         });
-    }
-
-    private void registerPartitionReplica(CacheChunk cacheChunk) {
-        clusterService.getPartitionService().register(cacheChunk.partition());
-        clusterService.getReplicaService().registerPartitionReplica(cacheChunk.partition());
-        cacheChunk.partition().addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
-
-        clusterService.getMigrationService().migrateToLocalServer(cacheChunk);
     }
 
     @Override
