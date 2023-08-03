@@ -90,8 +90,8 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
     private static <T extends RequestVote.Response> VotingResult createVotingResult(boolean acceptedByMajority,
                                                                                     Map<Boolean, List<T>> candidatesResponsesByAcceptance) {
-        int numberOfVoters = (int) candidatesResponsesByAcceptance.values().stream().flatMap(List::stream).count();
         int candidateRequestVote = 1;
+        int numberOfVoters = (int) candidatesResponsesByAcceptance.values().stream().flatMap(List::stream).count() + candidateRequestVote;
         int numberOfAcceptedVotes = candidatesResponsesByAcceptance.get(true).size() + candidateRequestVote;
 
         return new VotingResult(acceptedByMajority, numberOfVoters, numberOfAcceptedVotes);
