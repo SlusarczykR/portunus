@@ -55,10 +55,10 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
 
         if (votingResult.accepted) {
             log.info("Server leader candidacy has been accepted by the majority and elected as the new leader ({} of {})",
-                    paxosServer.getIdValue(), votingResult.numberOfAcceptedVotes, votingResult.numberOfVoters);
+                    votingResult.numberOfAcceptedVotes, votingResult.numberOfVoters);
         } else {
             log.debug("Server has not been elected as the leader ({} of {})",
-                    paxosServer.getIdValue(), votingResult.numberOfAcceptedVotes, votingResult.numberOfVoters);
+                    votingResult.numberOfAcceptedVotes, votingResult.numberOfVoters);
         }
         return votingResult.accepted;
     }
