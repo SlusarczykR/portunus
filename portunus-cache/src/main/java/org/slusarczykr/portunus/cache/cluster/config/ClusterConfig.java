@@ -17,8 +17,6 @@ import java.util.List;
 public class ClusterConfig {
 
     public static final String DEFAULT_CONFIG_PATH = "portunus-config.yml";
-    public static final boolean DEFAULT_MULTICAST_ENABLED = true;
-    public static final int DEFAULT_MULTICAST_PORT = 4321;
 
     @JsonProperty
     private int port;
@@ -47,11 +45,14 @@ public class ClusterConfig {
     @AllArgsConstructor
     public static class Multicast {
 
-        @JsonProperty
-        private boolean enabled = true;
+        public static final boolean DEFAULT_MULTICAST_ENABLED = true;
+        public static final int DEFAULT_MULTICAST_PORT = 4321;
 
         @JsonProperty
-        private int port = 4321;
+        private boolean enabled = DEFAULT_MULTICAST_ENABLED;
+
+        @JsonProperty
+        private int port = DEFAULT_MULTICAST_PORT;
     }
 
     @Getter

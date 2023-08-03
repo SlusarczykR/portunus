@@ -47,7 +47,8 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
                 .map(it -> ClusterConfig.builder()
                         .port(Integer.parseInt(it))
                         .members(readPropertyClusterMembers())
-                        .multicast(new Multicast(DEFAULT_MULTICAST_ENABLED, DEFAULT_MULTICAST_PORT))
+                        .multicast(new Multicast())
+                        .leaderElection(new LeaderElection())
                         .build());
     }
 
