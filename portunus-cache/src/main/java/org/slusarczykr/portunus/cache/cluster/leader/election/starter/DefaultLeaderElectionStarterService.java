@@ -4,12 +4,11 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.leader.election.config.LeaderElectionProperties;
+import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderConflictException;
 import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElectionException;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractPaxosService;
 import org.slusarczykr.portunus.cache.cluster.service.Service;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.Map;
 import java.util.Optional;
@@ -19,8 +18,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.slusarczykr.portunus.cache.cluster.leader.election.config.LeaderElectionProperties.INITIAL_HEARTBEATS_DELAY;
-import static org.slusarczykr.portunus.cache.cluster.leader.election.config.LeaderElectionProperties.INITIAL_SYNC_STATE_DELAY;
+import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.LeaderElection.INITIAL_HEARTBEATS_DELAY;
+import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.LeaderElection.INITIAL_SYNC_STATE_DELAY;
 
 public class DefaultLeaderElectionStarterService extends AbstractPaxosService implements LeaderElectionStarterService {
 
@@ -29,7 +28,6 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     private static final String SEND_HEARTBEATS_JOB = "heartbeats";
     private static final String SYNC_STATE_JOB = "syncState";
 
-    private LeaderElectionProperties leaderElectionProps;
     private final ScheduledExecutorService scheduledExecutor;
 
     private final AtomicReference<CompletableFuture<Boolean>> candidacy = new AtomicReference<>();
@@ -55,24 +53,20 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     }
 
     @Override
-    protected void onInitialization() throws PortunusException {
-        this.leaderElectionProps = new LeaderElectionProperties();
-    }
-
-    @Override
     public void start() {
         log.debug("Initializing leader election procedure...");
+        ClusterConfig.LeaderElection leaderElectionConfig = clusterService.getClusterConfig().getLeaderElection();
 
-        if (validateLeaderElectionConfig()) {
+        if (validateLeaderElectionConfig(leaderElectionConfig)) {
             log.warn("Invalid leader election config. detected! Resetting leader election properties to default values...");
-            leaderElectionProps.reset();
+            clusterService.getClusterConfig().getLeaderElection().reset();
         }
         startLeaderCandidacy();
     }
 
-    private boolean validateLeaderElectionConfig() {
-        return leaderElectionProps.getHeartbeatsInterval() >= leaderElectionProps.getMinAwaitTime()
-                || leaderElectionProps.getMinAwaitTime() >= leaderElectionProps.getMaxAwaitTime();
+    private boolean validateLeaderElectionConfig(ClusterConfig.LeaderElection leaderElectionConfig) {
+        return leaderElectionConfig.getHeartbeatsInterval() >= leaderElectionConfig.getMinAwaitTime()
+                || leaderElectionConfig.getMinAwaitTime() >= leaderElectionConfig.getMaxAwaitTime();
     }
 
     private void startLeaderCandidacy() {
@@ -109,7 +103,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
 
     private void scheduleHeartbeats() {
-        int heartbeatsInterval = leaderElectionProps.getHeartbeatsInterval();
+        int heartbeatsInterval = clusterService.getClusterConfig().getLeaderElection().getHeartbeatsInterval();
         log.debug("Scheduling heartbeats with interval of {}s", heartbeatsInterval);
         ScheduledFuture<?> sendHeartbeatsJob = scheduledExecutor.scheduleAtFixedRate(
                 this::sendHeartbeats,
@@ -130,7 +124,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     }
 
     private void scheduleSyncState() {
-        int heartbeatsInterval = leaderElectionProps.getSyncStateInterval();
+        int heartbeatsInterval = clusterService.getClusterConfig().getLeaderElection().getSyncStateInterval();
         log.debug("Scheduling sync server state with interval of {}s", heartbeatsInterval);
         ScheduledFuture<?> syncServerStateJob = scheduledExecutor.scheduleAtFixedRate(
                 this::syncServerState,
@@ -186,7 +180,8 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     }
 
     private int awaitLeaderElectionTime() {
-        return generateRandom(leaderElectionProps.getMinAwaitTime(), leaderElectionProps.getMaxAwaitTime()) * 1000;
+        ClusterConfig.LeaderElection leaderElectionConfig = clusterService.getClusterConfig().getLeaderElection();
+        return generateRandom(leaderElectionConfig.getMinAwaitTime(), leaderElectionConfig.getMaxAwaitTime()) * 1000;
     }
 
     private int generateRandom(int min, int max) {
