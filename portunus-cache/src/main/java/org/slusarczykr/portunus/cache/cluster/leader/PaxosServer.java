@@ -19,12 +19,12 @@ public class PaxosServer {
 
     private final AtomicBoolean leader = new AtomicBoolean(false);
 
-    public PaxosServer(int serverPort, int numberOfServers) {
-        initServerId(serverPort, numberOfServers);
-        incrementTerm(numberOfServers);
+    public PaxosServer(int serverPort) {
+        updateServerId(serverPort, 1);
+        incrementTerm(1);
     }
 
-    private void initServerId(int serverPort, int numberOfServers) {
+    public void updateServerId(int serverPort, int numberOfServers) {
         int serverId = calculateServerId(serverPort, numberOfServers);
         id.set(serverId);
         log.debug("Id {} has been assigned to the server", serverId);
@@ -51,7 +51,7 @@ public class PaxosServer {
     }
 
     public int calculateServerId(int serverPort, int numberOfServers) {
-        log.debug("Calculating server id - port: {}, number of servers: {}", serverPort, numberOfServers);
+        log.debug("Generating server id for port: {}", serverPort);
         return serverPort % numberOfServers;
     }
 

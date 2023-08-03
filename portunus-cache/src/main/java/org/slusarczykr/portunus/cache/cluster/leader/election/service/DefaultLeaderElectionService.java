@@ -154,9 +154,6 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     public void sendHeartbeats(Consumer<Exception> errorHandler) {
         log.trace("Sending heartbeat to followers...");
 
-        //TODO remove this block
-        generateCacheEntry();
-
         withRemoteServers(it -> {
             log.trace("Syncing heartbeat to server: {}", it.getAddress());
             AppendEntryResponse appendEntryResponse = it.sendHeartbeats(paxosServer.getIdValue(), paxosServer.getTermValue());

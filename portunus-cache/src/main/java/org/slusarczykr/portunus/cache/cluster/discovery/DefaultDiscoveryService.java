@@ -67,8 +67,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     private RemotePortunusServer createRemoteServer(Address address) {
         validateRemoteAddress(address);
-        int numberOfClusterMembers = clusterService.getClusterConfigService().getNumberOfClusterMembers();
-        ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers + 1);
+        ClusterMemberContext context = new ClusterMemberContext(address);
 
         return RemotePortunusServer.newInstance(clusterService, context);
     }
@@ -148,6 +147,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
             log.info("Registering server with address: '{}'", server.getPlainAddress());
             portunusInstances.put(server.getPlainAddress(), server);
             clusterService.getPartitionService().register(server);
+            clusterService.getLocalServer().updatePaxosServerId(portunusInstances.size());
             log.debug("Current portunus instances: '{}'", portunusInstances);
         }
     }
@@ -166,6 +166,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
         }
         log.info("Unregistering remote server with address: '{}'", address);
         portunusInstances.remove(plainAddress);
+        clusterService.getLocalServer().updatePaxosServerId(portunusInstances.size());
         clusterService.getPartitionService().unregister(address);
     }
 

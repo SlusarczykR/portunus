@@ -52,7 +52,7 @@ public interface PortunusServer {
 
     void replicate(CacheChunk cacheChunk);
 
-    record ClusterMemberContext(Address address, int numberOfServers) {
+    record ClusterMemberContext(Address address) {
 
         public record Address(String hostname, int port) {
 

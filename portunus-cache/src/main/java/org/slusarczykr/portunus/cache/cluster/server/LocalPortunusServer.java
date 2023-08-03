@@ -52,9 +52,8 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     private static ClusterMemberContext createServerContext(ClusterService clusterService, ClusterConfig clusterConfig) {
         clusterConfig = getDefaultClusterConfigIfAbsent(clusterService, clusterConfig);
         Address address = clusterConfig.getLocalServerAddress();
-        int numberOfServers = clusterConfig.getMembers().size() + 1;
 
-        return new ClusterMemberContext(address, numberOfServers);
+        return new ClusterMemberContext(address);
     }
 
     private static ClusterConfig getDefaultClusterConfigIfAbsent(ClusterService clusterService, ClusterConfig clusterConfig) {
@@ -81,6 +80,10 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         return ServerBuilder.forPort(serverContext.getPort())
                 .addService(new PortunusGRPCService(clusterService))
                 .build();
+    }
+
+    public void updatePaxosServerId(int numberOfServers) {
+        getPaxosServer().updateServerId(getAddress().port(), numberOfServers);
     }
 
     @Override

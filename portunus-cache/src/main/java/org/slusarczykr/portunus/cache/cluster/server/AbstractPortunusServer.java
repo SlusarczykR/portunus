@@ -20,7 +20,7 @@ public abstract class AbstractPortunusServer extends AbstractManaged implements 
         try {
             this.clusterService = clusterService;
             this.serverContext = serverContext;
-            this.paxosServer = new PaxosServer(serverContext.getPort(), serverContext.numberOfServers());
+            this.paxosServer = new PaxosServer(serverContext.getPort());
             initialize();
         } catch (Exception e) {
             throw new FatalPortunusException("Portunus server initialization failed", e);

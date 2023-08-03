@@ -6,13 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
+import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberJoinedEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.MemberLeftEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionCreatedEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
-import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionUpdatedEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
@@ -95,8 +90,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     @SneakyThrows
     private void handleMemberJoinedEvent(MemberJoinedEvent event) {
         Address address = clusterService.getConversionService().convert(event.getAddress());
-        int numberOfClusterMembers = clusterService.getDiscoveryService().getNumberOfServers();
-        ClusterMemberContext context = new ClusterMemberContext(address, numberOfClusterMembers + 1);
+        ClusterMemberContext context = new ClusterMemberContext(address);
         RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, context);
 
         clusterService.getDiscoveryService().register(portunusServer);
