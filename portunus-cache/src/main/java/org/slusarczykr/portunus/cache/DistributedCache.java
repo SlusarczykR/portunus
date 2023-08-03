@@ -16,14 +16,7 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -285,6 +278,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         SEND_PARTITION_EVENT,
         SYNC_STATE,
         REPLICATE_PARTITION,
-        MIGRATE_PARTITIONS
+        MIGRATE_PARTITIONS,
+        REGISTER_MEMBER
     }
 }

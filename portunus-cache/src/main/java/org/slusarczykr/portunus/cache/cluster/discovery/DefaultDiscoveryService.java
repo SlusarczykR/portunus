@@ -132,24 +132,29 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     @Override
     public PortunusServer register(Address address) {
         return withWriteLock(() ->
-                portunusInstances.computeIfAbsent(address.toPlainAddress(), it -> createRemoteServer(address))
+                portunusInstances.computeIfAbsent(address.toPlainAddress(), it -> {
+                    log.info("Registering server with address: '{}'", address);
+                    return createRemoteServer(address);
+                })
         );
     }
 
     @Override
-    public void register(PortunusServer server) throws PortunusException {
-        withWriteLock(() -> registerServer(server));
+    public boolean register(PortunusServer server) throws PortunusException {
+        return withWriteLock(() -> registerServer(server));
     }
 
     @SneakyThrows
-    private void registerServer(PortunusServer server) {
+    private boolean registerServer(PortunusServer server) {
         if (!portunusInstances.containsKey(server.getPlainAddress())) {
             log.info("Registering server with address: '{}'", server.getPlainAddress());
             portunusInstances.put(server.getPlainAddress(), server);
             clusterService.getPartitionService().register(server);
             clusterService.getLocalServer().updatePaxosServerId(portunusInstances.size());
             log.debug("Current portunus instances: '{}'", portunusInstances);
+            return true;
         }
+        return false;
     }
 
     @Override

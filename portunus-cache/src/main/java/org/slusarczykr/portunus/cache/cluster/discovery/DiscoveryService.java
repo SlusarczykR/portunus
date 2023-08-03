@@ -30,7 +30,7 @@ public interface DiscoveryService extends Service {
 
     int getNumberOfServers();
 
-    void register(PortunusServer server) throws PortunusException;
+    boolean register(PortunusServer server) throws PortunusException;
 
     PortunusServer register(Address address);
 

@@ -166,4 +166,8 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
                 "address=" + serverContext.getPlainAddress() +
                 '}';
     }
+
+    public void register() {
+        portunusClient.register();
+    }
 }

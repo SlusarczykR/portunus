@@ -345,7 +345,6 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     @Override
     public void migrate(MigratePartitionsCommand request, StreamObserver<MigratePartitionsDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.MIGRATE_PARTITIONS, () -> {
-            log.debug("Migrating partitions from: {}", clusterService.getConversionService().convert(request.getFrom()));
             List<CacheChunk> cacheChunks = convert(request.getCacheChunksList());
 
             clusterService.getMigrationService().migrateToLocalServer(cacheChunks);
@@ -354,6 +353,14 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .setStatus(true)
                     .build();
         });
+    }
+
+    @Override
+    public void register(RegisterMemberCommand request, StreamObserver<RegisterMemberDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.REGISTER_MEMBER, () ->
+                RegisterMemberDocument.newBuilder()
+                        .setStatus(true)
+                        .build());
     }
 
     private List<CacheChunk> convert(List<PortunusApiProtos.CacheChunkDTO> cacheChunksList) {
@@ -367,16 +374,16 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         return (DistributedCache<K, V>) clusterService.getPortunusClusterInstance().getCache(name);
     }
 
-    private <T> void completeWith(AddressDTO from, StreamObserver<T> responseObserver, OperationType operationType,
+    private <T> void completeWith(AddressDTO fromDTO, StreamObserver<T> responseObserver, OperationType operationType,
                                   Supplier<T> onNext) {
-        log.debug("Received '{}' command from remote server", operationType);
+        Address from = clusterService.getConversionService().convert(fromDTO);
+        log.debug("Received '{}' command from '{}'", operationType, from);
         registerRemoteServerIfAbsent(from);
         responseObserver.onNext(onNext.get());
         responseObserver.onCompleted();
     }
 
-    private void registerRemoteServerIfAbsent(AddressDTO addressDTO) {
-        Address address = clusterService.getConversionService().convert(addressDTO);
+    private void registerRemoteServerIfAbsent(Address address) {
         clusterService.getDiscoveryService().register(address);
     }
 }
