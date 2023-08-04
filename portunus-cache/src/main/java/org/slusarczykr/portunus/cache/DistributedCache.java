@@ -208,10 +208,10 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     private <T> T executeOperation(OperationType operationType, Callable<T> operation) {
         try {
-            log.debug("Executing operation: '{}'", operationType.name());
+            log.trace("Executing operation: '{}'", operationType.name());
             Future<T> futureResult = operationExecutor.submit(operation);
             T result = futureResult.get();
-            log.debug("Operation: '{}' execution has finished", operationType.name());
+            log.trace("Operation: '{}' execution has finished", operationType.name());
             return result;
         } catch (Exception e) {
             log.error("Failed to execute operation: '{}'", operationType.name(), e);
@@ -231,8 +231,11 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         PortunusServer owner = partition.getOwner();
 
         if (executeOnReplicaOwner && isPartitionReplicaOwner(partition)) {
+            log.debug("Local server is replica owner of partition: {}", partition.getPartitionId());
             owner = clusterService.getPortunusClusterInstance().localMember();
         }
+        log.debug("Executing operation on '{}'", owner.getAddress());
+
         return operation.apply(owner);
     }
 
