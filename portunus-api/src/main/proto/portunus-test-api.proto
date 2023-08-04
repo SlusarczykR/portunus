@@ -1,0 +1,28 @@
+syntax = "proto3";
+import "portunus-api.proto";
+
+package org.slusarczykr.portunus.cache.api.test;
+
+option java_package = "org.slusarczykr.portunus.cache.api.test";
+option java_outer_classname = "PortunusTestApiProtos";
+
+message GetStringEntryQuery {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  string key = 3;
+}
+
+message GetStringEntryDocument {
+  StringCacheEntryDTO cacheEntry = 1;
+}
+
+message StringCacheEntryDTO {
+  string key = 1;
+  string value = 2;
+}
+
+message PutStringEntryCommand {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  StringCacheEntryDTO cacheEntry = 3;
+}

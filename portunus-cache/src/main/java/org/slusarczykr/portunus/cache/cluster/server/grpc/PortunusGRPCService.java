@@ -7,19 +7,20 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.*;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
+import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos;
+import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringEntryDocument;
+import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringEntryQuery;
+import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.StringCacheEntryDTO;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
@@ -359,6 +360,42 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 RegisterMemberDocument.newBuilder()
                         .setStatus(true)
                         .build());
+    }
+
+    @Override
+    public void getStringCacheEntry(GetStringEntryQuery request, StreamObserver<GetStringEntryDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ENTRY, () -> getStringCacheEntry(request));
+    }
+
+    @SneakyThrows
+    private <K extends Serializable, V extends Serializable> GetStringEntryDocument getStringCacheEntry(GetStringEntryQuery command) {
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
+        StringCacheEntryDTO cacheEntry = cache.getEntry((K) command.getKey())
+                .map(it -> StringCacheEntryDTO.newBuilder()
+                        .setKey((String) it.getKey())
+                        .setValue((String) it.getValue())
+                        .build())
+                .orElse(null);
+
+        return GetStringEntryDocument.newBuilder()
+                .setCacheEntry(cacheEntry)
+                .build();
+    }
+
+    @Override
+    public void putStringEntry(PortunusTestApiProtos.PutStringEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.PUT, () -> putStringEntry(request));
+    }
+
+    private <K extends Serializable, V extends Serializable> PutEntryDocument putStringEntry(PortunusTestApiProtos.PutStringEntryCommand command) {
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
+        StringCacheEntryDTO cacheEntryDTO = command.getCacheEntry();
+        Cache.Entry<K, V> entry = (Cache.Entry<K, V>) new DefaultCache.Entry<>(cacheEntryDTO.getKey(), cacheEntryDTO.getValue());
+        cache.put(entry);
+
+        return PutEntryDocument.newBuilder()
+                .setStatus(true)
+                .build();
     }
 
     private List<CacheChunk> convert(List<PortunusApiProtos.CacheChunkDTO> cacheChunksList) {

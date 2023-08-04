@@ -5,6 +5,7 @@ import "portunus-query-api.proto";
 import "portunus-command-api.proto";
 import "portunus-event-api.proto";
 import "portunus-paxos-api.proto";
+import "portunus-test-api.proto";
 package org.slusarczykr.portunus.cache.api.service;
 
 option java_package = "org.slusarczykr.portunus.cache.api.service";
@@ -15,11 +16,13 @@ service PortunusService {
   rpc sendPartitionEvent(org.slusarczykr.portunus.cache.api.event.PartitionEvent) returns (google.protobuf.Empty);
   rpc getCache(org.slusarczykr.portunus.cache.api.query.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.query.GetCacheDocument);
   rpc getCacheEntry(org.slusarczykr.portunus.cache.api.query.GetEntryCommand) returns (org.slusarczykr.portunus.cache.api.query.GetEntryDocument);
+  rpc getStringCacheEntry(org.slusarczykr.portunus.cache.api.test.GetStringEntryQuery) returns (org.slusarczykr.portunus.cache.api.test.GetStringEntryDocument);
   rpc getCacheEntries(org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdCommand) returns (org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdDocument);
   rpc getPartitions(org.slusarczykr.portunus.cache.api.query.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.query.GetPartitionsDocument);
   rpc anyEntry(org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
   rpc putEntry(org.slusarczykr.portunus.cache.api.command.PutEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
+  rpc putStringEntry(org.slusarczykr.portunus.cache.api.test.PutStringEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
   rpc putEntries(org.slusarczykr.portunus.cache.api.command.PutEntriesCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntriesDocument);
   rpc removeEntry(org.slusarczykr.portunus.cache.api.command.RemoveEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.RemoveEntryDocument);
   rpc sendRequestVote(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.RequestVoteResponse);
