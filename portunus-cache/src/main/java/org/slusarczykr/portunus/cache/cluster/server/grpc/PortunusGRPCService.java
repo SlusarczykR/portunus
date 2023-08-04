@@ -11,7 +11,10 @@ import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
@@ -276,7 +279,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .setServerId(getPaxosServer().getIdValue())
                     .setConflict(conflict)
                     .build();
-        });
+        }, true);
     }
 
     @Override
@@ -289,7 +292,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .setServerId(getPaxosServer().getIdValue())
                     .setConflict(false)
                     .build();
-        });
+        }, true);
     }
 
     private void syncServerState(List<VirtualPortunusNodeDTO> virtualPortunusNodes,
@@ -411,11 +414,27 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private <T> void completeWith(AddressDTO fromDTO, StreamObserver<T> responseObserver, OperationType operationType,
                                   Supplier<T> onNext) {
+        completeWith(fromDTO, responseObserver, operationType, onNext, false);
+    }
+
+    private <T> void completeWith(AddressDTO fromDTO, StreamObserver<T> responseObserver, OperationType operationType,
+                                  Supplier<T> onNext, boolean trace) {
         Address from = clusterService.getConversionService().convert(fromDTO);
-        log.debug("Received '{}' command from '{}'", operationType, from);
+        logRequest(operationType, from, trace);
+
         registerRemoteServerIfAbsent(from);
         responseObserver.onNext(onNext.get());
         responseObserver.onCompleted();
+    }
+
+    private static void logRequest(OperationType operationType, Address from, boolean trace) {
+        String logEntry = String.format("Received '%s' command from '%s'", operationType, from);
+
+        if (trace) {
+            log.trace(logEntry);
+        } else {
+            log.debug(logEntry);
+        }
     }
 
     private void registerRemoteServerIfAbsent(Address address) {
