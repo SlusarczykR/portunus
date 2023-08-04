@@ -149,6 +149,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         log.debug("Stopping cluster leader jobs");
         cancelIfPresent(leaderScheduledJobs.get(SEND_HEARTBEATS_JOB));
         cancelIfPresent(leaderScheduledJobs.get(SYNC_STATE_JOB));
+        clusterService.getLeaderElectionStarter().reset();
     }
 
     private void cancelIfPresent(Future<?> task) {
@@ -173,9 +174,9 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
         if (leader) {
             clusterService.getLeaderElectionStarter().stopLeaderScheduledJobs();
+        } else {
+            clusterService.getLeaderElectionStarter().reset();
         }
-        clusterService.getLeaderElectionStarter().reset();
-
         return leader;
     }
 
