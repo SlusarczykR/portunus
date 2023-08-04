@@ -279,7 +279,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .setServerId(getPaxosServer().getIdValue())
                     .setConflict(conflict)
                     .build();
-        }, true);
+        }, true, true);
     }
 
     @Override
@@ -292,7 +292,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                     .setServerId(getPaxosServer().getIdValue())
                     .setConflict(false)
                     .build();
-        }, true);
+        }, true, true);
     }
 
     private void syncServerState(List<VirtualPortunusNodeDTO> virtualPortunusNodes,
@@ -354,7 +354,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
             return MigratePartitionsDocument.newBuilder()
                     .setStatus(true)
                     .build();
-        });
+        }, false, false);
     }
 
     @Override
@@ -414,15 +414,17 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private <T> void completeWith(AddressDTO fromDTO, StreamObserver<T> responseObserver, OperationType operationType,
                                   Supplier<T> onNext) {
-        completeWith(fromDTO, responseObserver, operationType, onNext, false);
+        completeWith(fromDTO, responseObserver, operationType, onNext, true, false);
     }
 
     private <T> void completeWith(AddressDTO fromDTO, StreamObserver<T> responseObserver, OperationType operationType,
-                                  Supplier<T> onNext, boolean trace) {
+                                  Supplier<T> onNext, boolean registerRemoteServer, boolean trace) {
         Address from = clusterService.getConversionService().convert(fromDTO);
         logRequest(operationType, from, trace);
 
-        registerRemoteServerIfAbsent(from);
+        if (registerRemoteServer) {
+            registerRemoteServerIfAbsent(from);
+        }
         responseObserver.onNext(onNext.get());
         responseObserver.onCompleted();
     }

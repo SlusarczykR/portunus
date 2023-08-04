@@ -96,7 +96,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         boolean registered = clusterService.getDiscoveryService().register(portunusServer);
 
         if (registered) {
-           portunusServer.register();
+            portunusServer.register();
         }
     }
 
@@ -128,21 +128,19 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     @SneakyThrows
     private void handlePartitionCreatedEvent(PartitionCreatedEvent event) {
-        processCacheChunk(event.getCacheChunk(), true);
+        processCacheChunk(event.getCacheChunk());
     }
 
     @SneakyThrows
     private void handlePartitionUpdatedEvent(PartitionUpdatedEvent event) {
-        processCacheChunk(event.getCacheChunk(), false);
+        processCacheChunk(event.getCacheChunk());
     }
 
-    private void processCacheChunk(CacheChunkDTO cacheChunkDTO, boolean register) {
+    private void processCacheChunk(CacheChunkDTO cacheChunkDTO) {
         CacheChunk cacheChunk = clusterService.getConversionService().convert(cacheChunkDTO);
         Partition partition = cacheChunk.partition();
 
-        if (register) {
-            clusterService.getPartitionService().register(partition);
-        }
+        clusterService.getPartitionService().register(partition);
         updateLocalCachesIfPartitionOwner(cacheChunk);
     }
 
