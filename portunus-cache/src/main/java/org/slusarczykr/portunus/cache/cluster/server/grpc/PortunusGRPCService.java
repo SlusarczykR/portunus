@@ -17,10 +17,8 @@ import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeD
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryDocument;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsAnyEntryQuery;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.*;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;

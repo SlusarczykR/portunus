@@ -25,3 +25,40 @@ message ContainsEntryQuery {
 message ContainsEntryDocument {
   bool containsEntry = 1;
 }
+
+message GetCacheEntriesByPartitionIdCommand {
+  AddressDTO from = 1;
+  int64 partitionId = 2;
+}
+
+message GetCacheEntriesByPartitionIdDocument {
+  CacheChunkDTO cacheChunk = 1;
+}
+
+message GetCacheCommand {
+  AddressDTO from = 1;
+  string name = 2;
+}
+
+message GetCacheDocument {
+  repeated CacheEntryDTO cacheEntries = 1;
+}
+
+message GetPartitionsCommand {
+  AddressDTO from = 1;
+  string address = 2;
+}
+
+message GetPartitionsDocument {
+  repeated PartitionDTO partitions = 1;
+}
+
+message GetEntryCommand {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  bytes key = 3;
+}
+
+message GetEntryDocument {
+  CacheEntryDTO cacheEntry = 1;
+}

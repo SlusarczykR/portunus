@@ -13,10 +13,10 @@ option java_outer_classname = "PortunusServiceProtos";
 service PortunusService {
   rpc sendClusterEvent(org.slusarczykr.portunus.cache.api.event.ClusterEvent) returns (google.protobuf.Empty);
   rpc sendPartitionEvent(org.slusarczykr.portunus.cache.api.event.PartitionEvent) returns (google.protobuf.Empty);
-  rpc getCache(org.slusarczykr.portunus.cache.api.command.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.command.GetCacheDocument);
-  rpc getCacheEntry(org.slusarczykr.portunus.cache.api.command.GetEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.GetEntryDocument);
-  rpc getCacheEntries(org.slusarczykr.portunus.cache.api.command.GetCacheEntriesByPartitionIdCommand) returns (org.slusarczykr.portunus.cache.api.command.GetCacheEntriesByPartitionIdDocument);
-  rpc getPartitions(org.slusarczykr.portunus.cache.api.command.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.command.GetPartitionsDocument);
+  rpc getCache(org.slusarczykr.portunus.cache.api.query.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.query.GetCacheDocument);
+  rpc getCacheEntry(org.slusarczykr.portunus.cache.api.query.GetEntryCommand) returns (org.slusarczykr.portunus.cache.api.query.GetEntryDocument);
+  rpc getCacheEntries(org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdCommand) returns (org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdDocument);
+  rpc getPartitions(org.slusarczykr.portunus.cache.api.query.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.query.GetPartitionsDocument);
   rpc anyEntry(org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
   rpc putEntry(org.slusarczykr.portunus.cache.api.command.PutEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
