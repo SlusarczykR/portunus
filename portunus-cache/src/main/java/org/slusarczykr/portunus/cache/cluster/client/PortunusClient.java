@@ -38,7 +38,7 @@ public interface PortunusClient {
 
     boolean replicate(CacheChunkDTO cacheChunk);
 
-    boolean migrate(List<CacheChunkDTO> cacheChunks);
+    boolean migrate(List<CacheChunkDTO> cacheChunks, boolean replicate);
 
     void register();
 }

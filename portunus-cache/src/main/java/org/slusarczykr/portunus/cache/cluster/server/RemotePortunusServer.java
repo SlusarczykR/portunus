@@ -22,9 +22,11 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEnt
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class RemotePortunusServer extends AbstractPortunusServer implements PaxosClient {
@@ -131,12 +133,21 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
         cacheChunk.partition().addReplicaOwner(getAddress());
     }
 
-    public boolean migrate(List<CacheChunk> cacheChunks) {
+    public boolean migrate(List<CacheChunk> cacheChunks, boolean replicate) {
+        withCacheEntries(cacheChunks, (cacheName, cacheEntry) -> log.debug("Migrating entry: {} from '{}'", cacheEntry, cacheName));
         List<CacheChunkDTO> cacheChunksDTO = cacheChunks.stream()
                 .map(it -> clusterService.getConversionService().convert(it))
                 .toList();
 
-        return portunusClient.migrate(cacheChunksDTO);
+        return portunusClient.migrate(cacheChunksDTO, replicate);
+    }
+
+    private void withCacheEntries(List<CacheChunk> cacheChunks, BiConsumer<String, Cache.Entry<?, ?>> consumer) {
+        cacheChunks.stream()
+                .map(CacheChunk::cacheEntries)
+                .flatMap(Collection::stream)
+                .forEach(cacheChunk -> cacheChunk.allEntries()
+                        .forEach(it -> consumer.accept(cacheChunk.getName(), it)));
     }
 
     @Override

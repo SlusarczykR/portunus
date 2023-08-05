@@ -29,13 +29,13 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     }
 
     @Override
-    public void migrate(Collection<Partition> partitions, Address address) {
+    public void migrate(Collection<Partition> partitions, Address address, boolean replicate) {
         try {
             log.debug("Migrating {} partitions to: '{}'", partitions.size(), address);
             RemotePortunusServer remotePortunusServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServerOrThrow(address);
             List<CacheChunk> cacheChunks = getCacheChunks(partitions);
 
-            remotePortunusServer.migrate(cacheChunks);
+            remotePortunusServer.migrate(cacheChunks, replicate);
 
             removeLocalCachesEntries(partitions);
         } catch (PortunusException e) {
@@ -58,21 +58,21 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     public void migratePartitionReplicas(Collection<Partition> partitions) {
         log.debug("Recreating {} partitions from local replicas", partitions.size());
         List<CacheChunk> cacheChunks = getCacheChunks(partitions);
-        cacheChunks.forEach(this::migrateToLocalServer);
+        cacheChunks.forEach(it -> migrateToLocalServer(it, true));
     }
 
     @Override
-    public void migrateToLocalServer(Collection<CacheChunk> cacheChunk) {
-        cacheChunk.forEach(this::migrateToLocalServer);
+    public void migrateToLocalServer(Collection<CacheChunk> cacheChunk, boolean replicate) {
+        cacheChunk.forEach(it -> migrateToLocalServer(it, replicate));
     }
 
     @Override
-    public void migrateToLocalServer(CacheChunk cacheChunk) {
+    public void migrateToLocalServer(CacheChunk cacheChunk, boolean replicate) {
         log.debug("Migrating partition [{}] to local server", cacheChunk.partition().getPartitionId());
         Partition partition = reassignOwner(cacheChunk.partition());
         log.debug("Reassigned partition: {}", partition);
 
-        clusterService.getPartitionService().register(partition, true);
+        clusterService.getPartitionService().register(partition, replicate);
 
         CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
         clusterService.getLocalServer().update(reassignedCacheChunk);

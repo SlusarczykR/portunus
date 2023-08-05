@@ -55,7 +55,8 @@ message ReplicatePartitionDocument {
 
 message MigratePartitionsCommand {
   AddressDTO from = 1;
-  repeated CacheChunkDTO cacheChunks = 2;
+  bool replicate = 2;
+  repeated CacheChunkDTO cacheChunks = 3;
 }
 
 message MigratePartitionsDocument {

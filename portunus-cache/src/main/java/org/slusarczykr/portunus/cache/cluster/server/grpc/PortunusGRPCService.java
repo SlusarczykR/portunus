@@ -349,7 +349,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         completeWith(request.getFrom(), responseObserver, OperationType.MIGRATE_PARTITIONS, () -> {
             List<CacheChunk> cacheChunks = convert(request.getCacheChunksList());
 
-            clusterService.getMigrationService().migrateToLocalServer(cacheChunks);
+            clusterService.getMigrationService().migrateToLocalServer(cacheChunks, request.getReplicate());
 
             return MigratePartitionsDocument.newBuilder()
                     .setStatus(true)

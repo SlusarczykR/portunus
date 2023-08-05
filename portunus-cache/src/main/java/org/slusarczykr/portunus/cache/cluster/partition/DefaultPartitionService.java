@@ -206,7 +206,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         Map<Address, List<Partition>> partitionsByOwner =
                 groupOwnerPartition(partitions, localServerAddress, it -> getOwnerAddress(it.getPartitionId()));
         List<Partition> remoteServerPartitions = partitionsByOwner.get(remoteServerAddress);
-        Optional.ofNullable(remoteServerPartitions).ifPresent(it -> migrate(remoteServerAddress, it));
+        Optional.ofNullable(remoteServerPartitions).ifPresent(it -> migrate(remoteServerAddress, it, false));
         replicatePartitionsWithoutReplica();
         log.debug("Partitions rebalance after member joined finished");
     }
@@ -234,10 +234,10 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
                 .collect(Collectors.groupingBy(classifier)));
     }
 
-    private void migrate(Address address, List<Partition> partitions) {
+    private void migrate(Address address, List<Partition> partitions, boolean replicate) {
         log.debug("Migrating to '{}' partitions: {}", address, partitions);
         withWriteLock(() -> partitions.forEach(it -> createPartition(it.getPartitionId())));
-        clusterService.getMigrationService().migrate(partitions, address);
+        clusterService.getMigrationService().migrate(partitions, address, replicate);
     }
 
     private List<Partition> getOwnerPartitions(Collection<Partition> partitions, Address address) {
@@ -281,7 +281,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
                     .collect(Collectors.groupingBy(it -> getOwnerAddress(it.getPartitionId())));
 
             migrateLocalPartitionReplicas(partitionsByOwner, localServerAddress);
-            partitionsByOwner.forEach(this::migrate);
+            partitionsByOwner.forEach((owner, ownerPartitions) -> migrate(owner, ownerPartitions, true));
         }
     }
 

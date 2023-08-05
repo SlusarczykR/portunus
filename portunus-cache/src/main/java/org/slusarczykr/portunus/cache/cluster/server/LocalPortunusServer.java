@@ -166,7 +166,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     @Override
     public <K extends Serializable, V extends Serializable> void putAll(String name, Partition partition, Map<K, V> entries) {
         Cache<K, V> cache = cacheManager.getCache(name);
-        log.trace("Updating local cache: entries amount: {}. Current cache entries: {}", entries.size(), cache.allEntries());
+        log.debug("Putting {} entries to local cache", entries.size());
         cache.putAll(entries);
         Set<Cache.Entry<K, V>> cacheEntries = toEntrySet(entries);
         registerCacheEntry(name, partition, cacheEntries);
@@ -199,10 +199,9 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     public <K extends Serializable, V extends Serializable> void update(CacheChunk cacheChunk) {
         cacheChunk.cacheEntries().forEach(it -> {
             Cache<K, V> localCache = getCache(it.getName());
-            log.debug("Updating local cache with partition replica: {}, entries amount: {}. Current cache entries: {}",
-                    cacheChunk.partition().getPartitionId(), it.allEntries().size(), localCache.allEntries());
+            log.debug("Updating cache entries: '{}'. Cache size: {}", it.getName(), localCache.allEntries().size());
             updateLocalCache(it.getName(), cacheChunk.partition(), it.allEntries());
-            log.debug("Cache entries after the update: {}", localCache.allEntries());
+            log.debug("Successfully updated cache: '{}'. Cache size: {}", it.getName(), localCache.allEntries().size());
         });
     }
 
@@ -253,6 +252,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
                                                                                    Collection<Cache.Entry<K, V>> cacheEntries) {
         Map<K, V> cacheEntriesMap = cacheEntries.stream()
                 .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
+        cacheEntriesMap.entrySet().forEach(it -> log.debug("Putting entry: {} to '{}'", it, name));
         putAll(name, partition, cacheEntriesMap);
     }
 

@@ -214,16 +214,17 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
-    public boolean migrate(List<CacheChunkDTO> cacheChunks) {
+    public boolean migrate(List<CacheChunkDTO> cacheChunks, boolean replicate) {
         return withPortunusServiceStub(portunusService -> {
-            MigratePartitionsCommand command = createMigratePartitionsCommand(cacheChunks);
+            MigratePartitionsCommand command = createMigratePartitionsCommand(cacheChunks, replicate);
             return portunusService.migrate(command);
         }).getStatus();
     }
 
-    private MigratePartitionsCommand createMigratePartitionsCommand(List<CacheChunkDTO> cacheChunks) {
+    private MigratePartitionsCommand createMigratePartitionsCommand(List<CacheChunkDTO> cacheChunks, boolean replicate) {
         return MigratePartitionsCommand.newBuilder()
                 .setFrom(getLocalServerAddressDTO())
+                .setReplicate(replicate)
                 .addAllCacheChunks(cacheChunks)
                 .build();
     }

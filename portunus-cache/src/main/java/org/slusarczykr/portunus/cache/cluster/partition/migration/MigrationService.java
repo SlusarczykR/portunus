@@ -9,11 +9,11 @@ import java.util.Collection;
 
 public interface MigrationService extends Service {
 
-    void migrate(Collection<Partition> partitions, Address address);
+    void migrate(Collection<Partition> partitions, Address address, boolean replicate);
 
     void migratePartitionReplicas(Collection<Partition> partitions);
 
-    void migrateToLocalServer(CacheChunk cacheChunk);
+    void migrateToLocalServer(CacheChunk cacheChunk, boolean replicate);
 
-    void migrateToLocalServer(Collection<CacheChunk> cacheChunk);
+    void migrateToLocalServer(Collection<CacheChunk> cacheChunk, boolean replicate);
 }
