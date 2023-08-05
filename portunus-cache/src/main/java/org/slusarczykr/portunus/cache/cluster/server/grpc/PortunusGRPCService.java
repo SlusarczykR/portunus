@@ -304,7 +304,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private void updateServerDiscovery(SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
         Set<Address> portunusNodes = getPhysicalNodeAddresses(virtualPortunusNodeMap);
-        clusterService.getDiscoveryService().register(portunusNodes);
+        clusterService.getDiscoveryService().registerRemoteServers(portunusNodes);
     }
 
     private void updatePartitions(List<PartitionDTO> partitions, SortedMap<String, VirtualPortunusNode> virtualPortunusNodeMap) {
@@ -440,6 +440,6 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private void registerRemoteServerIfAbsent(Address address) {
-        clusterService.getDiscoveryService().register(address);
+        clusterService.getDiscoveryService().registerRemoteServer(address);
     }
 }

@@ -42,7 +42,7 @@ public class DefaultConversionService extends AbstractService implements Convers
     @Override
     public Partition convert(PartitionDTO partition) {
         Address address = convert(partition.getOwner());
-        PortunusServer owner = clusterService.getDiscoveryService().register(address);
+        PortunusServer owner = clusterService.getDiscoveryService().registerRemoteServer(address);
 
         return newPartition(partition, owner);
     }
@@ -54,7 +54,7 @@ public class DefaultConversionService extends AbstractService implements Convers
 
     private Set<Address> getReplicaOwners(PartitionDTO partition) {
         return partition.getReplicaOwnersList().stream()
-                .map(server -> clusterService.getDiscoveryService().register(convert(server)))
+                .map(server -> clusterService.getDiscoveryService().registerRemoteServer(convert(server)))
                 .map(PortunusServer::getAddress)
                 .collect(Collectors.toSet());
     }

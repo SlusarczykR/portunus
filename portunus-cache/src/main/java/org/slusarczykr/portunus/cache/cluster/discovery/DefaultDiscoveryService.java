@@ -43,12 +43,12 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     public void loadServers() throws PortunusException {
         withWriteLock(() -> {
             List<Address> memberAddresses = clusterService.getClusterConfigService().getClusterMembers();
-            memberAddresses.forEach(this::registerRemoteServer);
+            memberAddresses.forEach(this::registerRemoteAddress);
         });
     }
 
     @SneakyThrows
-    private RemotePortunusServer registerRemoteServer(Address address) {
+    private RemotePortunusServer registerRemoteAddress(Address address) {
         RemotePortunusServer portunusServer = createRemoteServer(address);
         registerServer(portunusServer);
 
@@ -130,8 +130,8 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     @Override
-    public PortunusServer register(Address address) {
-        return withWriteLock(() ->
+    public RemotePortunusServer registerRemoteServer(Address address) {
+        return (RemotePortunusServer) withWriteLock(() ->
                 portunusInstances.computeIfAbsent(address.toPlainAddress(), it -> {
                     log.info("Registering server with address: '{}'", address);
                     return createRemoteServer(address);
@@ -176,11 +176,11 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     @Override
-    public List<PortunusServer> register(Collection<Address> addresses) {
+    public List<RemotePortunusServer> registerRemoteServers(Collection<Address> addresses) {
         return withWriteLock(() -> {
             log.debug("Updating portunus cluster members");
             Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
-            return registerServers(addresses, it -> shouldRegisterServer(localServerAddress, it));
+            return registerRemoteServers(addresses, it -> shouldRegisterServer(localServerAddress, it));
         });
     }
 
@@ -188,11 +188,10 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
         return !(address.equals(localServerAddress) || portunusInstances.containsKey(address.toPlainAddress()));
     }
 
-    private List<PortunusServer> registerServers(Collection<Address> addresses, Predicate<Address> filter) {
+    private List<RemotePortunusServer> registerRemoteServers(Collection<Address> addresses, Predicate<Address> filter) {
         return addresses.stream()
                 .filter(filter)
                 .map(this::registerRemoteServer)
-                .map(PortunusServer.class::cast)
                 .toList();
     }
 
