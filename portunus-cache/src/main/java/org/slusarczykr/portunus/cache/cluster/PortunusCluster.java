@@ -7,6 +7,10 @@ import java.io.Serializable;
 
 public interface PortunusCluster {
 
+    static PortunusCluster newInstance() {
+        return PortunusClusterInstance.getInstance(null);
+    }
+
     static PortunusCluster newInstance(ClusterConfig clusterConfig) {
         return PortunusClusterInstance.getInstance(clusterConfig);
     }
