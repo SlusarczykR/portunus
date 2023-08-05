@@ -440,6 +440,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     private void registerRemoteServerIfAbsent(Address address) {
-        clusterService.getDiscoveryService().registerRemoteServer(address);
+        if (!clusterService.getDiscoveryService().isLocalAddress(address)) {
+            clusterService.getDiscoveryService().registerRemoteServer(address);
+        }
     }
 }

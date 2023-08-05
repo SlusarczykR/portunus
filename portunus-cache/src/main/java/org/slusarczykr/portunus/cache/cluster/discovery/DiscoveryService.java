@@ -32,9 +32,11 @@ public interface DiscoveryService extends Service {
 
     boolean register(PortunusServer server) throws PortunusException;
 
-    RemotePortunusServer registerRemoteServer(Address address);
+    PortunusServer registerRemoteServer(Address address);
 
-    List<RemotePortunusServer> registerRemoteServers(Collection<Address> addresses);
+    List<PortunusServer> registerRemoteServers(Collection<Address> addresses);
 
     void unregister(Address address) throws PortunusException;
+
+    boolean isLocalAddress(Address address);
 }

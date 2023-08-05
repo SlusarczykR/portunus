@@ -2,12 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.conversion;
 
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
@@ -54,7 +49,9 @@ public class DefaultConversionService extends AbstractService implements Convers
 
     private Set<Address> getReplicaOwners(PartitionDTO partition) {
         return partition.getReplicaOwnersList().stream()
-                .map(server -> clusterService.getDiscoveryService().registerRemoteServer(convert(server)))
+                .map(this::convert)
+                .filter(it -> !clusterService.getDiscoveryService().isLocalAddress(it))
+                .map(it -> clusterService.getDiscoveryService().registerRemoteServer(it))
                 .map(PortunusServer::getAddress)
                 .collect(Collectors.toSet());
     }

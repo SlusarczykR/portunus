@@ -49,6 +49,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @SneakyThrows
     private RemotePortunusServer registerRemoteAddress(Address address) {
+        validateRemoteAddress(address);
         RemotePortunusServer portunusServer = createRemoteServer(address);
         registerServer(portunusServer);
 
@@ -56,9 +57,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     private void validateRemoteAddress(Address address) {
-        Address localServerAddress = clusterService.getLocalServer().getAddress();
-
-        if (address.equals(localServerAddress)) {
+        if (isLocalAddress(address)) {
             throw new InvalidPortunusStateException(
                     String.format("Could not register remote server. '%s' is local server address", address)
             );
@@ -66,9 +65,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     private RemotePortunusServer createRemoteServer(Address address) {
-        validateRemoteAddress(address);
         ClusterMemberContext context = new ClusterMemberContext(address);
-
         return RemotePortunusServer.newInstance(clusterService, context);
     }
 
@@ -130,13 +127,20 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     @Override
-    public RemotePortunusServer registerRemoteServer(Address address) {
-        return (RemotePortunusServer) withWriteLock(() ->
+    public PortunusServer registerRemoteServer(Address address) {
+        return withWriteLock(() ->
                 portunusInstances.computeIfAbsent(address.toPlainAddress(), it -> {
                     log.info("Registering server with address: '{}'", address);
-                    return createRemoteServer(address);
+                    return createServer(address);
                 })
         );
+    }
+
+    private PortunusServer createServer(Address address) {
+        if (isLocalAddress(address)) {
+            return localServer();
+        }
+        return createRemoteServer(address);
     }
 
     @Override
@@ -162,6 +166,12 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
         withWriteLock(() -> unregisterServer(address));
     }
 
+    @Override
+    public boolean isLocalAddress(Address address) {
+        Address localServerAddress = localServer().getAddress();
+        return address.equals(localServerAddress);
+    }
+
     @SneakyThrows
     private void unregisterServer(Address address) {
         String plainAddress = address.toPlainAddress();
@@ -176,7 +186,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     @Override
-    public List<RemotePortunusServer> registerRemoteServers(Collection<Address> addresses) {
+    public List<PortunusServer> registerRemoteServers(Collection<Address> addresses) {
         return withWriteLock(() -> {
             log.debug("Updating portunus cluster members");
             Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
@@ -188,7 +198,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
         return !(address.equals(localServerAddress) || portunusInstances.containsKey(address.toPlainAddress()));
     }
 
-    private List<RemotePortunusServer> registerRemoteServers(Collection<Address> addresses, Predicate<Address> filter) {
+    private List<PortunusServer> registerRemoteServers(Collection<Address> addresses, Predicate<Address> filter) {
         return addresses.stream()
                 .filter(filter)
                 .map(this::registerRemoteServer)
