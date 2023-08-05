@@ -107,7 +107,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     public Collection<Cache.Entry<K, V>> allEntries() {
         return executeOperation(OperationType.GET_ALL_ENTRIES, () -> {
             List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(getRemoteServersEntries());
-            Set<Cache.Entry<K, V>> entries = clusterService.getDiscoveryService().localServer().getCacheEntries(name);
+            Set<Cache.Entry<K, V>> entries = clusterService.getLocalServer().getCacheEntries(name);
             entries.forEach(cacheEntryObserver::onAccess);
             remoteEntries.addAll(entries);
 

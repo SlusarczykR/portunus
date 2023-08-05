@@ -118,9 +118,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> GetCacheDocument getCacheEntries(GetCacheCommand command) {
-        Cache<K, V> cache = getDistributedCache(command.getName());
-        List<CacheEntryDTO> cacheEntries = cache.allEntries().stream()
-                .map(PortunusGRPCService::toCacheEntry)
+        List<CacheEntryDTO> cacheEntries = clusterService.getLocalServer().getCacheEntries(command.getName()).stream()
+                .map(this::toCacheEntry)
                 .toList();
 
         return GetCacheDocument.newBuilder()
@@ -128,7 +127,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 .build();
     }
 
-    private static <K extends Serializable, V extends Serializable> CacheEntryDTO toCacheEntry(Cache.Entry<K, V> entry) {
+    private <K extends Serializable, V extends Serializable> CacheEntryDTO toCacheEntry(Cache.Entry<K, V> entry) {
         return CacheEntryDTO.newBuilder()
                 .setKey(DistributedWrapper.from((entry.getKey())).getByteString())
                 .setValue(DistributedWrapper.from((entry.getValue())).getByteString())
