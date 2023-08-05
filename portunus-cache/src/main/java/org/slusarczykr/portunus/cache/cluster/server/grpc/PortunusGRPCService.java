@@ -21,6 +21,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.Partition
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.*;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
 import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos;
+import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringCacheDocument;
 import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringEntryDocument;
 import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringEntryQuery;
 import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.StringCacheEntryDTO;
@@ -373,14 +374,34 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     private <K extends Serializable, V extends Serializable> GetStringEntryDocument getStringCacheEntry(GetStringEntryQuery command) {
         Cache<K, V> cache = getDistributedCache(command.getCacheName());
         StringCacheEntryDTO cacheEntry = cache.getEntry((K) command.getKey())
-                .map(it -> StringCacheEntryDTO.newBuilder()
-                        .setKey((String) it.getKey())
-                        .setValue((String) it.getValue())
-                        .build())
+                .map(this::toStringCacheEntry)
                 .orElse(null);
 
         return GetStringEntryDocument.newBuilder()
                 .setCacheEntry(cacheEntry)
+                .build();
+    }
+
+    private <K extends Serializable, V extends Serializable> StringCacheEntryDTO toStringCacheEntry(Cache.Entry<K, V> it) {
+        return StringCacheEntryDTO.newBuilder()
+                .setKey((String) it.getKey())
+                .setValue((String) it.getValue())
+                .build();
+    }
+
+    @Override
+    public void getStringCache(GetCacheCommand request, StreamObserver<GetStringCacheDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ALL_ENTRIES, () -> getStringCacheEntries(request));
+    }
+
+    @SneakyThrows
+    private <K extends Serializable, V extends Serializable> GetStringCacheDocument getStringCacheEntries(GetCacheCommand command) {
+        List<StringCacheEntryDTO> cacheEntries = clusterService.getLocalServer().getCacheEntries(command.getName()).stream()
+                .map(this::toStringCacheEntry)
+                .toList();
+
+        return GetStringCacheDocument.newBuilder()
+                .addAllCacheEntries(cacheEntries)
                 .build();
     }
 

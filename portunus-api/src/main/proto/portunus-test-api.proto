@@ -12,6 +12,10 @@ message GetStringEntryQuery {
   string key = 3;
 }
 
+message GetStringCacheDocument {
+  repeated StringCacheEntryDTO cacheEntries = 1;
+}
+
 message GetStringEntryDocument {
   StringCacheEntryDTO cacheEntry = 1;
 }
