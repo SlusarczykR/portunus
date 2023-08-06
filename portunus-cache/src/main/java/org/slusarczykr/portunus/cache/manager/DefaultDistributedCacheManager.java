@@ -37,25 +37,13 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
     @Override
     public <K extends Serializable, V extends Serializable> void register(int partitionId, String name,
                                                                           Set<Cache.Entry<K, V>> cacheEntries) {
-        Set<Cache<? extends Serializable, ? extends Serializable>> caches = getCacheEntries(partitionId);
-
-        Cache<K, V> cache = (Cache<K, V>) caches.stream()
-                .filter(it -> it.getName().equals(name))
-                .findFirst()
-                .orElseGet(() -> newCache(caches, name));
-
+        Cache<K, V> cache = getCache(partitionId, name);
         cache.putAll(cacheEntries);
     }
 
     @Override
     public <K extends Serializable> void unregister(int partitionId, String name, Set<K> keys) {
-        Set<Cache<? extends Serializable, ? extends Serializable>> caches = getCacheEntries(partitionId);
-
-        Cache<K, ? extends Serializable> cache = (Cache<K, ? extends Serializable>) caches.stream()
-                .filter(it -> it.getName().equals(name))
-                .findFirst()
-                .orElseGet(() -> newCache(caches, name));
-
+        Cache<K, ? extends Serializable> cache = getCache(partitionId, name);
         cache.removeAll(keys);
     }
 
@@ -73,6 +61,18 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
                 .toList();
 
         cache.removeAll(keys);
+    }
+
+    private <K extends Serializable, V extends Serializable> Cache<K, V> getCache(int partitionId, String name) {
+        Set<Cache<? extends Serializable, ? extends Serializable>> caches = getCacheEntries(partitionId);
+        return getOrCreate(caches, name);
+    }
+
+    private <K extends Serializable, V extends Serializable> Cache<K, V> getOrCreate(Set<Cache<? extends Serializable, ? extends Serializable>> caches, String name) {
+        return (Cache<K, V>) caches.stream()
+                .filter(it -> it.getName().equals(name))
+                .findFirst()
+                .orElseGet(() -> newCache(caches, name));
     }
 
     private <K extends Serializable, V extends Serializable> Cache<K, V> newCache(Set<Cache<? extends Serializable, ? extends Serializable>> caches,
