@@ -61,8 +61,7 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     public Collection<Cache.Entry<K, V>> getEntries(Collection<K> keys) {
         return keys.stream()
                 .map(this::getEntry)
-                .map(Optional::stream)
-                .map(it -> (Cache.Entry<K, V>) it)
+                .flatMap(Optional::stream)
                 .toList();
 
     }
