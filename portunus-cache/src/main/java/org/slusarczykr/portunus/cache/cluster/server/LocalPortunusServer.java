@@ -200,11 +200,11 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> removeAll(String name, Partition partition, Set<Cache.Entry<K, V>> entries) {
         Cache<K, V> cache = cacheManager.getCache(name);
         Set<K> keys = DistributedCache.getEntryKeys(entries);
-        log.debug("Putting {} entries to local cache", keys.size());
-        Collection<Cache.Entry<K, V>> cacheEntries = cache.removeAll(keys);
-        unregisterCacheEntries(name, partition, new HashSet<>(cacheEntries));
+        log.debug("Removing {} entries from local cache", keys.size());
+        Collection<Cache.Entry<K, V>> removedEntries = cache.removeAll(keys);
+        unregisterCacheEntries(name, partition, new HashSet<>(removedEntries));
 
-        return new HashSet<>(cacheEntries);
+        return new HashSet<>(removedEntries);
     }
 
     private <K extends Serializable, V extends Serializable> void unregisterCacheEntries(String name, Partition partition, Set<Cache.Entry<K, V>> entries) {
@@ -236,7 +236,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         }
     }
 
-    public <K extends Serializable, V extends Serializable> void update(CacheChunk cacheChunk) {
+    public void update(CacheChunk cacheChunk) {
         cacheChunk.cacheEntries().forEach(it -> updateLocalCache(it, cacheChunk.partition()));
     }
 
@@ -245,6 +245,12 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         log.debug("Updating cache entries: '{}'. Cache size: {}", cache.getName(), localCache.allEntries().size());
         updateLocalCache(cache.getName(), partition, cache.allEntries());
         log.debug("Successfully updated cache: '{}'. Cache size: {}", cache.getName(), localCache.allEntries().size());
+    }
+
+    private <K extends Serializable, V extends Serializable> void removeFromLocalCache(String name, Partition partition,
+                                                                                       Collection<Cache.Entry<K, V>> cacheEntries) {
+        cacheEntries.forEach(it -> log.debug("Removing entry: {} from '{}'", it, name));
+        removeAll(name, partition, new HashSet<>(cacheEntries));
     }
 
     private PartitionEvent createPartitionUpdatedEvent(PartitionChangeDTO partitionChangeDTO) {
@@ -296,12 +302,6 @@ public class LocalPortunusServer extends AbstractPortunusServer {
                 .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
         cacheEntriesMap.entrySet().forEach(it -> log.debug("Putting entry: {} to '{}'", it, name));
         putAll(name, partition, cacheEntriesMap);
-    }
-
-    private <K extends Serializable, V extends Serializable> void removeFromLocalCache(String name, Partition partition,
-                                                                                       Collection<Cache.Entry<K, V>> cacheEntries) {
-        cacheEntries.forEach(it -> log.debug("Removing entry: {} from '{}'", it, name));
-        removeAll(name, partition, new HashSet<>(cacheEntries));
     }
 
     private AddressDTO getAddressDTO() {
