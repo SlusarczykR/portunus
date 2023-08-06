@@ -211,7 +211,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         cacheManager.unregister(partition.getPartitionId(), name, DistributedCache.getEntryKeys(entries));
 
         if (partition.isLocal()) {
-            sendPartitionEvent(partition.new Change<>(name, entries, false), false);
+            sendPartitionEvent(partition.new Change<>(name, entries, true), false);
         }
     }
 
