@@ -44,5 +44,9 @@ public interface ConversionService extends Service {
 
     CacheChunk convert(CacheChunkDTO cacheChunkDTO);
 
+    <K extends Serializable, V extends Serializable> PartitionChangeDTO convert(Partition.Change<K, V> partitionChange);
+
+    <K extends Serializable, V extends Serializable> Partition.Change<K, V> convert(PartitionChangeDTO partitionChangeDTO);
+
     CacheChunkDTO convert(CacheChunk cacheChunk);
 }

@@ -18,5 +18,8 @@ public interface DistributedCacheManager extends CacheManager {
     <K extends Serializable, V extends Serializable> void register(int partitionId, String name,
                                                                    Set<Cache.Entry<K, V>> cacheEntries);
 
+    <K extends Serializable> void unregister(int partitionId, String name,
+                                             Set<K> keys);
+
     void remove(int partitionId);
 }

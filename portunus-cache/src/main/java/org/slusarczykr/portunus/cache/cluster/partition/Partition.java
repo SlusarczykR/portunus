@@ -1,16 +1,16 @@
 package org.slusarczykr.portunus.cache.cluster.partition;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.io.Serializable;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Data
@@ -86,5 +86,18 @@ public class Partition {
                 ", owner=" + owner +
                 ", replicaOwners=" + Arrays.toString(replicaOwners.toArray()) +
                 '}';
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public class Change<K extends Serializable, V extends Serializable> {
+
+        private final String cacheName;
+        private final Set<Cache.Entry<K, V>> entries;
+        private final boolean remove;
+
+        public Partition getPartition() {
+            return Partition.this;
+        }
     }
 }

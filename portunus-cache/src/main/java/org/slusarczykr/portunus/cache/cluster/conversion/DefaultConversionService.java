@@ -18,6 +18,7 @@ import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEnt
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -183,6 +184,29 @@ public class DefaultConversionService extends AbstractService implements Convers
                 .collect(Collectors.toSet());
 
         return new CacheChunk(partition, cacheEntries);
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> PartitionChangeDTO convert(Partition.Change<K, V> partitionChange) {
+        Map<K, V> cacheEntries = partitionChange.getEntries().stream()
+                .collect(Collectors.toMap(Cache.Entry::getKey, Cache.Entry::getValue));
+        Cache<K, V> cache = new DefaultCache<>(partitionChange.getCacheName());
+        cache.putAll(cacheEntries);
+
+        return PartitionChangeDTO.newBuilder()
+                .setPartition(convert(partitionChange.getPartition()))
+                .setCache(convert(cache))
+                .setRemove(partitionChange.isRemove())
+                .build();
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> Partition.Change<K, V> convert(PartitionChangeDTO partitionChangeDTO) {
+        Partition partition = convert(partitionChangeDTO.getPartition());
+        Cache<K, V> cache = convert(partitionChangeDTO.getCache());
+        Set<Cache.Entry<K, V>> cacheEntries = new HashSet<>(cache.allEntries());
+
+        return partition.new Change<>(cache.getName(), cacheEntries, partitionChangeDTO.getRemove());
     }
 
     @Override

@@ -33,7 +33,7 @@ public interface Cache<K, V> {
 
     Entry<K, V> remove(K key);
 
-    void removeAll(Collection<K> keys);
+    Collection<Entry<K, V>> removeAll(Collection<K> keys);
 
     interface Entry<K, V> {
 

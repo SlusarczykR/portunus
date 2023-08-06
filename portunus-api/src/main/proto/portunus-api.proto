@@ -17,6 +17,12 @@ message PartitionDTO {
   repeated AddressDTO replicaOwners = 3;
 }
 
+message PartitionChangeDTO {
+  PartitionDTO partition = 1;
+  CacheDTO cache = 2;
+  bool remove = 3;
+}
+
 message CacheChunkDTO {
   PartitionDTO partition = 1;
   repeated CacheDTO caches = 2;

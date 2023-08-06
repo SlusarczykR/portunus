@@ -172,9 +172,15 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, Partition partition, K key) {
         Cache<K, V> cache = getCache(name);
         return cache.remove(key);
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> removeAll(String name, Partition partition, Set<Cache.Entry<K, V>> entries) {
+        Cache<K, V> cache = getCache(name);
+        return new HashSet<>(cache.removeAll(DistributedCache.getEntryKeys(entries)));
     }
 
     @Override

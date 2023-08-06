@@ -111,8 +111,20 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
-    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, K key) {
+    public <K extends Serializable, V extends Serializable> Cache.Entry<K, V> remove(String name, Partition partition, K key) {
         return clusterService.getConversionService().convert(portunusClient.removeEntry(name, key));
+    }
+
+    @Override
+    public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> removeAll(String name, Partition partition, Set<Cache.Entry<K, V>> entries) {
+        List<CacheEntryDTO> cacheEntries = entries.stream()
+                .map(it -> new DefaultCache.Entry<>(it.getKey(), it.getValue()))
+                .map(it -> clusterService.getConversionService().convert(it))
+                .toList();
+
+        return portunusClient.removeEntries(name, cacheEntries).stream()
+                .map(it -> (Cache.Entry<K, V>) clusterService.getConversionService().convert(it))
+                .collect(Collectors.toSet());
     }
 
     @Override

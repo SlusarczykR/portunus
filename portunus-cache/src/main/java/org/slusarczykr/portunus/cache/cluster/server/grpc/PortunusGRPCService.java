@@ -195,6 +195,29 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     @Override
+    public void removeEntries(RemoveEntriesCommand request, StreamObserver<RemoveEntriesDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.REMOVE, () -> removeEntries(request));
+    }
+
+    private <K extends Serializable, V extends Serializable> RemoveEntriesDocument removeEntries(RemoveEntriesCommand command) {
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
+        Collection<K> keys = command.getKeyList().stream()
+                .map(it -> (K) toDistributed(it).get())
+                .collect(Collectors.toSet());
+        Collection<Cache.Entry<K, V>> removedEntries = cache.removeAll(keys);
+
+        return RemoveEntriesDocument.newBuilder()
+                .addAllCacheEntry(toCacheEntriesDTO(removedEntries))
+                .build();
+    }
+
+    private <K extends Serializable, V extends Serializable> Set<CacheEntryDTO> toCacheEntriesDTO(Collection<Cache.Entry<K, V>> entries) {
+        return entries.stream()
+                .map(it -> clusterService.getConversionService().convert(it))
+                .collect(Collectors.toSet());
+    }
+
+    @Override
     public void removeEntry(RemoveEntryCommand request, StreamObserver<RemoveEntryDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.REMOVE, () -> removeEntry(request));
     }

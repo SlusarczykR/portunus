@@ -48,9 +48,9 @@ message PartitionEvent {
 }
 
 message PartitionCreatedEvent {
-  CacheChunkDTO cacheChunk = 1;
+  PartitionChangeDTO partitionChange = 1;
 }
 
 message PartitionUpdatedEvent {
-  CacheChunkDTO cacheChunk = 1;
+  PartitionChangeDTO partitionChange = 1;
 }

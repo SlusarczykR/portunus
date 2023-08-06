@@ -34,6 +34,16 @@ message PutEntriesDocument {
   bool status = 1;
 }
 
+message RemoveEntriesCommand {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  repeated bytes key = 3;
+}
+
+message RemoveEntriesDocument {
+  repeated CacheEntryDTO cacheEntry = 1;
+}
+
 message RemoveEntryCommand {
   AddressDTO from = 1;
   string cacheName = 2;

@@ -30,10 +30,7 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
 
     @Override
     public <K extends Serializable, V extends Serializable> void register(int partitionId, String name, Map<K, V> cacheEntries) {
-        Set<Cache.Entry<K, V>> entries = cacheEntries.entrySet().stream()
-                .map(it -> new DefaultCache.Entry<>(it.getKey(), it.getValue()))
-                .collect(Collectors.toSet());
-
+        Set<Cache.Entry<K, V>> entries = toEntrySet(cacheEntries);
         register(partitionId, name, entries);
     }
 
@@ -48,6 +45,18 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
                 .orElseGet(() -> newCache(caches, name));
 
         cache.putAll(cacheEntries);
+    }
+
+    @Override
+    public <K extends Serializable> void unregister(int partitionId, String name, Set<K> keys) {
+        Set<Cache<? extends Serializable, ? extends Serializable>> caches = getCacheEntries(partitionId);
+
+        Cache<K, ? extends Serializable> cache = (Cache<K, ? extends Serializable>) caches.stream()
+                .filter(it -> it.getName().equals(name))
+                .findFirst()
+                .orElseGet(() -> newCache(caches, name));
+
+        cache.removeAll(keys);
     }
 
     @Override
@@ -72,5 +81,11 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
         caches.add(cache);
 
         return cache;
+    }
+
+    private <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> toEntrySet(Map<K, V> cacheEntries) {
+        return cacheEntries.entrySet().stream()
+                .map(it -> new DefaultCache.Entry<>(it.getKey(), it.getValue()))
+                .collect(Collectors.toSet());
     }
 }

@@ -5,11 +5,10 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionChangeDTO;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -19,6 +18,7 @@ import org.slusarczykr.portunus.cache.exception.FatalPortunusException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -128,25 +128,24 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     @SneakyThrows
     private void handlePartitionCreatedEvent(PartitionCreatedEvent event) {
-        processCacheChunk(event.getCacheChunk());
+        processPartitionChange(event.getPartitionChange());
     }
 
     @SneakyThrows
     private void handlePartitionUpdatedEvent(PartitionUpdatedEvent event) {
-        processCacheChunk(event.getCacheChunk());
+        processPartitionChange(event.getPartitionChange());
     }
 
-    private void processCacheChunk(CacheChunkDTO cacheChunkDTO) {
-        CacheChunk cacheChunk = clusterService.getConversionService().convert(cacheChunkDTO);
-        Partition partition = cacheChunk.partition();
+    private <K extends Serializable, V extends Serializable> void processPartitionChange(PartitionChangeDTO partitionChangeDTO) {
+        Partition.Change<K, V> partitionChange = clusterService.getConversionService().convert(partitionChangeDTO);
 
-        clusterService.getPartitionService().register(partition);
-        updateLocalCachesIfPartitionOwner(cacheChunk);
+        clusterService.getPartitionService().register(partitionChange.getPartition());
+        updateLocalCachesIfPartitionOwner(partitionChange);
     }
 
-    private void updateLocalCachesIfPartitionOwner(CacheChunk cacheChunk) {
-        if (isPartitionReplicaOwner(cacheChunk.partition())) {
-            clusterService.getLocalServer().update(cacheChunk);
+    private <K extends Serializable, V extends Serializable> void updateLocalCachesIfPartitionOwner(Partition.Change<K, V> partitionChange) {
+        if (isPartitionReplicaOwner(partitionChange.getPartition())) {
+            clusterService.getLocalServer().update(partitionChange);
         }
     }
 

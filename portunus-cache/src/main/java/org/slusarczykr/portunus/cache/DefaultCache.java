@@ -116,8 +116,10 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void removeAll(Collection<K> keys) {
-        keys.forEach(this::remove);
+    public Collection<Cache.Entry<K, V>> removeAll(Collection<K> keys) {
+        return keys.stream()
+                .map(this::remove)
+                .toList();
     }
 
     private void validate(K key, V value) {

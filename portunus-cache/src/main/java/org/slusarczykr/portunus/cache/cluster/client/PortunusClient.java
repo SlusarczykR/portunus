@@ -8,7 +8,6 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 
 import java.io.Serializable;
-import java.security.Key;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +34,7 @@ public interface PortunusClient {
 
     boolean putEntry(String cacheName, CacheEntryDTO entry);
 
-    boolean putEntries(String cacheName, Collection<CacheEntryDTO> entry);
+    boolean putEntries(String cacheName, Collection<CacheEntryDTO> entries);
 
     <K extends Serializable> CacheEntryDTO removeEntry(String cacheName, K key);
 
@@ -44,4 +43,6 @@ public interface PortunusClient {
     boolean migrate(List<CacheChunkDTO> cacheChunks, boolean replicate);
 
     void register();
+
+    Collection<CacheEntryDTO> removeEntries(String cacheName, Collection<CacheEntryDTO> entries);
 }

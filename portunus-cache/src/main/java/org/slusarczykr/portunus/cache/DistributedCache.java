@@ -144,7 +144,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     private void putEntry(K key, Entry<K, V> entry) {
-        Partition partition = clusterService.getPartitionService().getPartitionForKey(key);
+        Partition partition = getPartitionForKey(key);
         putEntry(partition, entry);
     }
 
@@ -179,7 +179,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private Cache.Entry<K, V> removeEntry(K key) {
-        return Optional.ofNullable((Cache.Entry<K, V>) executeLocalOrDistributed(key, it -> it.remove(name, key)))
+        return Optional.ofNullable((Cache.Entry<K, V>) executeLocalOrDistributed(key, it -> it.remove(name, getPartitionForKey(key), key)))
                 .map(it -> {
                     cacheEntryObserver.onRemove(it);
                     return it;
@@ -188,10 +188,11 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     @Override
-    public void removeAll(Collection<K> keys) {
-        executeOperation(OperationType.REMOVE_ALL, () -> {
-            keys.forEach(this::removeEntry);
-            return keys;
+    public Collection<Cache.Entry<K, V>> removeAll(Collection<K> keys) {
+        return executeOperation(OperationType.REMOVE_ALL, () -> {
+            return keys.stream()
+                    .map(this::removeEntry)
+                    .toList();
         });
     }
 
@@ -248,9 +249,19 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         return clusterService.getDiscoveryService().remoteServers().parallelStream();
     }
 
+    private Partition getPartitionForKey(K key) {
+        return clusterService.getPartitionService().getPartitionForKey(key);
+    }
+
     @Override
     public void shutdown() {
         operationExecutor.shutdown();
+    }
+
+    public static <K extends Serializable, V extends Serializable> Set<K> getEntryKeys(Set<Cache.Entry<K, V>> entries) {
+        return entries.stream()
+                .map(Cache.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
     public record Entry<K, V>(K key, V value) implements Cache.Entry<K, V> {

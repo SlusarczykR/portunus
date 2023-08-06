@@ -191,9 +191,9 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
-    public boolean putEntries(String cacheName, Collection<CacheEntryDTO> entry) {
+    public boolean putEntries(String cacheName, Collection<CacheEntryDTO> entries) {
         return withPortunusServiceStub(portunusService -> {
-            PutEntriesCommand command = createPutEntriesCommand(cacheName, entry);
+            PutEntriesCommand command = createPutEntriesCommand(cacheName, entries);
             return portunusService.putEntries(command);
         }).getStatus();
     }
@@ -250,6 +250,28 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         withPortunusServiceStub(portunusService -> {
             return portunusService.register(createRegisterMemberCommand());
         });
+    }
+
+    @Override
+    public Collection<CacheEntryDTO> removeEntries(String cacheName, Collection<CacheEntryDTO> entries) {
+        return withPortunusServiceStub(portunusService -> {
+            RemoveEntriesCommand command = createRemoveEntriesCommand(cacheName, entries);
+            return portunusService.removeEntries(command);
+        }).getCacheEntryList();
+    }
+
+    private RemoveEntriesCommand createRemoveEntriesCommand(String cacheName, Collection<CacheEntryDTO> entries) {
+        return RemoveEntriesCommand.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
+                .setCacheName(cacheName)
+                .addAllKey(getEntryKeys(entries))
+                .build();
+    }
+
+    private List<ByteString> getEntryKeys(Collection<CacheEntryDTO> entries) {
+        return entries.stream()
+                .map(CacheEntryDTO::getKey)
+                .toList();
     }
 
     private RegisterMemberCommand createRegisterMemberCommand() {
