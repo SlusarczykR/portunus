@@ -95,7 +95,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     @Override
     public Collection<Cache.Entry<K, V>> getEntries(Collection<K> keys) {
         return executeOperation(OperationType.GET_ENTRIES, () -> {
-            List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(withRemoteServers(it -> getRemoteEntries(it, keys)));
+            Set<Cache.Entry<K, V>> remoteEntries = new HashSet<>(withRemoteServers(it -> getRemoteEntries(it, keys)));
             Set<Cache.Entry<K, V>> entries = clusterService.getLocalServer().getCacheEntries(name, keys);
             entries.forEach(cacheEntryObserver::onAccess);
             remoteEntries.addAll(entries);
@@ -111,7 +111,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     @Override
     public Collection<Cache.Entry<K, V>> allEntries() {
         return executeOperation(OperationType.GET_ALL_ENTRIES, () -> {
-            List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(withRemoteServers(this::getAllRemoteEntries));
+            Set<Cache.Entry<K, V>> remoteEntries = new HashSet<>(withRemoteServers(this::getAllRemoteEntries));
             Set<Cache.Entry<K, V>> entries = clusterService.getLocalServer().getCacheEntries(name);
             entries.forEach(cacheEntryObserver::onAccess);
             remoteEntries.addAll(entries);
@@ -267,6 +267,19 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         @Override
         public V getValue() {
             return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Entry<?, ?> entry = (Entry<?, ?>) o;
+            return Objects.equals(key, entry.key);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key);
         }
     }
 

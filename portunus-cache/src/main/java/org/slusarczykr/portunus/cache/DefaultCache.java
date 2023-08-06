@@ -63,7 +63,6 @@ public class DefaultCache<K, V> implements Cache<K, V> {
                 .map(this::getEntry)
                 .flatMap(Optional::stream)
                 .toList();
-
     }
 
     public Collection<Cache.Entry<K, V>> allEntries() {
@@ -140,6 +139,19 @@ public class DefaultCache<K, V> implements Cache<K, V> {
         @Override
         public V getValue() {
             return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Entry<?, ?> entry = (Entry<?, ?>) o;
+            return Objects.equals(key, entry.key);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key);
         }
     }
 }

@@ -139,7 +139,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable> GetEntriesDocument getCacheEntries(GetEntriesQuery query) {
-        List<Distributed<K>> keys = toDistributed(query.getKeyList());
+        List<K> keys = fromBytes(query.getKeyList());
         List<CacheEntryDTO> cacheEntries = clusterService.getLocalServer().getCacheEntries(query.getCacheName(), keys).stream()
                 .map(this::toCacheEntry)
                 .toList();
@@ -425,7 +425,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> GetStringCacheDocument getStringCacheEntries(GetCacheCommand command) {
-        List<StringCacheEntryDTO> cacheEntries = clusterService.getLocalServer().getCacheEntries(command.getName()).stream()
+        DistributedCache<K, V> distributedCache = getDistributedCache(command.getName());
+        List<StringCacheEntryDTO> cacheEntries = distributedCache.allEntries().stream()
                 .map(this::toStringCacheEntry)
                 .toList();
 
@@ -441,7 +442,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private <K extends Serializable, V extends Serializable> GetStringCacheDocument getStringCacheEntries(GetStringEntriesQuery query) {
-        List<StringCacheEntryDTO> cacheEntries = clusterService.getLocalServer().getCacheEntries(query.getCacheName(), query.getKeyList()).stream()
+        DistributedCache<K, V> distributedCache = getDistributedCache(query.getCacheName());
+        List<StringCacheEntryDTO> cacheEntries = distributedCache.getEntries((List<K>) query.getKeyList().stream().toList()).stream()
                 .map(this::toStringCacheEntry)
                 .toList();
 
@@ -472,9 +474,9 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 .toList();
     }
 
-    private <T extends Serializable> List<Distributed<T>> toDistributed(List<ByteString> elements) {
-        return elements.stream()
-                .map(it -> (Distributed<T>) toDistributed(it))
+    private <T extends Serializable> List<T> fromBytes(List<ByteString> byteStrings) {
+        return byteStrings.stream()
+                .map(it -> (T) toDistributed(it).get())
                 .toList();
     }
 
