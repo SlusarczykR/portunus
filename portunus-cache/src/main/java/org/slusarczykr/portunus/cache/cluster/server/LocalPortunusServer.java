@@ -132,6 +132,12 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name, Collection<K> keys) {
+        Cache<K, V> cache = cacheManager.getCache(name);
+        return new HashSet<>(cache.getEntries(keys));
+    }
+
+    @Override
     public <K extends Serializable, V extends Serializable> void put(String name, Partition partition, Cache.Entry<K, V> entry) {
         put(name, entry);
         registerCacheEntry(name, partition, Set.of(entry));

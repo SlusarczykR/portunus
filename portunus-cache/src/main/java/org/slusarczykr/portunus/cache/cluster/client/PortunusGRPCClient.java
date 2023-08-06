@@ -1,5 +1,6 @@
 package org.slusarczykr.portunus.cache.cluster.client;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessageV3;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -91,10 +92,26 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     }
 
     @Override
+    public <K extends Serializable> Set<CacheEntryDTO> getCacheEntries(String name, Collection<K> keys) {
+        return new HashSet<>(withPortunusServiceStub(portunusService -> {
+            GetEntriesQuery query = createGetEntriesQuery(name, keys);
+            return portunusService.getCacheEntries(query);
+        }).getCacheEntryList());
+    }
+
+    private <K extends Serializable> GetEntriesQuery createGetEntriesQuery(String name, Collection<K> keys) {
+        return GetEntriesQuery.newBuilder()
+                .setFrom(getLocalServerAddressDTO())
+                .setCacheName(name)
+                .addAllKey(toDistributed(keys))
+                .build();
+    }
+
+    @Override
     public CacheChunkDTO getCacheChunk(int partitionId) {
         return withPortunusServiceStub(portunusService -> {
             GetCacheEntriesByPartitionIdCommand command = createGetEntryCommand(partitionId);
-            return portunusService.getCacheEntries(command);
+            return portunusService.getCacheEntriesByPartitionId(command);
         }).getCacheChunk();
     }
 
@@ -269,6 +286,12 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
     private AddressDTO getLocalServerAddressDTO() {
         LocalPortunusServer localServer = clusterService.getLocalServer();
         return clusterService.getConversionService().convert(localServer.getAddress());
+    }
+
+    private <T extends Serializable> List<ByteString> toDistributed(Collection<T> elements) {
+        return elements.stream()
+                .map(it -> DistributedWrapper.from(it).getByteString())
+                .toList();
     }
 
     @Override

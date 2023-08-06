@@ -18,7 +18,9 @@ service PortunusService {
   rpc getStringCache(org.slusarczykr.portunus.cache.api.query.GetCacheCommand) returns (org.slusarczykr.portunus.cache.api.test.GetStringCacheDocument);
   rpc getCacheEntry(org.slusarczykr.portunus.cache.api.query.GetEntryCommand) returns (org.slusarczykr.portunus.cache.api.query.GetEntryDocument);
   rpc getStringCacheEntry(org.slusarczykr.portunus.cache.api.test.GetStringEntryQuery) returns (org.slusarczykr.portunus.cache.api.test.GetStringEntryDocument);
-  rpc getCacheEntries(org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdCommand) returns (org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdDocument);
+  rpc getCacheEntries(org.slusarczykr.portunus.cache.api.query.GetEntriesQuery) returns (org.slusarczykr.portunus.cache.api.query.GetEntriesDocument);
+  rpc getStringCacheEntries(org.slusarczykr.portunus.cache.api.test.GetStringEntriesQuery) returns (org.slusarczykr.portunus.cache.api.test.GetStringCacheDocument);
+  rpc getCacheEntriesByPartitionId(org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdCommand) returns (org.slusarczykr.portunus.cache.api.query.GetCacheEntriesByPartitionIdDocument);
   rpc getPartitions(org.slusarczykr.portunus.cache.api.query.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.query.GetPartitionsDocument);
   rpc anyEntry(org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);

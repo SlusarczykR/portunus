@@ -12,6 +12,12 @@ message GetStringEntryQuery {
   string key = 3;
 }
 
+message GetStringEntriesQuery {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  repeated string key = 3;
+}
+
 message GetStringCacheDocument {
   repeated StringCacheEntryDTO cacheEntries = 1;
 }

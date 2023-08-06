@@ -62,3 +62,13 @@ message GetEntryCommand {
 message GetEntryDocument {
   CacheEntryDTO cacheEntry = 1;
 }
+
+message GetEntriesQuery {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  repeated bytes key = 3;
+}
+
+message GetEntriesDocument {
+  repeated CacheEntryDTO cacheEntry = 1;
+}

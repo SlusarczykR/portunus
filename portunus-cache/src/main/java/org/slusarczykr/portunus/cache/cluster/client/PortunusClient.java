@@ -8,6 +8,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 
 import java.io.Serializable;
+import java.security.Key;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -19,6 +20,8 @@ public interface PortunusClient {
     <K extends Serializable> boolean containsEntry(String cacheName, K key);
 
     Set<CacheEntryDTO> getCache(String name);
+
+    <K extends Serializable> Set<CacheEntryDTO> getCacheEntries(String name, Collection<K> keys);
 
     CacheChunkDTO getCacheChunk(int partitionId);
 

@@ -94,19 +94,24 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @Override
     public Collection<Cache.Entry<K, V>> getEntries(Collection<K> keys) {
-        return executeOperation(OperationType.GET_ENTRIES, () ->
-                keys.stream()
-                        .map(this::getEntry)
-                        .map(Optional::stream)
-                        .map(it -> (Cache.Entry<K, V>) it)
-                        .toList()
-        );
+        return executeOperation(OperationType.GET_ENTRIES, () -> {
+            List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(withRemoteServers(it -> getRemoteEntries(it, keys)));
+            Set<Cache.Entry<K, V>> entries = clusterService.getLocalServer().getCacheEntries(name, keys);
+            entries.forEach(cacheEntryObserver::onAccess);
+            remoteEntries.addAll(entries);
+
+            return Collections.unmodifiableCollection(remoteEntries);
+        });
+    }
+
+    private Set<Cache.Entry<K, V>> getRemoteEntries(PortunusServer remoteServer, Collection<K> keys) {
+        return remoteServer.getCacheEntries(name, keys);
     }
 
     @Override
     public Collection<Cache.Entry<K, V>> allEntries() {
         return executeOperation(OperationType.GET_ALL_ENTRIES, () -> {
-            List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(getRemoteServersEntries());
+            List<Cache.Entry<K, V>> remoteEntries = new ArrayList<>(withRemoteServers(this::getAllRemoteEntries));
             Set<Cache.Entry<K, V>> entries = clusterService.getLocalServer().getCacheEntries(name);
             entries.forEach(cacheEntryObserver::onAccess);
             remoteEntries.addAll(entries);
@@ -115,18 +120,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         });
     }
 
-    private List<Cache.Entry<K, V>> getRemoteServersEntries() {
-        return remoteServersStream()
-                .map(this::getRemoteEntries)
-                .flatMap(Collection::stream)
-                .toList();
-    }
-
-    private Stream<RemotePortunusServer> remoteServersStream() {
-        return clusterService.getDiscoveryService().remoteServers().parallelStream();
-    }
-
-    private Set<Cache.Entry<K, V>> getRemoteEntries(PortunusServer remoteServer) {
+    private Set<Cache.Entry<K, V>> getAllRemoteEntries(PortunusServer remoteServer) {
         return remoteServer.getCacheEntries(name);
     }
 
@@ -243,6 +237,17 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         return clusterService.getReplicaService().isPartitionReplicaOwner(partition.getPartitionId());
     }
 
+    private List<Cache.Entry<K, V>> withRemoteServers(Function<RemotePortunusServer, Collection<Cache.Entry<K, V>>> operation) {
+        return remoteServersStream()
+                .map(operation)
+                .flatMap(Collection::stream)
+                .toList();
+    }
+
+    private Stream<RemotePortunusServer> remoteServersStream() {
+        return clusterService.getDiscoveryService().remoteServers().parallelStream();
+    }
+
     @Override
     public void shutdown() {
         operationExecutor.shutdown();
@@ -271,6 +276,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         CONTAINS_VALUE,
         GET_ENTRY,
         GET_ENTRIES,
+        GET_ENTRIES_BY_PARTITION,
         GET_ALL_ENTRIES,
         PUT,
         PUT_ALL,

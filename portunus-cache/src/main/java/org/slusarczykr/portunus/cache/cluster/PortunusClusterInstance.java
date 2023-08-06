@@ -154,6 +154,12 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     }
 
     @Override
+    public <K extends Serializable, V extends Serializable> Set<Cache.Entry<K, V>> getCacheEntries(String name, Collection<K> keys) {
+        Cache<K, V> cache = getCache(name);
+        return new HashSet<>(cache.getEntries(keys));
+    }
+
+    @Override
     public <K extends Serializable, V extends Serializable> void put(String name, Partition partition, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = getCache(name);
         cache.put(entry);

@@ -21,10 +21,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.Partition
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.*;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
 import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos;
-import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringCacheDocument;
-import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringEntryDocument;
-import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.GetStringEntryQuery;
-import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.StringCacheEntryDTO;
+import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.*;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
@@ -132,6 +129,38 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         return CacheEntryDTO.newBuilder()
                 .setKey(DistributedWrapper.from((entry.getKey())).getByteString())
                 .setValue(DistributedWrapper.from((entry.getValue())).getByteString())
+                .build();
+    }
+
+    @Override
+    public void getCacheEntries(GetEntriesQuery request, StreamObserver<GetEntriesDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ENTRIES, () -> getCacheEntries(request));
+    }
+
+    @SneakyThrows
+    private <K extends Serializable> GetEntriesDocument getCacheEntries(GetEntriesQuery query) {
+        List<Distributed<K>> keys = toDistributed(query.getKeyList());
+        List<CacheEntryDTO> cacheEntries = clusterService.getLocalServer().getCacheEntries(query.getCacheName(), keys).stream()
+                .map(this::toCacheEntry)
+                .toList();
+
+        return GetEntriesDocument.newBuilder()
+                .addAllCacheEntry(cacheEntries)
+                .build();
+    }
+
+    @Override
+    public void getCacheEntriesByPartitionId(GetCacheEntriesByPartitionIdCommand request, StreamObserver<GetCacheEntriesByPartitionIdDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ENTRIES_BY_PARTITION, () -> getCacheEntries(request));
+    }
+
+    @SneakyThrows
+    private <K extends Serializable> GetCacheEntriesByPartitionIdDocument getCacheEntries(GetCacheEntriesByPartitionIdCommand query) {
+        Partition partition = clusterService.getPartitionService().getPartition((int) query.getPartitionId());
+        CacheChunk cacheChunk = clusterService.getLocalServer().getCacheChunk(partition);
+
+        return GetCacheEntriesByPartitionIdDocument.newBuilder()
+                .setCacheChunk(clusterService.getConversionService().convert(cacheChunk))
                 .build();
     }
 
@@ -406,6 +435,22 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     @Override
+    public void getStringCacheEntries(GetStringEntriesQuery request, StreamObserver<GetStringCacheDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.GET_ALL_ENTRIES, () -> getStringCacheEntries(request));
+    }
+
+    @SneakyThrows
+    private <K extends Serializable, V extends Serializable> GetStringCacheDocument getStringCacheEntries(GetStringEntriesQuery query) {
+        List<StringCacheEntryDTO> cacheEntries = clusterService.getLocalServer().getCacheEntries(query.getCacheName(), query.getKeyList()).stream()
+                .map(this::toStringCacheEntry)
+                .toList();
+
+        return GetStringCacheDocument.newBuilder()
+                .addAllCacheEntries(cacheEntries)
+                .build();
+    }
+
+    @Override
     public void putStringEntry(PortunusTestApiProtos.PutStringEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.PUT, () -> putStringEntry(request));
     }
@@ -424,6 +469,12 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     private List<CacheChunk> convert(List<PortunusApiProtos.CacheChunkDTO> cacheChunksList) {
         return cacheChunksList.stream()
                 .map(it -> clusterService.getConversionService().convert(it))
+                .toList();
+    }
+
+    private <T extends Serializable> List<Distributed<T>> toDistributed(List<ByteString> elements) {
+        return elements.stream()
+                .map(it -> (Distributed<T>) toDistributed(it))
                 .toList();
     }
 
