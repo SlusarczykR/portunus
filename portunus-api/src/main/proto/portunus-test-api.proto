@@ -6,6 +6,12 @@ package org.slusarczykr.portunus.cache.api.test;
 option java_package = "org.slusarczykr.portunus.cache.api.test";
 option java_outer_classname = "PortunusTestApiProtos";
 
+message ContainsStringEntryQuery {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  string key = 3;
+}
+
 message GetStringEntryQuery {
   AddressDTO from = 1;
   string cacheName = 2;

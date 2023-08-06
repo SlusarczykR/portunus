@@ -78,7 +78,6 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
         return ContainsEntryQuery.newBuilder()
                 .setFrom(getLocalServerAddressDTO())
                 .setCacheName(cacheName)
-                .setEntryKeyType(key.getClass().getCanonicalName())
                 .setEntryKey(distributed.getByteString())
                 .build();
     }

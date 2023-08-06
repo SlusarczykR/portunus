@@ -79,34 +79,16 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     @SneakyThrows
     private ContainsEntryDocument createContainsEntryDocument(ContainsEntryQuery query) {
-        Distributed<?> distributed = getDistributedKey(query);
-        boolean containsEntry = containsEntry(query, distributed);
+        boolean containsEntry = containsEntry(query);
         return ContainsEntryDocument.newBuilder()
                 .setContainsEntry(containsEntry)
                 .build();
     }
 
-    private boolean containsEntry(ContainsEntryQuery query, Distributed<?> distributed) {
-        return Optional.ofNullable(getDistributedCache(query.getCacheName()))
-                .map(it -> containsEntry(it, distributed.get()))
-                .orElse(false);
-    }
-
-    @SneakyThrows
-    private <K> boolean containsEntry(Cache<K, ?> cache, K key) {
+    private <K extends Serializable, V extends Serializable> boolean containsEntry(ContainsEntryQuery query) {
+        DistributedCache<K, V> cache = getDistributedCache(query.getCacheName());
+        K key = (K) toDistributed(query.getEntryKey()).get();
         return cache.containsKey(key);
-    }
-
-    private <T extends Serializable> Distributed<T> getDistributedKey(ContainsEntryQuery query) throws PortunusException {
-        try {
-            return toDistributed(query.getEntryKey());
-        } catch (Exception e) {
-            throw new PortunusException("Unable to deserialize request");
-        }
-    }
-
-    private <K extends Serializable> Distributed<K> toDistributed(ByteString bytes) {
-        return DistributedWrapper.fromBytes(bytes.toByteArray());
     }
 
     @Override
@@ -395,6 +377,24 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     @Override
+    public void containsStringEntry(ContainsStringEntryQuery request, StreamObserver<ContainsEntryDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.CONTAINS_KEY, () -> containsStringEntry(request));
+    }
+
+    @SneakyThrows
+    private ContainsEntryDocument containsStringEntry(ContainsStringEntryQuery query) {
+        boolean containsEntry = containsEntry(query);
+        return ContainsEntryDocument.newBuilder()
+                .setContainsEntry(containsEntry)
+                .build();
+    }
+
+    private <K extends Serializable, V extends Serializable> boolean containsEntry(ContainsStringEntryQuery query) {
+        DistributedCache<K, V> cache = getDistributedCache(query.getCacheName());
+        return cache.containsKey((K) query.getKey());
+    }
+
+    @Override
     public void getStringCacheEntry(GetStringEntryQuery request, StreamObserver<GetStringEntryDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.GET_ENTRY, () -> getStringCacheEntry(request));
     }
@@ -480,6 +480,10 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 .toList();
     }
 
+    private <K extends Serializable> Distributed<K> toDistributed(ByteString bytes) {
+        return DistributedWrapper.fromBytes(bytes.toByteArray());
+    }
+
     private <K extends Serializable, V extends Serializable> DistributedCache<K, V> getDistributedCache(String name) {
         log.trace("Getting distributed cache: '{}'", name);
         return (DistributedCache<K, V>) clusterService.getPortunusClusterInstance().getCache(name);
@@ -502,7 +506,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         responseObserver.onCompleted();
     }
 
-    private static void logRequest(OperationType operationType, Address from, boolean trace) {
+    private void logRequest(OperationType operationType, Address from, boolean trace) {
         String logEntry = String.format("Received '%s' command from '%s'", operationType, from);
 
         if (trace) {

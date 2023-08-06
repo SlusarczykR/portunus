@@ -18,8 +18,7 @@ message ContainsAnyEntryDocument {
 message ContainsEntryQuery {
   AddressDTO from = 1;
   string cacheName = 2;
-  string entryKeyType = 3;
-  bytes entryKey = 4;
+  bytes entryKey = 3;
 }
 
 message ContainsEntryDocument {

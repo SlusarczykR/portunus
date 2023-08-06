@@ -24,6 +24,7 @@ service PortunusService {
   rpc getPartitions(org.slusarczykr.portunus.cache.api.query.GetPartitionsCommand) returns (org.slusarczykr.portunus.cache.api.query.GetPartitionsDocument);
   rpc anyEntry(org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsAnyEntryDocument);
   rpc containsEntry(org.slusarczykr.portunus.cache.api.query.ContainsEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
+  rpc containsStringEntry(org.slusarczykr.portunus.cache.api.test.ContainsStringEntryQuery) returns (org.slusarczykr.portunus.cache.api.query.ContainsEntryDocument);
   rpc putEntry(org.slusarczykr.portunus.cache.api.command.PutEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
   rpc putStringEntry(org.slusarczykr.portunus.cache.api.test.PutStringEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
   rpc putEntries(org.slusarczykr.portunus.cache.api.command.PutEntriesCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntriesDocument);
