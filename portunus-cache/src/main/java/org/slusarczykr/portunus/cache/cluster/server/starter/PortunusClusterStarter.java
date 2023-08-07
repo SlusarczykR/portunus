@@ -2,6 +2,7 @@ package org.slusarczykr.portunus.cache.cluster.server.starter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.cluster.PortunusCluster;
 
 public final class PortunusClusterStarter {
@@ -10,6 +11,13 @@ public final class PortunusClusterStarter {
 
     public static void main(String[] args) {
         log.info("Starting portunus cluster");
-        PortunusCluster.newInstance();
+        PortunusCluster portunusCluster = PortunusCluster.newInstance();
+
+        Cache<String, String> cache = portunusCluster.getCache("testCache1");
+        cache.put("testKey1", "testValue1");
+
+        assert cache.remove("testKey1") != null;
+
+
     }
 }

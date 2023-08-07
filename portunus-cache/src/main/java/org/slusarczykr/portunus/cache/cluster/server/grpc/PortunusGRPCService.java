@@ -10,11 +10,7 @@ import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.DistributedCache;
 import org.slusarczykr.portunus.cache.DistributedCache.OperationType;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.VirtualPortunusNodeDTO;
+import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
 import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
@@ -33,7 +29,6 @@ import org.slusarczykr.portunus.cache.cluster.leader.exception.PaxosLeaderElecti
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntry;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.AppendEntryResponse;
 import org.slusarczykr.portunus.cache.paxos.api.PortunusPaxosApiProtos.RequestVoteResponse;
@@ -227,15 +222,15 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
         Cache<K, V> cache = getDistributedCache(command.getCacheName());
         Distributed<K> distributed = toDistributed(command.getKey());
 
-        return cache.getEntry(distributed.get())
+        Optional<CacheEntryDTO> removedEntry = cache.getEntry(distributed.get())
                 .map(it -> {
-                    removeEntry(cache, it.getKey());
-                    return RemoveEntryDocument.newBuilder()
-                            .setCacheEntry(clusterService.getConversionService().convert(it))
-                            .build();
+                    Cache.Entry<K, V> entry = removeEntry(cache, it.getKey());
+                    return clusterService.getConversionService().convert(entry);
+                });
 
-                })
-                .orElseThrow(() -> new PortunusException("Could not remove entry"));
+        return RemoveEntryDocument.newBuilder()
+                .setCacheEntry(removedEntry.orElse(null))
+                .build();
     }
 
     @SneakyThrows
@@ -491,7 +486,27 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
                 .build();
     }
 
-    private List<CacheChunk> convert(List<PortunusApiProtos.CacheChunkDTO> cacheChunksList) {
+    @Override
+    public void removeStringEntry(RemoveStringEntryCommand request, StreamObserver<RemoveStringEntryDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.REMOVE, () -> removeEntry(request));
+    }
+
+    @SneakyThrows
+    private <K extends Serializable, V extends Serializable> RemoveStringEntryDocument removeEntry(RemoveStringEntryCommand command) {
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
+
+        Optional<StringCacheEntryDTO> removedEntry = cache.getEntry((K) command.getKey())
+                .map(it -> {
+                    Cache.Entry<K, V> entry = removeEntry(cache, it.getKey());
+                    return toStringCacheEntry(entry);
+                });
+
+        return RemoveStringEntryDocument.newBuilder()
+                .setCacheEntry(removedEntry.orElse(null))
+                .build();
+    }
+
+    private List<CacheChunk> convert(List<CacheChunkDTO> cacheChunksList) {
         return cacheChunksList.stream()
                 .map(it -> clusterService.getConversionService().convert(it))
                 .toList();

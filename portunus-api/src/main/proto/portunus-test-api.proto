@@ -42,3 +42,13 @@ message PutStringEntryCommand {
   string cacheName = 2;
   StringCacheEntryDTO cacheEntry = 3;
 }
+
+message RemoveStringEntryCommand {
+  AddressDTO from = 1;
+  string cacheName = 2;
+  string key = 3;
+}
+
+message RemoveStringEntryDocument {
+  StringCacheEntryDTO cacheEntry = 1;
+}

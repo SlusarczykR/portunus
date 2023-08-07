@@ -12,7 +12,6 @@ import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
 import org.slusarczykr.portunus.cache.exception.OperationFailedException;
-import org.slusarczykr.portunus.cache.exception.PortunusException;
 import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 import java.io.Serializable;
@@ -184,7 +183,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
                     cacheEntryObserver.onRemove(it);
                     return it;
                 })
-                .orElseThrow(() -> new PortunusException("Entry is not present"));
+                .orElse(null);
     }
 
     @Override
@@ -192,6 +191,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
         return executeOperation(OperationType.REMOVE_ALL, () -> {
             return keys.stream()
                     .map(this::removeEntry)
+                    .filter(Objects::nonNull)
                     .toList();
         });
     }

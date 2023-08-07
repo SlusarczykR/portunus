@@ -29,6 +29,7 @@ service PortunusService {
   rpc putStringEntry(org.slusarczykr.portunus.cache.api.test.PutStringEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntryDocument);
   rpc putEntries(org.slusarczykr.portunus.cache.api.command.PutEntriesCommand) returns (org.slusarczykr.portunus.cache.api.command.PutEntriesDocument);
   rpc removeEntry(org.slusarczykr.portunus.cache.api.command.RemoveEntryCommand) returns (org.slusarczykr.portunus.cache.api.command.RemoveEntryDocument);
+  rpc removeStringEntry(org.slusarczykr.portunus.cache.api.test.RemoveStringEntryCommand) returns (org.slusarczykr.portunus.cache.api.test.RemoveStringEntryDocument);
   rpc removeEntries(org.slusarczykr.portunus.cache.api.command.RemoveEntriesCommand) returns (org.slusarczykr.portunus.cache.api.command.RemoveEntriesDocument);
   rpc sendRequestVote(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.RequestVoteResponse);
   rpc sendHeartbeats(org.slusarczykr.portunus.cache.paxos.api.AppendEntry) returns (org.slusarczykr.portunus.cache.paxos.api.AppendEntryResponse);
