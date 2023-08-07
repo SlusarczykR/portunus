@@ -12,12 +12,5 @@ public final class PortunusClusterStarter {
     public static void main(String[] args) {
         log.info("Starting portunus cluster");
         PortunusCluster portunusCluster = PortunusCluster.newInstance();
-
-        Cache<String, String> cache = portunusCluster.getCache("testCache1");
-        cache.put("testKey1", "testValue1");
-
-        assert cache.remove("testKey1") != null;
-
-
     }
 }

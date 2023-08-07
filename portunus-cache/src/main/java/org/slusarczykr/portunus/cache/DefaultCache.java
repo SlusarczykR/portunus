@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 import org.slusarczykr.portunus.cache.event.observer.DefaultCacheEntryObserver;
-import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,7 +111,7 @@ public class DefaultCache<K, V> implements Cache<K, V> {
                     cacheEntryObserver.onRemove(it);
                     return it;
                 })
-                .orElseThrow(() -> new OperationFailedException("Entry is not present"));
+                .orElse(null);
     }
 
     @Override

@@ -178,6 +178,7 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     @SneakyThrows
     private Cache.Entry<K, V> removeEntry(K key) {
+        log.debug("Removing entry: {} from local cache", key);
         return Optional.ofNullable((Cache.Entry<K, V>) executeLocalOrDistributed(key, it -> it.remove(name, getPartitionForKey(key), key)))
                 .map(it -> {
                     cacheEntryObserver.onRemove(it);

@@ -38,12 +38,14 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
     public <K extends Serializable, V extends Serializable> void register(int partitionId, String name,
                                                                           Set<Cache.Entry<K, V>> cacheEntries) {
         Cache<K, V> cache = getCache(partitionId, name);
+        log.debug("Registering {} entries from cache: '{}'", cacheEntries.size(), cache.getName());
         cache.putAll(cacheEntries);
     }
 
     @Override
     public <K extends Serializable> void unregister(int partitionId, String name, Set<K> keys) {
         Cache<K, ? extends Serializable> cache = getCache(partitionId, name);
+        log.debug("Unregistering {} entries from cache: '{}'", keys.size(), cache.getName());
         cache.removeAll(keys);
     }
 
