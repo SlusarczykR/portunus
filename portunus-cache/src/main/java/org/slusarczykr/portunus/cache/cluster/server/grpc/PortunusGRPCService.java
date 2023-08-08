@@ -495,11 +495,8 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     private <K extends Serializable, V extends Serializable> RemoveStringEntryDocument removeEntry(RemoveStringEntryCommand command) {
         Cache<K, V> cache = getDistributedCache(command.getCacheName());
 
-        Optional<StringCacheEntryDTO> removedEntry = cache.getEntry((K) command.getKey())
-                .map(it -> {
-                    Cache.Entry<K, V> entry = removeEntry(cache, it.getKey());
-                    return toStringCacheEntry(entry);
-                });
+        Optional<StringCacheEntryDTO> removedEntry = Optional.ofNullable(removeEntry(cache, (K) command.getKey()))
+                .map(this::toStringCacheEntry);
 
         return RemoveStringEntryDocument.newBuilder()
                 .setCacheEntry(removedEntry.orElse(null))
