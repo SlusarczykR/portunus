@@ -174,9 +174,9 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
         if (leader) {
             clusterService.getLeaderElectionStarter().stopLeaderScheduledJobs();
-        } else {
-            clusterService.getLeaderElectionStarter().reset();
         }
+        clusterService.getLeaderElectionStarter().reset();
+
         return leader;
     }
 
