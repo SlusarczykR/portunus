@@ -10,13 +10,22 @@
             <AppenderRef ref="console"/>
         </Root>
         <Logger name="org.slusarczykr.portunus.cache.cluster.server.grpc" level="debug">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="console"/>
         </Logger>
         <Logger name="org.slusarczykr.portunus.cache.cluster.partition" level="debug">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="console"/>
         </Logger>
         <Logger name="org.slusarczykr.portunus.cache.cluster.partition.circle" level="info">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.slusarczykr.portunus.cache.DistributedCache" level="debug">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.slusarczykr.portunus.cache.cluster.event.consumer" level="debug">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer" level="debug">
+            <AppenderRef ref="console"/>
         </Logger>
     </Loggers>
 </Configuration>
