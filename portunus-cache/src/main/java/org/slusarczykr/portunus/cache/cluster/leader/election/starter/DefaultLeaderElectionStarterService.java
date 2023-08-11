@@ -18,8 +18,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.LeaderElection.INITIAL_HEARTBEATS_DELAY;
-import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.LeaderElection.INITIAL_SYNC_STATE_DELAY;
+import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.LeaderElection.DEFAULT_HEARTBEATS_INTERVAL;
+import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.LeaderElection.DEFAULT_SYNC_STATE_INTERVAL;
 
 public class DefaultLeaderElectionStarterService extends AbstractPaxosService implements LeaderElectionStarterService {
 
@@ -107,7 +107,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         log.debug("Scheduling heartbeats with interval of {}s", heartbeatsInterval);
         ScheduledFuture<?> sendHeartbeatsJob = scheduledExecutor.scheduleAtFixedRate(
                 this::sendHeartbeats,
-                INITIAL_HEARTBEATS_DELAY,
+                DEFAULT_HEARTBEATS_INTERVAL,
                 heartbeatsInterval,
                 SECONDS
         );
@@ -128,7 +128,7 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         log.debug("Scheduling sync server state with interval of {}s", heartbeatsInterval);
         ScheduledFuture<?> syncServerStateJob = scheduledExecutor.scheduleAtFixedRate(
                 this::syncServerState,
-                INITIAL_SYNC_STATE_DELAY,
+                DEFAULT_SYNC_STATE_INTERVAL,
                 heartbeatsInterval,
                 SECONDS
         );
