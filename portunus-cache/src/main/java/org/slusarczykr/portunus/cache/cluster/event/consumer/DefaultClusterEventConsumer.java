@@ -168,7 +168,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
         return ClusterEventConsumer.class.getSimpleName();
     }
 
-    private static class MulticastReceiver extends Thread {
+    private class MulticastReceiver extends Thread {
 
         private final int port;
         private final Consumer<ClusterEvent> operation;
@@ -193,7 +193,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
                 InetAddress group = InetAddress.getByName(HOST);
                 socket.joinGroup(group);
 
-                while (true) {
+                while (!clusterService.getPortunusClusterInstance().isShutdown()) {
                     String received = receive(socket, buf);
 
                     if (received.endsWith(MESSAGE_MARKER)) {

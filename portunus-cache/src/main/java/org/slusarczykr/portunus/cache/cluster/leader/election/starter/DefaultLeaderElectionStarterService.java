@@ -162,8 +162,12 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
     @Override
     public void reset() {
         log.trace("Resetting leader candidacy starting timeout");
-        cancelIfPresent(candidacy.get());
+        cancelLeaderCandidacy();
         startLeaderCandidacy();
+    }
+
+    private void cancelLeaderCandidacy() {
+        cancelIfPresent(candidacy.get());
     }
 
     @Override
@@ -196,6 +200,8 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
 
     @Override
     public void shutdown() {
+        stopLeaderScheduledJobs();
+        cancelLeaderCandidacy();
         scheduledExecutor.shutdown();
     }
 }

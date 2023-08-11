@@ -24,7 +24,10 @@ import org.slusarczykr.portunus.cache.maintenance.ManagedService;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+
+import static org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance.State.*;
 
 public class PortunusClusterInstance implements PortunusCluster, PortunusServer {
 
@@ -32,23 +35,23 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     public static final int DEFAULT_PORT = 8091;
 
-    private static PortunusClusterInstance instance;
+    private final AtomicReference<State> state = new AtomicReference<>(STARTING);
+
     private final ManagedService managedService;
+    private final ShutdownThread shutdownThread;
     private final ClusterService clusterService;
     private final LocalPortunusServer localServer;
 
     private final Map<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
 
-    public static synchronized PortunusClusterInstance getInstance(ClusterConfig clusterConfig) {
-        if (instance == null) {
-            instance = new PortunusClusterInstance(clusterConfig);
-        }
-        return instance;
+    public static PortunusClusterInstance getInstance(ClusterConfig clusterConfig) {
+        return new PortunusClusterInstance(clusterConfig);
     }
 
     private PortunusClusterInstance(ClusterConfig clusterConfig) {
         log.info("Portunus instance is starting");
         this.managedService = DefaultManagedService.newInstance();
+        this.shutdownThread = new ShutdownThread();
         preInitialize();
         this.clusterService = DefaultClusterService.newInstance(this, clusterConfig);
         this.localServer = LocalPortunusServer.newInstance(clusterService, clusterConfig);
@@ -69,27 +72,22 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
             clusterService.getLeaderElectionStarter().start();
 
             publishMemberEvent(this::createMemberJoinedEvent);
+            state.set(STARTED);
         } catch (Exception e) {
             throw new FatalPortunusException("Could not initialize portunus instance", e);
         }
     }
 
     private void registerShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Portunus cluster is shutting down");
-            onShutdown();
-            managedService.shutdownAll();
-        }));
+        Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
-    private int getPort(ClusterConfig clusterConfig) {
-        return Optional.ofNullable(clusterConfig)
-                .map(ClusterConfig::getPort)
-                .orElse(DEFAULT_PORT);
+    public boolean isInitialized() {
+        return STARTED == state.get();
     }
 
-    private void onShutdown() {
-        publishMemberEvent(this::createMemberLeftEvent);
+    public boolean isShutdown() {
+        return List.of(STOPPING, STOPPED).contains(state.get());
     }
 
     public ManagedService getManagedService() {
@@ -117,6 +115,12 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
     @Override
     public <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name) {
         return (Cache<K, V>) caches.computeIfAbsent(name, this::newDistributedCache);
+    }
+
+    @Override
+    public synchronized void shutdown() {
+        shutdownClusterInstance();
+        Runtime.getRuntime().removeShutdownHook(shutdownThread);
     }
 
     private <K extends Serializable, V extends Serializable> DistributedCache<K, V> newDistributedCache(String name) {
@@ -225,5 +229,25 @@ public class PortunusClusterInstance implements PortunusCluster, PortunusServer 
 
     private AddressDTO getLocalServerAddressDTO() {
         return clusterService.getConversionService().convert(localServer.getAddress());
+    }
+
+    private void shutdownClusterInstance() {
+        state.set(STOPPING);
+        log.info("Portunus cluster is shutting down");
+        publishMemberEvent(PortunusClusterInstance.this::createMemberLeftEvent);
+        managedService.shutdownAll();
+        state.set(STOPPED);
+    }
+
+    private class ShutdownThread extends Thread {
+
+        @Override
+        public void run() {
+            shutdownClusterInstance();
+        }
+    }
+
+    public enum State {
+        STARTING, STARTED, STOPPING, STOPPED
     }
 }

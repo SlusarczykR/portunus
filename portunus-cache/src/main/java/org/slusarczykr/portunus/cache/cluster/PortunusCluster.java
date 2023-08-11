@@ -16,4 +16,6 @@ public interface PortunusCluster {
     }
 
     <K extends Serializable, V extends Serializable> Cache<K, V> getCache(String name);
+
+    void shutdown();
 }
