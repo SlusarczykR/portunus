@@ -3,7 +3,6 @@ package org.slusarczykr.portunus.cache.cluster.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 
 import java.util.concurrent.locks.Lock;
@@ -41,16 +40,16 @@ public abstract class AbstractConcurrentService extends AbstractService {
 
     private <T> T withLock(Supplier<T> operation, boolean write) {
         try {
-            log.trace("Acquiring {} lock", getLockName(write));
+            log.trace("Acquiring {} lock ['{}']", getLockName(write), getName());
             boolean lockAcquired = getLock(write).tryLock(10, SECONDS);
 
             if (lockAcquired) {
                 return executeOperation(operation, write);
             } else {
-                throw new OperationFailedException("Could not acquire lock");
+                throw new OperationFailedException(getLockErrorMessage());
             }
         } catch (Exception e) {
-            throw new OperationFailedException("Could not acquire lock", e);
+            throw new OperationFailedException(getLockErrorMessage(), e);
         }
     }
 
@@ -58,23 +57,23 @@ public abstract class AbstractConcurrentService extends AbstractService {
         try {
             return operation.get();
         } finally {
-            log.trace("Releasing {} lock", getLockName(write));
+            log.trace("Releasing {} lock ['{}']", getLockName(write), getName());
             getLock(write).unlock();
         }
     }
 
     private void withLock(Runnable operation, boolean write) {
         try {
-            log.trace("Acquiring {} lock", getLockName(write));
+            log.trace("Acquiring {} lock ['{}']", getLockName(write), getName());
             boolean lockAcquired = getLock(write).tryLock(10, SECONDS);
 
             if (lockAcquired) {
                 executeOperation(operation, write);
             } else {
-                throw new OperationFailedException("Could not acquire lock");
+                throw new OperationFailedException(getLockErrorMessage());
             }
         } catch (Exception e) {
-            throw new OperationFailedException("Could not acquire lock", e);
+            throw new OperationFailedException(getLockErrorMessage(), e);
         }
     }
 
@@ -82,7 +81,7 @@ public abstract class AbstractConcurrentService extends AbstractService {
         try {
             operation.run();
         } finally {
-            log.trace("Releasing {} lock", getLockName(write));
+            log.trace("Releasing {} lock ['{}']", getLockName(write), getName());
             getLock(write).unlock();
         }
     }
@@ -96,5 +95,9 @@ public abstract class AbstractConcurrentService extends AbstractService {
 
     private String getLockName(boolean write) {
         return write ? "write" : "read";
+    }
+
+    private String getLockErrorMessage() {
+        return String.format("Could not acquire lock ['%s']", getName());
     }
 }
