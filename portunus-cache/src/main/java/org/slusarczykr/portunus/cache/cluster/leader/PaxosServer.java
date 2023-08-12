@@ -3,6 +3,7 @@ package org.slusarczykr.portunus.cache.cluster.leader;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,15 +14,17 @@ public class PaxosServer {
 
     private static final Logger log = LoggerFactory.getLogger(PaxosServer.class);
 
+    private final Address address;
     private final AtomicInteger id = new AtomicInteger(0);
     private final AtomicLong term = new AtomicLong(0);
 
     private final AtomicBoolean leader = new AtomicBoolean(false);
 
-    public PaxosServer(int serverPort) {
-        updateServerId(serverPort, 1);
+    public PaxosServer(Address address) {
+        this.address = address;
+        updateServerId(address.port(), 1);
         incrementTerm(1);
-        log.debug("Paxos context created for server: {} with id: {}", serverPort, getIdValue());
+        log.debug("Paxos context created for server: '{}' with id: {}", address, getIdValue());
     }
 
     public void updateServerId(int serverPort, int numberOfServers) {
@@ -72,7 +75,11 @@ public class PaxosServer {
     }
 
     public void demoteLeader() {
-        setLeader(false);
+        boolean currentLeader = getLeader().getAndSet(false);
+
+        if (currentLeader) {
+            log.warn("Demoting current leader status of server: '{}'", address);
+        }
     }
 
     public void setLeader(boolean leader) {

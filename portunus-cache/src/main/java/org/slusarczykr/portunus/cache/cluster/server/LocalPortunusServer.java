@@ -57,8 +57,8 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         try {
             this.cacheManager = new DefaultDistributedCacheManager();
             this.gRPCServer = startGRPCServer();
-            this.paxosServer = new PaxosServer(gRPCServer.getPort());
             this.serverContext = createServerContext(gRPCServer.getPort());
+            this.paxosServer = new PaxosServer(serverContext.address());
         } catch (IOException e) {
             throw new PortunusException(String.format("Unable to start gRPC server on port: %s", gRPCServer.getPort()), e);
         }
