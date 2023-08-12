@@ -21,9 +21,9 @@ public interface DiscoveryService extends Service {
 
     List<RemotePortunusServer> remoteServers();
 
-    List<PortunusServer> allServers();
+    List<PortunusServer> allServers(boolean fresh);
 
-    List<String> allServerAddresses();
+    List<String> allServerAddresses(boolean fresh);
 
     int getNumberOfServers();
 

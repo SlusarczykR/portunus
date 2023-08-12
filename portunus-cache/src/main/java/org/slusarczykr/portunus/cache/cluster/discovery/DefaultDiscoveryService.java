@@ -104,15 +104,23 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     @Override
-    public List<PortunusServer> allServers() {
-        return withReadLock(() -> portunusInstances.values().stream()
-                .toList());
+    public List<PortunusServer> allServers(boolean fresh) {
+        if (fresh) {
+            return withReadLock(() -> portunusInstances.values().stream()
+                    .toList());
+        }
+        return portunusInstances.values().stream()
+                .toList();
     }
 
     @Override
-    public List<String> allServerAddresses() {
-        return withReadLock(() -> portunusInstances.keySet().stream()
-                .toList());
+    public List<String> allServerAddresses(boolean fresh) {
+        if (fresh) {
+            return withReadLock(() -> portunusInstances.keySet().stream()
+                    .toList());
+        }
+        return portunusInstances.keySet().stream()
+                .toList();
     }
 
     @Override
