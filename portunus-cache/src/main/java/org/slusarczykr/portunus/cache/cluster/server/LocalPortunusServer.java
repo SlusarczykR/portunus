@@ -338,17 +338,21 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     protected void shutdownServer(Server server) {
         if (!server.isShutdown()) {
-            try {
-                server.shutdown();
-                if (!server.awaitTermination(3, TimeUnit.SECONDS)) {
-                    getLogger().warn("Timed out gracefully shutting down server: {}. ", server);
-                }
-            } catch (Exception e) {
-                getLogger().error("Unexpected exception while waiting for server termination", e);
-            }
+            awaitTermination(server);
         }
         if (!server.isTerminated()) {
             forcefulShutdown(server);
+        }
+    }
+
+    private void awaitTermination(Server server) {
+        try {
+            server.shutdown();
+            if (!server.awaitTermination(3, TimeUnit.SECONDS)) {
+                getLogger().warn("Timed out gracefully shutting down server: {}. ", server);
+            }
+        } catch (Exception e) {
+            getLogger().error("Unexpected exception while waiting for server termination", e);
         }
     }
 

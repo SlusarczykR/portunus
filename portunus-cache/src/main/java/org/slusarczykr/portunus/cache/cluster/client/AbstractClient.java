@@ -84,17 +84,22 @@ public abstract class AbstractClient extends AbstractManaged {
 
     protected void shutdownManagedChannel(ManagedChannel managedChannel) {
         if (!managedChannel.isShutdown()) {
-            try {
-                managedChannel.shutdown();
-                if (!managedChannel.awaitTermination(3, TimeUnit.SECONDS)) {
-                    getLogger().warn("Timed out gracefully shutting down connection: {}. ", managedChannel);
-                }
-            } catch (Exception e) {
-                getLogger().error("Unexpected exception while waiting for channel termination", e);
-            }
+            awaitTermination(managedChannel);
         }
         if (!managedChannel.isTerminated()) {
             forcefulShutdown(managedChannel);
+        }
+    }
+
+    private void awaitTermination(ManagedChannel managedChannel) {
+        try {
+            managedChannel.shutdown();
+
+            if (!managedChannel.awaitTermination(3, TimeUnit.SECONDS)) {
+                getLogger().warn("Timed out gracefully shutting down connection: {}. ", managedChannel);
+            }
+        } catch (Exception e) {
+            getLogger().error("Unexpected exception while waiting for channel termination", e);
         }
     }
 
