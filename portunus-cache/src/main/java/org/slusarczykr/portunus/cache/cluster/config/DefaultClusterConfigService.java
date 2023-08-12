@@ -4,7 +4,6 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
-import org.slusarczykr.portunus.cache.cluster.partition.migration.DefaultMigrationService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -76,6 +75,11 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
     @Override
     public void overrideClusterConfig(ClusterConfig clusterConfig) {
         this.clusterConfig = clusterConfig;
+    }
+
+    @Override
+    public void overrideClusterConfig(int port) {
+        clusterConfig.setPort(port);
     }
 
     @Override

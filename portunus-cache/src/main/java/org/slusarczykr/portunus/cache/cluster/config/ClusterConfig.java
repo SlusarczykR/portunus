@@ -19,6 +19,7 @@ public class ClusterConfig {
     public static final String DEFAULT_CONFIG_PATH = "portunus-config.yml";
 
     @JsonProperty
+    @Setter
     private int port;
 
     @JsonProperty

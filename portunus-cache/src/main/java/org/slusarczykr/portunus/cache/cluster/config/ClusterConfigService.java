@@ -10,6 +10,8 @@ public interface ClusterConfigService extends ClusterConfigHolder, Service {
 
     void overrideClusterConfig(ClusterConfig clusterConfig);
 
+    void overrideClusterConfig(int port);
+
     String getLocalServerPlainAddress() throws PortunusException;
 
     Address getLocalServerAddress();

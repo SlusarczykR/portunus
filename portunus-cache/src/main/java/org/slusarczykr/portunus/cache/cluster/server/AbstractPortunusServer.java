@@ -11,14 +11,15 @@ import java.util.Objects;
 public abstract class AbstractPortunusServer extends AbstractManaged implements PortunusServer {
 
     protected final ClusterService clusterService;
-    protected final ClusterMemberContext serverContext;
+    protected ClusterMemberContext serverContext;
 
     protected AbstractPortunusServer(ClusterService clusterService, ClusterMemberContext serverContext) {
         super(clusterService.getManagedService());
         try {
             this.clusterService = clusterService;
             this.serverContext = serverContext;
-            initialize();
+            this.
+                    initialize();
         } catch (Exception e) {
             throw new FatalPortunusException("Portunus server initialization failed", e);
         }

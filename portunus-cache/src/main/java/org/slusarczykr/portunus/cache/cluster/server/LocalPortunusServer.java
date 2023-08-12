@@ -2,7 +2,6 @@ package org.slusarczykr.portunus.cache.cluster.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
@@ -41,56 +40,52 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private DistributedCacheManager cacheManager;
 
-    private final PaxosServer paxosServer;
+    private PaxosServer paxosServer;
 
     private Server gRPCServer;
 
-    private LocalPortunusServer(ClusterService clusterService, ClusterMemberContext context) {
-        super(clusterService, context);
-        this.paxosServer = new PaxosServer(context.getPort());
+    private LocalPortunusServer(ClusterService clusterService) {
+        super(clusterService, null);
     }
 
-    public static LocalPortunusServer newInstance(ClusterService clusterService, ClusterConfig clusterConfig) {
-        ClusterMemberContext serverContext = createServerContext(clusterService, clusterConfig);
-        return new LocalPortunusServer(clusterService, serverContext);
-    }
-
-    @SneakyThrows
-    private static ClusterMemberContext createServerContext(ClusterService clusterService, ClusterConfig clusterConfig) {
-        clusterConfig = getDefaultClusterConfigIfAbsent(clusterService, clusterConfig);
-        Address address = clusterConfig.getLocalServerAddress();
-
-        return new ClusterMemberContext(address);
-    }
-
-    private static ClusterConfig getDefaultClusterConfigIfAbsent(ClusterService clusterService, ClusterConfig clusterConfig) {
-        return Optional.ofNullable(clusterConfig).orElseGet(() -> getClusterConfig(clusterService));
-    }
-
-    private static ClusterConfig getClusterConfig(ClusterService clusterService) {
-        return clusterService.getClusterConfigService().getClusterConfig();
+    public static LocalPortunusServer newInstance(ClusterService clusterService) {
+        return new LocalPortunusServer(clusterService);
     }
 
     @Override
     protected void initialize() throws PortunusException {
         try {
-            log.info("Starting gRPC server for '{}' server", serverContext.getPlainAddress());
             this.cacheManager = new DefaultDistributedCacheManager();
-            this.gRPCServer = createGRPCServer();
-            this.gRPCServer.start();
+            this.gRPCServer = startGRPCServer();
+            this.paxosServer = new PaxosServer(gRPCServer.getPort());
+            this.serverContext = createServerContext(gRPCServer.getPort());
         } catch (IOException e) {
-            throw new PortunusException("Could not start gRPC server", e);
+            throw new PortunusException(String.format("Unable to start gRPC server on port: %s", gRPCServer.getPort()), e);
         }
     }
 
-    private Server createGRPCServer() {
-        return ServerBuilder.forPort(getPort())
+    private Server startGRPCServer() throws IOException {
+        Server server = ServerBuilder.forPort(getPort())
                 .addService(new PortunusGRPCService(clusterService))
                 .build();
+        server.start();
+        log.info("Server started on port: {}", server.getPort());
+
+        return server;
+    }
+
+    private ClusterMemberContext createServerContext(int port) {
+        ClusterConfig clusterConfig = clusterService.getClusterConfig();
+
+        if (clusterConfig.getPort() != port) {
+            clusterService.getClusterConfigService().overrideClusterConfig(port);
+        }
+        Address address = clusterConfig.getLocalServerAddress();
+        return new ClusterMemberContext(address);
     }
 
     private int getPort() {
-        int port = serverContext.getPort();
+        int port = clusterService.getClusterConfig().getPort();
 
         if (allocatePort(port) != 0) {
             return port;
