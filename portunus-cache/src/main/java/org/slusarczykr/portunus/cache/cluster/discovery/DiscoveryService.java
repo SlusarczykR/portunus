@@ -8,15 +8,12 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 public interface DiscoveryService extends Service {
 
     void loadServers() throws PortunusException;
 
-    Optional<PortunusServer> getServer(Address address);
-
-    PortunusServer getServerOrThrow(Address address) throws PortunusException;
+    PortunusServer getServer(Address address, boolean fresh) throws PortunusException;
 
     PortunusServer localServer();
 

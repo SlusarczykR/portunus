@@ -160,7 +160,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     @SneakyThrows
     private Partition newPartition(int partitionId) {
         Address serverAddress = getOwnerAddress(partitionId);
-        PortunusServer server = clusterService.getDiscoveryService().getServerOrThrow(serverAddress);
+        PortunusServer server = clusterService.getDiscoveryService().getServer(serverAddress, false);
 
         return new Partition(partitionId, server);
     }

@@ -71,21 +71,18 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     @Override
-    public Optional<PortunusServer> getServer(Address address) {
-        String plainAddress = address.toPlainAddress();
-
-        return withReadLock(() -> {
-            if (portunusInstances.containsKey(plainAddress)) {
-                return Optional.of(portunusInstances.get(plainAddress));
-            }
-            return Optional.empty();
-        });
+    public PortunusServer getServer(Address address, boolean fresh) throws PortunusException {
+        return findServer(address, fresh)
+                .orElseThrow(() -> new PortunusException(String.format("Server: %s could not be found", address)));
     }
 
-    @Override
-    public PortunusServer getServerOrThrow(Address address) throws PortunusException {
-        return getServer(address)
-                .orElseThrow(() -> new PortunusException(String.format("Server: %s could not be found", address)));
+    private Optional<PortunusServer> findServer(Address address, boolean fresh) {
+        String plainAddress = address.toPlainAddress();
+
+        if (fresh) {
+            return withReadLock(() -> Optional.ofNullable(portunusInstances.get(plainAddress)));
+        }
+        return Optional.ofNullable(portunusInstances.get(plainAddress));
     }
 
     @Override

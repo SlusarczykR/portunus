@@ -179,17 +179,16 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
     }
 
     private void withRemoteServers(Consumer<RemotePortunusServer> operation, Consumer<Exception> errorHandler) {
-        try {
-            withRemoteServers(operation);
-        } catch (Exception e) {
-            log.error("Error occurred while sending request to remote servers");
-            errorHandler.accept(e);
-        }
-    }
-
-    private void withRemoteServers(Consumer<RemotePortunusServer> operation) {
         List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
-        remoteServers.parallelStream().forEach(operation);
+
+        remoteServers.parallelStream().forEach(it -> {
+            try {
+                operation.accept(it);
+            } catch (Exception e) {
+                log.error("Error occurred while sending request to remote server: '{}'", it.getAddress());
+                errorHandler.accept(e);
+            }
+        });
     }
 
     private void generateCacheEntry() {
