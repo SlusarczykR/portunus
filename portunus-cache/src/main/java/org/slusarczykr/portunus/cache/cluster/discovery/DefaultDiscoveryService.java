@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
@@ -150,7 +151,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
             log.info("Registering server with address: '{}'", server.getPlainAddress());
             portunusInstances.put(server.getPlainAddress(), server);
             clusterService.getPartitionService().register(server);
-            clusterService.getLocalServer().updatePaxosServerId(portunusInstances.size());
+            ((LocalPortunusServer) localServer()).updatePaxosServerId(portunusInstances.size());
             log.debug("Current portunus instances: '{}'", portunusInstances);
             return true;
         }

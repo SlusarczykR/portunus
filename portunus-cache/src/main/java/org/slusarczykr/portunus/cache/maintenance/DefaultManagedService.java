@@ -32,9 +32,7 @@ public class DefaultManagedService implements ManagedService {
     }
 
     public void shutdownAll() {
-        System.out.println("Shutting down managed objects");
         allManaged.forEach(this::shutdownManagedObject);
-        System.out.println("Managed objects were shut down");
     }
 
     private void shutdownManagedObject(Managed managedObject) {
