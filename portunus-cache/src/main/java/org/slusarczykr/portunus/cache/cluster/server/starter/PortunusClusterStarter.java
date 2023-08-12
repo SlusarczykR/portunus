@@ -9,10 +9,7 @@ public final class PortunusClusterStarter {
     private static final Logger log = LoggerFactory.getLogger(PortunusClusterStarter.class);
 
     public static void main(String[] args) {
-        for (int i = 0; i < 10000; i++) {
-            log.info("Starting portunus cluster: " + i);
-            PortunusCluster portunusCluster = PortunusCluster.newInstance();
-            portunusCluster.shutdown();
-        }
+        log.info("Starting portunus cluster");
+        PortunusCluster.newInstance();
     }
 }
