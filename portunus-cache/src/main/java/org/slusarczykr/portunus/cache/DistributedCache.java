@@ -265,6 +265,11 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
                 .collect(Collectors.toSet());
     }
 
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
+
     public record Entry<K, V>(K key, V value) implements Cache.Entry<K, V> {
 
         public Entry(Map.Entry<K, V> entry) {

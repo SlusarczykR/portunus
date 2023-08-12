@@ -228,6 +228,11 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         return LeaderElectionService.class.getSimpleName();
     }
 
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
+
     private record VotingResult(boolean accepted, int numberOfVoters, int numberOfAcceptedVotes) {
     }
 }

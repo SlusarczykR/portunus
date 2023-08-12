@@ -75,4 +75,9 @@ public class DefaultRequestVoteService extends AbstractPaxosService implements R
     public String getName() {
         return RequestVoteService.class.getSimpleName();
     }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
 }

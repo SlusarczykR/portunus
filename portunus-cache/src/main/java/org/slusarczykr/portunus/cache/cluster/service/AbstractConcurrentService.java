@@ -1,6 +1,5 @@
 package org.slusarczykr.portunus.cache.cluster.service;
 
-import org.slf4j.Logger;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 
 import java.util.concurrent.locks.Lock;
@@ -15,8 +14,6 @@ public abstract class AbstractConcurrentService extends AbstractService {
     protected AbstractConcurrentService(ClusterService clusterService) {
         super(clusterService);
     }
-
-    protected abstract Logger getLogger();
 
     protected <T> T withWriteLock(Supplier<T> operation) {
         return withLock(operation, true);

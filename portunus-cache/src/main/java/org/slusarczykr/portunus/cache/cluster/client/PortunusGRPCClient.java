@@ -1,10 +1,9 @@
 package org.slusarczykr.portunus.cache.cluster.client;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.GeneratedMessageV3;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import org.slusarczykr.portunus.cache.api.PortunusApiProtos.AddressDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheChunkDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.CacheEntryDTO;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
@@ -12,41 +11,28 @@ import org.slusarczykr.portunus.cache.api.command.PortunusCommandApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.*;
-import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc;
-import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceBlockingStub;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
-import org.slusarczykr.portunus.cache.cluster.server.LocalPortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
-import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-public class PortunusGRPCClient extends AbstractManaged implements PortunusClient {
+public class PortunusGRPCClient extends AbstractClient implements PortunusClient {
 
-    private final ClusterService clusterService;
-    private final ManagedChannel channel;
+    private static final Logger log = LoggerFactory.getLogger(PortunusGRPCClient.class);
+
 
     public PortunusGRPCClient(ClusterService clusterService, Address address) {
-        super(clusterService.getManagedService());
-        this.clusterService = clusterService;
-        this.channel = initializeManagedChannel(address.hostname(), address.port());
+        super(clusterService, address);
     }
 
-    public PortunusGRPCClient(ClusterService clusterService, ManagedChannel channel) {
-        super(clusterService.getManagedService());
-        this.clusterService = clusterService;
-        this.channel = channel;
-    }
-
-    private ManagedChannel initializeManagedChannel(String address, int port) {
-        return ManagedChannelBuilder.forAddress(address, port)
-                .usePlaintext()
-                .build();
+    public PortunusGRPCClient(ClusterService clusterService, Address address, ManagedChannel channel) {
+        super(clusterService, address, channel);
     }
 
     @Override
@@ -290,33 +276,8 @@ public class PortunusGRPCClient extends AbstractManaged implements PortunusClien
                 .build();
     }
 
-    private <T extends GeneratedMessageV3> T withPortunusServiceStub(Function<PortunusServiceBlockingStub, T> executable) {
-        PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
-        return executable.apply(portunusServiceStub);
-    }
-
-    private void withPortunusServiceStub(Consumer<PortunusServiceBlockingStub> executable) {
-        PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
-        executable.accept(portunusServiceStub);
-    }
-
-    private PortunusServiceBlockingStub newPortunusServiceStub() {
-        return PortunusServiceGrpc.newBlockingStub(channel);
-    }
-
-    private AddressDTO getLocalServerAddressDTO() {
-        LocalPortunusServer localServer = clusterService.getLocalServer();
-        return clusterService.getConversionService().convert(localServer.getAddress());
-    }
-
-    private <T extends Serializable> List<ByteString> toDistributed(Collection<T> elements) {
-        return elements.stream()
-                .map(it -> DistributedWrapper.from(it).getByteString())
-                .toList();
-    }
-
     @Override
-    public void shutdown() {
-        Optional.ofNullable(channel).ifPresent(ManagedChannel::shutdown);
+    protected Logger getLogger() {
+        return log;
     }
 }

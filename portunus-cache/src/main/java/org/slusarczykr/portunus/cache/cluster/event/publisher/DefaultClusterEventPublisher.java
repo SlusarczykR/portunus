@@ -109,6 +109,11 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
         return ClusterEventPublisher.class.getSimpleName();
     }
 
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
+
     private record MulticastPublisher(int port) {
 
         public void publish(String multicastMessage) throws IOException {

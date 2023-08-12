@@ -1,7 +1,10 @@
 package org.slusarczykr.portunus.cache.cluster.config;
 
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.partition.migration.DefaultMigrationService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
@@ -15,6 +18,8 @@ import java.util.Optional;
 import static org.slusarczykr.portunus.cache.cluster.config.ClusterConfig.*;
 
 public class DefaultClusterConfigService extends AbstractService implements ClusterConfigService {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultClusterConfigService.class);
 
     private static final String PORTUNUS_PORT_PROPERTY_NAME = "portunusPort";
     private static final String PORTUNUS_MEMBERS_PROPERTY_NAME = "portunusMembers";
@@ -111,5 +116,10 @@ public class DefaultClusterConfigService extends AbstractService implements Clus
     @Override
     public String getName() {
         return ClusterConfigService.class.getSimpleName();
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 }

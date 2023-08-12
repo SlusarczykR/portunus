@@ -200,4 +200,9 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     public void register() {
         portunusClient.register();
     }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
 }

@@ -55,11 +55,14 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     private void handleMulticastClusterEvent(ClusterEvent event) {
         Address address = clusterService.getConversionService().convert(event.getFrom());
-
-        if (!isLocalAddress(address)) {
-            handleClusterEvent(event);
-        } else {
-            log.debug("Skipping self {} event", event.getEventType());
+        try {
+            if (!isLocalAddress(address)) {
+                handleClusterEvent(event);
+            } else {
+                log.debug("Skipping self {} event", event.getEventType());
+            }
+        } catch (Exception e) {
+            log.error("Could not process multicast cluster '{}' event sent from: '{}'", event.getEventType(), address);
         }
     }
 
@@ -166,6 +169,11 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     @Override
     public String getName() {
         return ClusterEventConsumer.class.getSimpleName();
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 
     private class MulticastReceiver extends Thread {

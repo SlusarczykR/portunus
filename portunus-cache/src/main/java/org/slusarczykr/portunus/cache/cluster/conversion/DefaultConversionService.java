@@ -1,5 +1,7 @@
 package org.slusarczykr.portunus.cache.cluster.conversion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.*;
@@ -11,6 +13,7 @@ import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
+import org.slusarczykr.portunus.cache.cluster.partition.migration.DefaultMigrationService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
@@ -26,6 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DefaultConversionService extends AbstractService implements ConversionService {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultConversionService.class);
 
     private DefaultConversionService(ClusterService clusterService) {
         super(clusterService);
@@ -224,5 +229,10 @@ public class DefaultConversionService extends AbstractService implements Convers
     @Override
     public String getName() {
         return ConversionService.class.getSimpleName();
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 }

@@ -26,7 +26,9 @@ import org.slusarczykr.portunus.cache.manager.DistributedCacheManager;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.ServerSocket;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -82,9 +84,28 @@ public class LocalPortunusServer extends AbstractPortunusServer {
     }
 
     private Server createGRPCServer() {
-        return ServerBuilder.forPort(serverContext.getPort())
+        return ServerBuilder.forPort(getPort())
                 .addService(new PortunusGRPCService(clusterService))
                 .build();
+    }
+
+    private int getPort() {
+        int port = serverContext.getPort();
+
+        if (allocatePort(port) != 0) {
+            return port;
+        }
+        return allocatePort(0);
+    }
+
+    private int allocatePort(int port) {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            return Optional.ofNullable(serverSocket)
+                    .map(ServerSocket::getLocalPort)
+                    .orElse(0);
+        } catch (IOException e) {
+            return 0;
+        }
     }
 
     public PaxosServer getPaxosServer() {
@@ -93,11 +114,6 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     public void updatePaxosServerId(int numberOfServers) {
         getPaxosServer().updateServerId(getAddress().port(), numberOfServers);
-    }
-
-    @Override
-    public void shutdown() {
-        Optional.ofNullable(gRPCServer).ifPresent(Server::shutdown);
     }
 
     @Override
@@ -313,6 +329,41 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private AddressDTO getAddressDTO() {
         return clusterService.getConversionService().convert(getAddress());
+    }
+
+    @Override
+    public void shutdown() {
+        Optional.ofNullable(gRPCServer).ifPresent(this::shutdownServer);
+    }
+
+    protected void shutdownServer(Server server) {
+        if (!server.isShutdown()) {
+            try {
+                server.shutdown();
+                if (!server.awaitTermination(3, TimeUnit.SECONDS)) {
+                    getLogger().warn("Timed out gracefully shutting down server: {}. ", server);
+                }
+            } catch (Exception e) {
+                getLogger().error("Unexpected exception while waiting for server termination", e);
+            }
+        }
+        if (!server.isTerminated()) {
+            forcefulShutdown(server);
+        }
+    }
+
+    private void forcefulShutdown(Server server) {
+        try {
+            getLogger().warn("Timed out forcefully shutting down server: {}. ", server);
+            server.shutdownNow();
+        } catch (Exception e) {
+            getLogger().error("Unexpected exception while waiting for server termination", e);
+        }
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 
     @Override

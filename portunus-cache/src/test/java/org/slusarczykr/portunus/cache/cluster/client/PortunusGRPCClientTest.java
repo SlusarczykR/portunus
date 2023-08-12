@@ -8,13 +8,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slusarczykr.portunus.cache.api.PortunusApiProtos.PartitionDTO;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.GetPartitionsCommand;
-import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryDocument;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.ContainsEntryQuery;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.GetPartitionsCommand;
+import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.GetPartitionsDocument;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.extension.GrpcCleanupExtension;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -26,6 +27,7 @@ import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.slusarczykr.portunus.cache.cluster.PortunusClusterInstance.DEFAULT_PORT;
 
 @ExtendWith(MockitoExtension.class)
 class PortunusGRPCClientTest {
@@ -62,7 +64,8 @@ class PortunusGRPCClientTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        portunusClient = new PortunusGRPCClient(clusterService, cleanupExtension.addService(portunusService));
+        portunusClient = new PortunusGRPCClient(clusterService, new Address("localhost", DEFAULT_PORT),
+                cleanupExtension.addService(portunusService));
     }
 
     @Test

@@ -93,4 +93,9 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     public String getName() {
         return MigrationService.class.getSimpleName();
     }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
 }

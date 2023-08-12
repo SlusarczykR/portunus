@@ -204,4 +204,9 @@ public class DefaultLeaderElectionStarterService extends AbstractPaxosService im
         cancelLeaderCandidacy();
         scheduledExecutor.shutdown();
     }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
+    }
 }

@@ -1,8 +1,11 @@
 package org.slusarczykr.portunus.cache.cluster;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfig;
 import org.slusarczykr.portunus.cache.cluster.config.ClusterConfigService;
 import org.slusarczykr.portunus.cache.cluster.conversion.ConversionService;
+import org.slusarczykr.portunus.cache.cluster.conversion.DefaultConversionService;
 import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.event.consumer.ClusterEventConsumer;
 import org.slusarczykr.portunus.cache.cluster.event.publisher.ClusterEventPublisher;
@@ -22,6 +25,8 @@ import org.slusarczykr.portunus.cache.maintenance.AbstractManaged;
 import org.slusarczykr.portunus.cache.maintenance.ManagedService;
 
 public class DefaultClusterService extends AbstractManaged implements ClusterService {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultClusterService.class);
 
     private final PortunusClusterInstance portunusClusterInstance;
     private ClusterConfig clusterConfig;
@@ -56,6 +61,11 @@ public class DefaultClusterService extends AbstractManaged implements ClusterSer
     @Override
     public PortunusClusterInstance getPortunusClusterInstance() {
         return portunusClusterInstance;
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 
     @Override
