@@ -52,10 +52,10 @@ public class PortunusConsistentHashingCircle implements PortunusHashingCircle, P
 
     @Override
     public void update(SortedMap<String, VirtualPortunusNode> virtualPortunusNodes) {
-        log.debug("Updating partition owner circle");
+        log.trace("Updating partition owner circle");
         circle.clear();
         circle.putAll(virtualPortunusNodes);
-        log.debug("Partition owner circle was updated");
+        log.trace("Partition owner circle was updated");
     }
 
     private Map<String, List<VirtualPortunusNode>> groupPortunusNodesByPhysicalNode() {
