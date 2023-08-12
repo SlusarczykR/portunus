@@ -89,11 +89,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public PortunusServer localServer() {
-        return withReadLock(() -> portunusInstances.values().stream()
-                .filter(PortunusServer::isLocal)
-                .findFirst()
-                .orElseThrow(() -> new InvalidPortunusStateException("Could not access local server"))
-        );
+        return clusterService.getLocalServer();
     }
 
     @Override
