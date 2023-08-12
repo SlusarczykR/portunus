@@ -1,6 +1,9 @@
 package org.slusarczykr.portunus.cache.cluster.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 
 import java.util.concurrent.locks.Lock;
@@ -11,6 +14,8 @@ import java.util.function.Supplier;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class AbstractConcurrentService extends AbstractService {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractConcurrentService.class);
 
     protected final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -36,27 +41,48 @@ public abstract class AbstractConcurrentService extends AbstractService {
 
     private <T> T withLock(Supplier<T> operation, boolean write) {
         try {
-            getLogger().trace("Acquiring {} lock", getLockName(write));
-            getLock(write).lock();
+            log.trace("Acquiring {} lock", getLockName(write));
+            boolean lockAcquired = getLock(write).tryLock(10, SECONDS);
+
+            if (lockAcquired) {
+                return executeOperation(operation, write);
+            } else {
+                throw new OperationFailedException("Could not acquire lock");
+            }
+        } catch (Exception e) {
+            throw new OperationFailedException("Could not acquire lock", e);
+        }
+    }
+
+    private <T> T executeOperation(Supplier<T> operation, boolean write) {
+        try {
             return operation.get();
         } finally {
-            getLogger().trace("Releasing {} lock", getLockName(write));
+            log.trace("Releasing {} lock", getLockName(write));
             getLock(write).unlock();
         }
     }
 
     private void withLock(Runnable operation, boolean write) {
         try {
+            log.trace("Acquiring {} lock", getLockName(write));
             boolean lockAcquired = getLock(write).tryLock(10, SECONDS);
 
             if (lockAcquired) {
-                operation.run();
+                executeOperation(operation, write);
             } else {
                 throw new OperationFailedException("Could not acquire lock");
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new OperationFailedException("Could not acquire lock", e);
+        }
+    }
+
+    private void executeOperation(Runnable operation, boolean write) {
+        try {
+            operation.run();
         } finally {
+            log.trace("Releasing {} lock", getLockName(write));
             getLock(write).unlock();
         }
     }
