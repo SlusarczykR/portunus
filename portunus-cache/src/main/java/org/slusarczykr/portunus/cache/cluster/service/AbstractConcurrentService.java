@@ -1,11 +1,14 @@
 package org.slusarczykr.portunus.cache.cluster.service;
 
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
+import org.slusarczykr.portunus.cache.exception.OperationFailedException;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class AbstractConcurrentService extends AbstractService {
 
@@ -44,8 +47,15 @@ public abstract class AbstractConcurrentService extends AbstractService {
 
     private void withLock(Runnable operation, boolean write) {
         try {
-            getLock(write).lock();
-            operation.run();
+            boolean lockAcquired = getLock(write).tryLock(10, SECONDS);
+
+            if (lockAcquired) {
+                operation.run();
+            } else {
+                throw new OperationFailedException("Could not acquire lock");
+            }
+        } catch (InterruptedException e) {
+            throw new OperationFailedException("Could not acquire lock", e);
         } finally {
             getLock(write).unlock();
         }
