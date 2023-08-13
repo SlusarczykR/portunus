@@ -185,7 +185,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
             try {
                 operation.accept(it);
             } catch (Exception e) {
-                log.error("Error occurred while sending request to remote server: '{}'", it.getAddress());
+                log.error("Error occurred while sending request to remote server: '{}'", it.getAddress(), e);
                 errorHandler.accept(e);
             }
         });

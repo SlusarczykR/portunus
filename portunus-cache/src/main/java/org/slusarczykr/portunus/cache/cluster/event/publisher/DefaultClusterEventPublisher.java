@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -78,12 +77,16 @@ public class DefaultClusterEventPublisher extends AbstractAsyncService implement
     }
 
     private void withClusterMembers(Consumer<RemotePortunusServer> operation) {
-        List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
+        if (!clusterService.getPortunusClusterInstance().isShutdown()) {
+            List<RemotePortunusServer> remoteServers = clusterService.getDiscoveryService().remoteServers();
 
-        if (!remoteServers.isEmpty()) {
-            remoteServers.forEach(it -> sendEvent(it, operation));
+            if (!remoteServers.isEmpty()) {
+                remoteServers.forEach(it -> sendEvent(it, operation));
+            } else {
+                log.debug("No remote cluster members registered");
+            }
         } else {
-            log.debug("No remote cluster members registered");
+            log.error("Server is shutting down. Operation will be cancelled");
         }
     }
 

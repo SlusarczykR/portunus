@@ -531,14 +531,18 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private <T> void completeWith(AddressDTO fromDTO, StreamObserver<T> responseObserver, OperationType operationType,
                                   Supplier<T> onNext, boolean registerRemoteServer, boolean trace) {
-        Address from = clusterService.getConversionService().convert(fromDTO);
-        logRequest(operationType, from, trace);
+        if (!clusterService.getPortunusClusterInstance().isShutdown()) {
+            Address from = clusterService.getConversionService().convert(fromDTO);
+            logRequest(operationType, from, trace);
 
-        if (registerRemoteServer) {
-            registerRemoteServerIfAbsent(from);
+            if (registerRemoteServer) {
+                registerRemoteServerIfAbsent(from);
+            }
+            responseObserver.onNext(onNext.get());
+            responseObserver.onCompleted();
+        } else {
+            log.error("Server is shutting down. Operation will be cancelled");
         }
-        responseObserver.onNext(onNext.get());
-        responseObserver.onCompleted();
     }
 
     private void logRequest(OperationType operationType, Address from, boolean trace) {

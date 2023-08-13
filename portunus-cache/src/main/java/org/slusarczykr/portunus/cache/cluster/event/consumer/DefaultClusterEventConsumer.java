@@ -62,7 +62,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
                 log.debug("Skipping self {} event", event.getEventType());
             }
         } catch (Exception e) {
-            log.error("Could not process multicast cluster '{}' event sent from: '{}'", event.getEventType(), address, e);
+            log.error("Could not process multicast cluster '{}' event sent from: '{}'", event.getEventType(), address);
         }
     }
 

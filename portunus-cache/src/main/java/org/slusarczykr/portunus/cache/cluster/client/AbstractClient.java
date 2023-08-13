@@ -49,17 +49,25 @@ public abstract class AbstractClient extends AbstractManaged {
     }
 
     protected <T extends GeneratedMessageV3> T withPortunusServiceStub(Function<PortunusServiceBlockingStub, T> executable) {
-        try {
-            PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
-            return executable.apply(portunusServiceStub);
-        } catch (Exception e) {
-            throw new OperationFailedException(String.format("Operation execution on remote server '%s' failed", address), e);
+        if (!clusterService.getPortunusClusterInstance().isShutdown()) {
+            try {
+                PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
+                return executable.apply(portunusServiceStub);
+            } catch (Exception e) {
+                throw new OperationFailedException(String.format("Operation execution on remote server '%s' failed", address), e);
+            }
+        } else {
+            throw new OperationFailedException("Server is shutting down. Operation will be cancelled");
         }
     }
 
     protected void withPortunusServiceStub(Consumer<PortunusServiceBlockingStub> executable) {
-        PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
-        executable.accept(portunusServiceStub);
+        if (!clusterService.getPortunusClusterInstance().isShutdown()) {
+            PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
+            executable.accept(portunusServiceStub);
+        } else {
+            throw new OperationFailedException("Server is shutting down. Operation will be cancelled");
+        }
     }
 
     private PortunusServiceBlockingStub newPortunusServiceStub() {
