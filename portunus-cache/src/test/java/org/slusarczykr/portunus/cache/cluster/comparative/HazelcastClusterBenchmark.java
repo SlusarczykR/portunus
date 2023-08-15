@@ -12,8 +12,9 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -22,26 +23,45 @@ import java.util.stream.IntStream;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1, jvmArgs = {"-Xms2G", "-Xmx2G"})
-public class HazelcastBenchmark {
+public class HazelcastClusterBenchmark {
 
-    private static final Logger log = LoggerFactory.getLogger(HazelcastBenchmark.class);
+    private static final Logger log = LoggerFactory.getLogger(HazelcastClusterBenchmark.class);
 
-    private HazelcastInstance hazelcastInstance;
+    private List<HazelcastInstance> hazelcastInstances;
     private IMap<String, String> cache;
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(HazelcastBenchmark.class.getSimpleName())
+                .include(HazelcastClusterBenchmark.class.getSimpleName())
                 .forks(1)
                 .build();
 
         new Runner(opt).run();
     }
 
+    @Setup
+    public void setup() {
+        log.info("Setting up global benchmark state");
+        hazelcastInstances = new ArrayList<>();
+        IntStream.range(0, 3)
+                .mapToObj(i -> Hazelcast.newHazelcastInstance())
+                .forEach(it -> hazelcastInstances.add(it));
+    }
+
+    @TearDown
+    public void tearDown() {
+        log.info("Cleaning up global benchmark state");
+        hazelcastInstances.forEach(it -> {
+            try {
+                it.shutdown();
+            } catch (Exception e) {
+            }
+        });
+    }
+
     @Setup(Level.Invocation)
     public void setupEach() {
         log.info("Setting up benchmark state");
-        hazelcastInstance = Hazelcast.newHazelcastInstance();
         cache = getTestMap();
         IntStream.rangeClosed(1, 10)
                 .forEach(i -> cache.put("testKey" + i, "testValue" + i));
@@ -50,16 +70,11 @@ public class HazelcastBenchmark {
     @TearDown(Level.Invocation)
     public void tearDownEach() {
         log.info("Cleaning up benchmark state");
-        Optional.ofNullable(hazelcastInstance).ifPresent(it -> {
-            try {
-                it.shutdown();
-            } catch (Exception e) {
-            }
-        });
+        getTestMap().removeAll(it -> true);
     }
 
     private IMap<String, String> getTestMap() {
-        return hazelcastInstance.getMap("test");
+        return hazelcastInstances.get(0).getMap("test");
     }
 
     @Benchmark
@@ -82,7 +97,7 @@ public class HazelcastBenchmark {
 
     @Benchmark
     public void putCacheEntry(Blackhole bh) {
-        cache.put("testKey11", "testValue11");
+        cache.put("testKey1", "testValue1");
         bh.consume(cache);
     }
 

@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
 import org.slusarczykr.portunus.cache.cluster.PortunusCluster;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -21,35 +21,35 @@ import java.util.stream.IntStream;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1, jvmArgs = {"-Xms2G", "-Xmx2G"})
-public class PortunusBenchmark {
+public class PortunusClusterBenchmark {
 
-    private static final Logger log = LoggerFactory.getLogger(PortunusBenchmark.class);
+    private static final Logger log = LoggerFactory.getLogger(PortunusClusterBenchmark.class);
 
-    private PortunusCluster portunusInstance;
+    private List<PortunusCluster> portunusInstances;
     private Cache<String, String> cache;
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(PortunusBenchmark.class.getSimpleName())
+                .include(PortunusClusterBenchmark.class.getSimpleName())
                 .forks(1)
                 .build();
 
         new Runner(opt).run();
     }
 
-    @Setup(Level.Invocation)
-    public void setupEach() {
-        log.info("Setting up benchmark state");
-        portunusInstance = PortunusCluster.newInstance();
-        cache = getTestCache();
-        IntStream.rangeClosed(1, 10)
-                .forEach(i -> cache.put("testKey" + i, "testValue" + i));
+    @Setup
+    public void setup() {
+        log.info("Setting up global benchmark state");
+        portunusInstances = new ArrayList<>();
+        IntStream.range(0, 3).forEach(i -> portunusInstances.add(PortunusCluster.newInstance()));
+        cache = portunusInstances.get(0).getCache("test");
+        IntStream.rangeClosed(1, 10).forEach(i -> cache.put("testKey" + i, "testValue" + i));
     }
 
-    @TearDown(Level.Invocation)
-    public void tearDownEach() {
+    @TearDown
+    public void tearDown() {
         log.info("Cleaning up global benchmark state");
-        Optional.ofNullable(portunusInstance).ifPresent(it -> {
+        portunusInstances.forEach(it -> {
             try {
                 it.shutdown();
             } catch (Exception e) {
@@ -57,20 +57,38 @@ public class PortunusBenchmark {
         });
     }
 
-    private Cache<String, String> getTestCache() {
-        return portunusInstance.getCache("test");
+    @Setup(Level.Invocation)
+    public void setupEach() {
+        log.info("Setting up benchmark state");
+        cache = getTestMap();
+        IntStream.rangeClosed(1, 10)
+                .forEach(i -> cache.put("testKey" + i, "testValue" + i));
+    }
+
+    @TearDown(Level.Invocation)
+    public void tearDownEach() {
+        log.info("Cleaning up benchmark state");
+        List<String> keys = IntStream.rangeClosed(1, 10)
+                .mapToObj(i -> "testKey" + i)
+                .toList();
+        getTestMap().removeAll(keys);
+    }
+
+    private Cache<String, String> getTestMap() {
+        return portunusInstances.get(0).getCache("test");
     }
 
     @Benchmark
-    public void getTestCache(Blackhole bh) {
+    public void getCache(Blackhole bh) {
         log.info("Cleaning up global benchmark state");
-        Cache<String, String> cache = getTestCache();
+        Cache<String, String> cache = portunusInstances.get(0).getCache("test");
         bh.consume(cache);
     }
 
     @Benchmark
     public void getCacheEntry(Blackhole bh) {
-        cache.getEntry("testKey1").ifPresent(bh::consume);
+        Cache.Entry<String, String> entry = cache.getEntry("testKey1").get();
+        bh.consume(entry);
     }
 
     @Benchmark
