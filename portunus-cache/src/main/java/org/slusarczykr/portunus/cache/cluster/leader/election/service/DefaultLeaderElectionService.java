@@ -75,7 +75,7 @@ public class DefaultLeaderElectionService extends AbstractPaxosService implement
         try {
             return Optional.of(portunusServer.sendRequestVote(paxosServer.getIdValue(), paxosServer.getTermValue()));
         } catch (Exception e) {
-            log.error("Could not reach remote server", e);
+            log.error("Could not reach remote server: '{}'", portunusServer.getAddress());
             return Optional.empty();
         }
     }
