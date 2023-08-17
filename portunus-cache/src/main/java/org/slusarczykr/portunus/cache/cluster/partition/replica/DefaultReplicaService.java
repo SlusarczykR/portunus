@@ -57,9 +57,9 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void registerPartitionReplica(CacheChunk cacheChunk) {
+        cacheChunk.partition().addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
         clusterService.getPartitionService().register(cacheChunk.partition());
         registerPartitionReplica(cacheChunk.partition());
-        cacheChunk.partition().addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
 
         clusterService.getLocalServer().update(cacheChunk);
         log.debug("Replicated partition: {}", cacheChunk.partition());

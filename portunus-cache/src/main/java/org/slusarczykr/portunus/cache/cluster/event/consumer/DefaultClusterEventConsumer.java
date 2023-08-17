@@ -62,7 +62,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
                 log.debug("Skipping self {} event", event.getEventType());
             }
         } catch (Exception e) {
-            log.error("Could not process multicast cluster '{}' event sent from: '{}'", event.getEventType(), address);
+            log.error("Could not process multicast cluster '{}' event sent from: '{}'", event.getEventType(), address, e);
         }
     }
 
@@ -141,6 +141,7 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     private <K extends Serializable, V extends Serializable> void processPartitionChange(PartitionChangeDTO partitionChangeDTO) {
         Partition.Change<K, V> partitionChange = clusterService.getConversionService().convert(partitionChangeDTO);
+        log.debug("Received partition change for: {}", partitionChange.getPartition());
 
         clusterService.getPartitionService().register(partitionChange.getPartition());
         updateLocalCachesIfPartitionOwner(partitionChange);

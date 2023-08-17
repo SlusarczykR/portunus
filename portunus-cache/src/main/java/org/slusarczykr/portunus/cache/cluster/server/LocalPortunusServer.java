@@ -171,8 +171,8 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private <K extends Serializable, V extends Serializable> void sendPartitionEvent(Partition.Change<K, V> partitionChange,
                                                                                      boolean newPartition) {
-        log.debug("Sending partition updated event for cache: '{}' [{} altered entries]",
-                partitionChange.getCacheName(), partitionChange.getEntries().size());
+        log.debug("Sending partition updated event for partition: '{}' [{} altered entries]",
+                partitionChange.getPartition(), partitionChange.getEntries().size());
         if (newPartition) {
             sendPartitionEvent(partitionChange, this::createPartitionCreatedEvent);
         } else {
@@ -182,7 +182,7 @@ public class LocalPortunusServer extends AbstractPortunusServer {
 
     private <K extends Serializable, V extends Serializable> void put(String name, Cache.Entry<K, V> entry) {
         Cache<K, V> cache = cacheManager.getCache(name);
-        log.debug("Putting entry from local cache: '{}'", cache.getName());
+        log.debug("Putting entry: '{}' to local cache: '{}'", entry.getKey(), cache.getName());
         cache.put(entry);
     }
 

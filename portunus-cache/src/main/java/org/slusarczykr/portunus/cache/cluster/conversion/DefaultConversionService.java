@@ -13,7 +13,6 @@ import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
-import org.slusarczykr.portunus.cache.cluster.partition.migration.DefaultMigrationService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
@@ -48,18 +47,24 @@ public class DefaultConversionService extends AbstractService implements Convers
         return newPartition(partition, owner);
     }
 
-    private Partition newPartition(PartitionDTO partition, PortunusServer owner) {
-        Set<Address> replicaOwners = getReplicaOwners(partition);
-        return new Partition((int) partition.getKey(), owner, replicaOwners);
+    private Partition newPartition(PartitionDTO partitionDTO, PortunusServer owner) {
+        Set<Address> replicaOwners = getReplicaOwners(partitionDTO);
+        return new Partition((int) partitionDTO.getKey(), owner, replicaOwners);
     }
 
     private Set<Address> getReplicaOwners(PartitionDTO partition) {
         return partition.getReplicaOwnersList().stream()
                 .map(this::convert)
-                .filter(it -> !clusterService.getDiscoveryService().isLocalAddress(it))
-                .map(it -> clusterService.getDiscoveryService().registerRemoteServer(it))
+                .map(this::toPortunusServer)
                 .map(PortunusServer::getAddress)
                 .collect(Collectors.toSet());
+    }
+
+    private PortunusServer toPortunusServer(Address it) {
+        if (!clusterService.getDiscoveryService().isLocalAddress(it)) {
+            return clusterService.getDiscoveryService().registerRemoteServer(it);
+        }
+        return clusterService.getLocalServer();
     }
 
     @Override

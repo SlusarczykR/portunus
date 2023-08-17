@@ -51,10 +51,9 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
     }
 
     public boolean anyLocalEntry() {
-        return executeOperation(OperationType.IS_EMPTY, () -> {
-            boolean anyLocalEntry = clusterService.getDiscoveryService().localServer().anyEntry(name);
-            return anyLocalEntry;
-        });
+        return executeOperation(OperationType.IS_EMPTY, () ->
+                clusterService.getDiscoveryService().localServer().anyEntry(name)
+        );
     }
 
     @Override
