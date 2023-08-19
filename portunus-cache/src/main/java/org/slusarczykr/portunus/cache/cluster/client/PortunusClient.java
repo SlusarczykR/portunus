@@ -45,4 +45,6 @@ public interface PortunusClient {
     void register();
 
     Collection<CacheEntryDTO> removeEntries(String cacheName, Collection<CacheEntryDTO> entries);
+
+    void shutdown();
 }

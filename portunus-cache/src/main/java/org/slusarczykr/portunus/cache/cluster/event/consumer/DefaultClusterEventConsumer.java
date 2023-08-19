@@ -94,19 +94,29 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
     private void handleMemberJoinedEvent(MemberJoinedEvent event) {
         Address address = clusterService.getConversionService().convert(event.getAddress());
         ClusterMemberContext context = new ClusterMemberContext(address);
-        RemotePortunusServer portunusServer = RemotePortunusServer.newInstance(clusterService, context);
+        RemotePortunusServer remoteServer = RemotePortunusServer.newInstance(clusterService, context);
 
-        boolean registered = clusterService.getDiscoveryService().register(portunusServer);
+        boolean registered = clusterService.getDiscoveryService().register(remoteServer);
 
         if (registered) {
-            portunusServer.register();
+            remoteServer.register();
         }
     }
 
     @SneakyThrows
     private void handleMemberLeftEvent(MemberLeftEvent event) {
         Address address = clusterService.getConversionService().convert(event.getAddress());
+        shutdownServer(address);
         clusterService.getDiscoveryService().unregister(address);
+    }
+
+    private void shutdownServer(Address address) {
+        try {
+            RemotePortunusServer remoteServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServer(address, true);
+            remoteServer.shutdown();
+        } catch (Exception e) {
+            log.error("Could not shutdown remote server with address: '{}'", address);
+        }
     }
 
     @Override

@@ -12,7 +12,6 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
-import org.slusarczykr.portunus.cache.cluster.client.PortunusClient;
 import org.slusarczykr.portunus.cache.cluster.client.PortunusGRPCClient;
 import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosClient;
 import org.slusarczykr.portunus.cache.cluster.leader.api.client.PaxosGRPCClient;
@@ -33,8 +32,8 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
 
     private static final Logger log = LoggerFactory.getLogger(RemotePortunusServer.class);
 
-    private PortunusClient portunusClient;
-    private PaxosClient paxosClient;
+    private PortunusGRPCClient portunusClient;
+    private PaxosGRPCClient paxosClient;
 
     public static RemotePortunusServer newInstance(ClusterService clusterService, ClusterMemberContext context) {
         return new RemotePortunusServer(clusterService, context);
@@ -187,10 +186,6 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     }
 
     @Override
-    public void shutdown() {
-    }
-
-    @Override
     public String toString() {
         return "RemotePortunusServer{" +
                 "address=" + serverContext.getPlainAddress() +
@@ -204,5 +199,11 @@ public class RemotePortunusServer extends AbstractPortunusServer implements Paxo
     @Override
     protected Logger getLogger() {
         return log;
+    }
+
+    @Override
+    public void shutdown() {
+        portunusClient.shutdown();
+        paxosClient.shutdown();
     }
 }
