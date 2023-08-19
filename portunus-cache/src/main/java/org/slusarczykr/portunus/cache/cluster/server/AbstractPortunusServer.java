@@ -18,8 +18,7 @@ public abstract class AbstractPortunusServer extends AbstractManaged implements 
         try {
             this.clusterService = clusterService;
             this.serverContext = serverContext;
-            this.
-                    initialize();
+            this.initialize();
         } catch (Exception e) {
             throw new FatalPortunusException("Portunus server initialization failed", e);
         }
