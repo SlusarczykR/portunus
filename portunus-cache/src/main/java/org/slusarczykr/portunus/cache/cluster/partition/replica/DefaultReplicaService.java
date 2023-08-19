@@ -62,7 +62,7 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
         registerPartitionReplica(cacheChunk.partition());
 
         clusterService.getLocalServer().update(cacheChunk);
-        log.debug("Replicated partition: {}", cacheChunk.partition());
+        log.debug("Replicated partition replica: {}", cacheChunk.partition());
     }
 
     private Optional<PortunusServer> getRemoteServerByPartitionsCount(Map<PortunusServer, Long> ownerToPartitionCount) {
@@ -82,7 +82,7 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void unregisterPartitionReplica(int partitionId) {
-        log.debug("Unregistering partition: {}", partitionId);
+        log.debug("Unregistering partition replica: {}", partitionId);
         withWriteLock(() -> partitionReplicas.remove(partitionId));
     }
 

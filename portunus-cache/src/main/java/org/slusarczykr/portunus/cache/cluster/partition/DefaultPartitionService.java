@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
+import org.slusarczykr.portunus.cache.cluster.partition.replica.ReplicaService;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
@@ -255,7 +256,9 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
                 groupOwnerPartition(partitions, remoteServerAddress, it -> it.isReplicaOwner(localServerAddress));
         List<Partition> partitionsWithReplicaOwners = partitionsByReplicaOwner.getOrDefault(true, new ArrayList<>());
 
-        migratePartitionReplicas(partitionsWithReplicaOwners, localServerAddress);
+        if (!partitionsWithReplicaOwners.isEmpty()) {
+            migratePartitionReplicas(partitionsWithReplicaOwners, localServerAddress);
+        }
         removeReplicaOwnerFromLinkedPartitions(remoteServerAddress);
         log.debug("Partitions rebalance after member left finished");
     }
@@ -279,19 +282,35 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     private void migratePartitionReplicas(List<Partition> partitions, Address localServerAddress) {
-        if (!partitions.isEmpty()) {
-            Map<Address, List<Partition>> partitionsByOwner = partitions.stream()
-                    .collect(Collectors.groupingBy(it -> getOwnerAddress(it.getPartitionId())));
+        Map<Address, List<Partition>> partitionsByOwner = partitions.stream()
+                .collect(Collectors.groupingBy(it -> getOwnerAddress(it.getPartitionId())));
 
-            migrateLocalPartitionReplicas(partitionsByOwner, localServerAddress);
-            partitionsByOwner.forEach((owner, ownerPartitions) -> migrate(owner, ownerPartitions, true));
-        }
+        migrateLocalPartitionReplicas(partitionsByOwner, localServerAddress);
+        migrateRemotePartitionReplicas(partitionsByOwner);
     }
 
     private void migrateLocalPartitionReplicas(Map<Address, List<Partition>> partitionsByOwner, Address localServerAddress) {
-        Optional.ofNullable(partitionsByOwner.get(localServerAddress)).ifPresent(it -> {
+        List<Partition> localPartitions = partitionsByOwner.getOrDefault(localServerAddress, List.of());
+
+        if (!localPartitions.isEmpty()) {
             partitionsByOwner.remove(localServerAddress);
-            clusterService.getMigrationService().migratePartitionReplicas(it);
+            clusterService.getMigrationService().migratePartitionReplicas(localPartitions);
+            unregisterPartitionReplicas(localPartitions);
+        }
+    }
+
+    private void unregisterPartitionReplicas(List<Partition> partitions) {
+        ReplicaService replicaService = clusterService.getReplicaService();
+
+        partitions.stream()
+                .map(Partition::getPartitionId)
+                .forEach(replicaService::unregisterPartitionReplica);
+    }
+
+    private void migrateRemotePartitionReplicas(Map<Address, List<Partition>> partitionsByOwner) {
+        partitionsByOwner.forEach((owner, ownerPartitions) -> {
+            migrate(owner, ownerPartitions, true);
+            unregisterPartitionReplicas(ownerPartitions);
         });
     }
 
