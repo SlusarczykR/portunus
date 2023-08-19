@@ -48,6 +48,11 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
         });
     }
 
+    @Override
+    public PortunusServer getServer(Address address) throws PortunusException {
+        return getServer(address, true);
+    }
+
     @SneakyThrows
     private RemotePortunusServer registerRemoteAddress(Address address) {
         validateRemoteAddress(address);

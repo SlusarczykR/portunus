@@ -13,6 +13,8 @@ public interface DiscoveryService extends Service {
 
     void loadServers() throws PortunusException;
 
+    PortunusServer getServer(Address address) throws PortunusException;
+
     PortunusServer getServer(Address address, boolean fresh) throws PortunusException;
 
     PortunusServer localServer();

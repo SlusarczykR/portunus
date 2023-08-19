@@ -10,6 +10,7 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.*;
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEvent.ClusterEventType;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
@@ -112,8 +113,8 @@ public class DefaultClusterEventConsumer extends AbstractAsyncService implements
 
     private void shutdownServer(Address address) {
         try {
-            RemotePortunusServer remoteServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServer(address, true);
-            remoteServer.shutdown();
+            PortunusServer remoteServer = clusterService.getDiscoveryService().getServer(address);
+            ((RemotePortunusServer) remoteServer).shutdown();
         } catch (Exception e) {
             log.error("Could not shutdown remote server with address: '{}'", address);
         }
