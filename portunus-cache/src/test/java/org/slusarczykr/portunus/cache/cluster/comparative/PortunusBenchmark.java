@@ -62,7 +62,7 @@ public class PortunusBenchmark {
     }
 
     @Benchmark
-    public void getTestCache(Blackhole bh) {
+    public void getCache(Blackhole bh) {
         log.info("Cleaning up global benchmark state");
         Cache<String, String> cache = getTestCache();
         bh.consume(cache);
