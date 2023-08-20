@@ -75,11 +75,8 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     public void put(K key, V value) {
         validate(key, value);
         Entry<K, V> entry = new Entry<>(key, value);
-
-        if (!cache.containsKey(key)) {
-            cache.put(key, entry);
-            cacheEntryObserver.onAdd(entry);
-        }
+        cache.put(key, entry);
+        cacheEntryObserver.onAdd(entry);
     }
 
     @Override

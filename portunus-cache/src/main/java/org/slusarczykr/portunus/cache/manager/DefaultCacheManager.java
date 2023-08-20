@@ -9,19 +9,18 @@ import org.slusarczykr.portunus.cache.event.CacheEventListener;
 import org.slusarczykr.portunus.cache.event.CacheEventType;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCacheManager implements CacheManager {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultDistributedCacheManager.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultCacheManager.class);
 
     private final Map<String, Cache<?, ?>> caches = new ConcurrentHashMap<>();
 
     @Override
     public <K, V> Cache<K, V> getCache(String name) {
-        return newCache(name);
+        return getCache(name, Map.of(), false);
     }
 
     @Override
@@ -29,16 +28,17 @@ public class DefaultCacheManager implements CacheManager {
         return caches.values();
     }
 
-    private <K, V> Cache<K, V> newCache(String name) {
-        return newCache(name, new HashMap<>());
-    }
-
     @Override
     public <K, V> Cache<K, V> newCache(String name, CacheConfig<K, V> configuration) {
-        return newCache(name, configuration.getEventListeners());
+        return getCache(name, configuration.getEventListeners(), true);
     }
 
-    private <K, V> Cache<K, V> newCache(String name, Map<CacheEventType, CacheEventListener> eventListeners) {
+    private <K, V> Cache<K, V> getCache(String name, Map<CacheEventType, CacheEventListener> eventListeners, boolean create) {
+        if (create) {
+            log.debug("Creating cache with name: '{}'", name);
+            return (Cache<K, V>) caches.put(name, new DefaultCache<>(name, eventListeners));
+        }
+        log.debug("Getting cache with name: '{}'", name);
         return (Cache<K, V>) caches.computeIfAbsent(name, it -> new DefaultCache<>(name, eventListeners));
     }
 
