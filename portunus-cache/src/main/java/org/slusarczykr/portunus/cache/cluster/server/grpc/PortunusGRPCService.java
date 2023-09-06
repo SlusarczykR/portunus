@@ -190,6 +190,23 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     @Override
+    public void putEntries(PutEntriesCommand request, StreamObserver<PutEntriesDocument> responseObserver) {
+        completeWith(request.getFrom(), responseObserver, OperationType.REMOVE, () -> putEntries(request));
+    }
+
+    private <K extends Serializable, V extends Serializable> PutEntriesDocument putEntries(PutEntriesCommand command) {
+        Cache<K, V> cache = getDistributedCache(command.getCacheName());
+        Set<Cache.Entry<K, V>> entries = command.getCacheEntriesList().stream()
+                .map(it -> (Cache.Entry<K, V>) clusterService.getConversionService().convert(it))
+                .collect(Collectors.toSet());
+        cache.putAll(entries);
+
+        return PutEntriesDocument.newBuilder()
+                .setStatus(true)
+                .build();
+    }
+
+    @Override
     public void removeEntries(RemoveEntriesCommand request, StreamObserver<RemoveEntriesDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.REMOVE, () -> removeEntries(request));
     }
