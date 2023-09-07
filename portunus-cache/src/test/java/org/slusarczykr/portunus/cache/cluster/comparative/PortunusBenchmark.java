@@ -9,21 +9,25 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slusarczykr.portunus.cache.Cache;
+import org.slusarczykr.portunus.cache.DefaultCache;
 import org.slusarczykr.portunus.cache.cluster.PortunusCluster;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 1, warmups = 1, jvmArgs = {"-Xms2G", "-Xmx2G"})
+@Fork(value = 1, warmups = 1, jvmArgs = {"-Xms8G", "-Xmx8G"})
 public class PortunusBenchmark {
 
     private static final Logger log = LoggerFactory.getLogger(PortunusBenchmark.class);
+
+    private static final int NUMBER_OF_RECORDS = 500000;
 
     private PortunusCluster portunusInstance;
     private Cache<String, String> cache;
@@ -42,7 +46,7 @@ public class PortunusBenchmark {
         log.info("Setting up benchmark state");
         portunusInstance = PortunusCluster.newInstance();
         cache = getTestCache();
-        IntStream.rangeClosed(1, 10)
+        IntStream.rangeClosed(1, NUMBER_OF_RECORDS)
                 .forEach(i -> cache.put("testKey" + i, "testValue" + i));
     }
 
@@ -62,32 +66,42 @@ public class PortunusBenchmark {
     }
 
     @Benchmark
-    public void getCache(Blackhole bh) {
-        log.info("Cleaning up global benchmark state");
-        Cache<String, String> cache = getTestCache();
-        bh.consume(cache);
-    }
-
-    @Benchmark
-    public void getCacheEntry(Blackhole bh) {
-        cache.getEntry("testKey1").ifPresent(bh::consume);
-    }
-
-    @Benchmark
     public void getCacheEntries(Blackhole bh) {
-        Collection<Cache.Entry<String, String>> entries = cache.getEntries(List.of("testKey1", "testKey3"));
+        Set<String> keys = getCacheEntries(1, NUMBER_OF_RECORDS).stream()
+                .map(Cache.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        Collection<Cache.Entry<String, String>> entries = cache.getEntries(keys);
+
+        bh.consume(cache);
         bh.consume(entries);
     }
 
     @Benchmark
-    public void putCacheEntry(Blackhole bh) {
-        cache.put("testKey11", "testValue11");
+    public void putCacheEntries(Blackhole bh) {
+        Set<Cache.Entry<String, String>> entries = getCacheEntries(NUMBER_OF_RECORDS + 1, NUMBER_OF_RECORDS + NUMBER_OF_RECORDS);
+
+        cache.putAll(entries);
+
         bh.consume(cache);
+        bh.consume(entries);
     }
 
     @Benchmark
-    public void removeCacheEntry(Blackhole bh) {
-        Cache.Entry<String, String> entry = cache.remove("testKey3");
-        bh.consume(entry);
+    public void removeCacheEntries(Blackhole bh) {
+        Set<String> keys = getCacheEntries(1, NUMBER_OF_RECORDS).stream()
+                .map(Cache.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        cache.removeAll(keys);
+
+        bh.consume(cache);
+        bh.consume(keys);
+    }
+
+    private Set<Cache.Entry<String, String>> getCacheEntries(int from, int to) {
+        return IntStream.rangeClosed(from, to)
+                .mapToObj(i -> (Cache.Entry<String, String>) new DefaultCache.Entry<>("testKey" + i, "testValue" + i))
+                .collect(Collectors.toSet());
     }
 }
