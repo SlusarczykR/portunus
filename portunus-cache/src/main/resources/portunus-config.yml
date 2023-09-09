@@ -2,3 +2,11 @@ port: 8091
 multicast:
   enabled: true
   port: 4321
+leader:
+  election:
+    heartbeats-interval: 1
+    sync-state-interval: 5
+    candidacy:
+      reset:
+        min: 5
+        max: 15
