@@ -240,9 +240,19 @@ public class DistributedCache<K extends Serializable, V extends Serializable> ex
 
     private List<Cache.Entry<K, V>> withRemoteServers(Function<RemotePortunusServer, Collection<Cache.Entry<K, V>>> operation) {
         return remoteServersStream()
-                .map(operation)
+                .map(it -> withRemoteServer(it, operation))
                 .flatMap(Collection::stream)
                 .toList();
+    }
+
+    private Collection<Cache.Entry<K, V>> withRemoteServer(RemotePortunusServer remotePortunusServer,
+                                                           Function<RemotePortunusServer, Collection<Cache.Entry<K, V>>> operation) {
+        try {
+            return operation.apply(remotePortunusServer);
+        } catch (Exception e) {
+            log.error(String.format("Operation execution on remote server '%s' failed", remotePortunusServer.getAddress()));
+        }
+        return Collections.emptyList();
     }
 
     private Stream<RemotePortunusServer> remoteServersStream() {
