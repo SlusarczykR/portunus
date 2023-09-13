@@ -23,18 +23,18 @@ import java.util.stream.IntStream;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1, jvmArgs = {"-Xms8G", "-Xmx8G"})
-public class HazelcastBenchmark {
+public class HazelcastOperationsBenchmark {
 
-    private static final Logger log = LoggerFactory.getLogger(HazelcastBenchmark.class);
+    private static final Logger log = LoggerFactory.getLogger(HazelcastOperationsBenchmark.class);
 
-    private static final int NUMBER_OF_RECORDS = 500000;
+    private static final int NUMBER_OF_RECORDS = 50000;
 
     private HazelcastInstance hazelcastInstance;
     private IMap<String, String> cache;
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(HazelcastBenchmark.class.getSimpleName())
+                .include(HazelcastOperationsBenchmark.class.getSimpleName())
                 .forks(1)
                 .build();
 

@@ -23,18 +23,18 @@ import java.util.stream.IntStream;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1, jvmArgs = {"-Xms8G", "-Xmx8G"})
-public class PortunusBenchmark {
+public class PortunusOperationsBenchmark {
 
-    private static final Logger log = LoggerFactory.getLogger(PortunusBenchmark.class);
+    private static final Logger log = LoggerFactory.getLogger(PortunusOperationsBenchmark.class);
 
-    private static final int NUMBER_OF_RECORDS = 500000;
+    private static final int NUMBER_OF_RECORDS = 50000;
 
     private PortunusCluster portunusInstance;
     private Cache<String, String> cache;
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(PortunusBenchmark.class.getSimpleName())
+                .include(PortunusOperationsBenchmark.class.getSimpleName())
                 .forks(1)
                 .build();
 
