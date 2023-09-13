@@ -161,7 +161,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     @SneakyThrows
     private Partition newPartition(int partitionId) {
         Address serverAddress = getOwnerAddress(partitionId);
-        PortunusServer server = clusterService.getDiscoveryService().getServer(serverAddress);
+        PortunusServer server = clusterService.getDiscoveryService().getServer(serverAddress, false);
 
         return new Partition(partitionId, server);
     }
@@ -179,10 +179,9 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public void register(PortunusServer server) throws PortunusException {
-        withWriteLock(() -> {
-            registerAddress(server.getAddress());
-            rebalance(new ArrayList<>(partitions.values()), server.getAddress(), true);
-        });
+        withWriteLock(() -> registerAddress(server.getAddress()));
+        rebalance(getPartitionList(), server.getAddress(), true);
+
     }
 
     @SneakyThrows
@@ -316,11 +315,13 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public void unregister(Address address) throws PortunusException {
-        withWriteLock(() -> {
-            Collection<Partition> currentPartitions = new ArrayList<>(partitions.values());
-            unregisterAddress(address);
-            rebalance(currentPartitions, address, false);
-        });
+        List<Partition> partitionList = getPartitionList();
+        withWriteLock(() -> unregisterAddress(address));
+        rebalance(partitionList, address, false);
+    }
+
+    private List<Partition> getPartitionList() {
+        return new ArrayList<>(partitions.values());
     }
 
     @SneakyThrows
@@ -339,9 +340,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public List<String> getRegisteredAddresses() {
-        return withReadLock(() -> {
-            return new ArrayList<>(partitionOwnerCircle.getAddresses());
-        });
+        return withReadLock(() -> new ArrayList<>(partitionOwnerCircle.getAddresses()));
     }
 
     @Override
