@@ -9,7 +9,7 @@ import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer.ClusterMemberContext.Address;
 import org.slusarczykr.portunus.cache.cluster.server.RemotePortunusServer;
-import org.slusarczykr.portunus.cache.cluster.service.AbstractConcurrentService;
+import org.slusarczykr.portunus.cache.cluster.service.AbstractService;
 import org.slusarczykr.portunus.cache.exception.InvalidPortunusStateException;
 import org.slusarczykr.portunus.cache.exception.PortunusException;
 
@@ -18,10 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
-public class DefaultDiscoveryService extends AbstractConcurrentService implements DiscoveryService {
+public class DefaultDiscoveryService extends AbstractService implements DiscoveryService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultDiscoveryService.class);
 
@@ -43,15 +43,14 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public void loadServers() throws PortunusException {
-        withWriteLock(() -> {
-            List<Address> memberAddresses = clusterService.getClusterConfigService().getClusterMembers();
-            memberAddresses.forEach(this::registerRemoteAddress);
-        });
+        List<Address> memberAddresses = clusterService.getClusterConfigService().getClusterMembers();
+        memberAddresses.forEach(this::registerRemoteAddress);
     }
 
     @Override
     public PortunusServer getServer(Address address) throws PortunusException {
-        return getServer(address, true);
+        return Optional.ofNullable(portunusInstances.get(address))
+                .orElseThrow(() -> new PortunusException(String.format("Server: %s could not be found", address)));
     }
 
     @SneakyThrows
@@ -77,81 +76,40 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     }
 
     @Override
-    public PortunusServer getServer(Address address, boolean fresh) throws PortunusException {
-        return findServer(address, fresh)
-                .orElseThrow(() -> new PortunusException(String.format("Server: %s could not be found", address)));
-    }
-
-    private Optional<PortunusServer> findServer(Address address, boolean fresh) {
-        String plainAddress = address.toPlainAddress();
-
-        if (fresh) {
-            return withReadLock(() -> Optional.ofNullable(portunusInstances.get(plainAddress)));
-        }
-        return Optional.ofNullable(portunusInstances.get(plainAddress));
-    }
-
-    @Override
     public PortunusServer localServer() {
         return clusterService.getLocalServer();
     }
 
     @Override
     public boolean anyRemoteServerAvailable() {
-        return !remoteServers(false).isEmpty();
+        return !remoteServers().isEmpty();
     }
 
     @Override
     public List<RemotePortunusServer> remoteServers() {
-        return remoteServers(false);
-    }
-
-    public List<RemotePortunusServer> remoteServers(boolean fresh) {
-        return withReadLockWrapper(fresh, () -> portunusInstances.values().stream()
+        return portunusInstances.values().stream()
                 .filter(Predicate.not(PortunusServer::isLocal).and(RemotePortunusServer.class::isInstance))
                 .map(RemotePortunusServer.class::cast)
-                .toList());
+                .toList();
     }
 
     @Override
     public List<PortunusServer> allServers() {
-        return allServers(false);
-    }
-
-    public List<PortunusServer> allServers(boolean fresh) {
-        return withReadLockWrapper(fresh, () -> portunusInstances.values().stream().toList());
-    }
-
-    private <T> T withReadLockWrapper(boolean lock, Supplier<T> operation) {
-        if (lock) {
-            return withReadLock(operation);
-        }
-        return operation.get();
-    }
-
-    @Override
-    public List<String> allServerAddresses(boolean fresh) {
-        if (fresh) {
-            return withReadLock(() -> portunusInstances.keySet().stream()
-                    .toList());
-        }
-        return portunusInstances.keySet().stream()
+        return portunusInstances.values().stream()
                 .toList();
     }
 
     @Override
     public int getNumberOfServers() {
-        return withReadLock(portunusInstances::size);
+        return portunusInstances.size();
     }
 
     @Override
     public PortunusServer registerRemoteServer(Address address) {
-        return withWriteLock(() ->
-                portunusInstances.computeIfAbsent(address.toPlainAddress(), it -> {
-                    log.info("Registering server with address: '{}'", address);
-                    return createServer(address);
-                })
-        );
+        return portunusInstances.computeIfAbsent(address.toPlainAddress(), it -> {
+            log.info("Registering server with address: '{}'", address);
+            return createServer(address);
+        });
     }
 
     private PortunusServer createServer(Address address) {
@@ -163,25 +121,33 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public boolean register(PortunusServer server) throws PortunusException {
-        return withWriteLock(() -> registerServer(server));
+        return registerServer(server);
     }
 
     @SneakyThrows
     private boolean registerServer(PortunusServer server) {
-        if (!portunusInstances.containsKey(server.getPlainAddress())) {
+        AtomicBoolean newPartition = new AtomicBoolean(false);
+
+        portunusInstances.computeIfAbsent(server.getPlainAddress(), it -> {
             log.info("Registering server with address: '{}'", server.getPlainAddress());
-            portunusInstances.put(server.getPlainAddress(), server);
-            clusterService.getPartitionService().register(server);
+            newPartition.set(true);
+            registerPartition(server);
             ((LocalPortunusServer) localServer()).updatePaxosServerId(portunusInstances.size());
             log.debug("Current portunus instances: '{}'", portunusInstances);
-            return true;
-        }
-        return false;
+
+            return server;
+        });
+        return newPartition.get();
+    }
+
+    @SneakyThrows
+    private void registerPartition(PortunusServer server) {
+        clusterService.getPartitionService().register(server);
     }
 
     @Override
     public void unregister(Address address) throws PortunusException {
-        withWriteLock(() -> unregisterServer(address));
+        unregisterServer(address);
     }
 
     @Override
@@ -194,21 +160,26 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
     private void unregisterServer(Address address) {
         String plainAddress = address.toPlainAddress();
 
-        if (portunusInstances.containsKey(plainAddress)) {
+        portunusInstances.computeIfPresent(plainAddress, (k, v) -> {
             log.info("Unregistering remote server with address: '{}'", address);
-            portunusInstances.remove(plainAddress);
+            PortunusServer portunusServer = portunusInstances.remove(plainAddress);
             clusterService.getLocalServer().updatePaxosServerId(portunusInstances.size());
-            clusterService.getPartitionService().unregister(address);
-        }
+            unregisterPartition(address);
+
+            return portunusServer;
+        });
+    }
+
+    @SneakyThrows
+    private void unregisterPartition(Address address) {
+        clusterService.getPartitionService().unregister(address);
     }
 
     @Override
     public List<PortunusServer> registerRemoteServers(Collection<Address> addresses) {
-        return withWriteLock(() -> {
-            log.debug("Updating portunus cluster members");
-            Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
-            return registerRemoteServers(addresses, it -> shouldRegisterServer(localServerAddress, it));
-        });
+        log.debug("Updating portunus cluster members");
+        Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
+        return registerRemoteServers(addresses, it -> shouldRegisterServer(localServerAddress, it));
     }
 
     private boolean shouldRegisterServer(Address localServerAddress, Address address) {

@@ -15,21 +15,13 @@ public interface DiscoveryService extends Service {
 
     PortunusServer getServer(Address address) throws PortunusException;
 
-    PortunusServer getServer(Address address, boolean fresh) throws PortunusException;
-
     PortunusServer localServer();
 
     boolean anyRemoteServerAvailable();
 
     List<RemotePortunusServer> remoteServers();
 
-    List<RemotePortunusServer> remoteServers(boolean fresh);
-
     List<PortunusServer> allServers();
-
-    List<PortunusServer> allServers(boolean fresh);
-
-    List<String> allServerAddresses(boolean fresh);
 
     int getNumberOfServers();
 
