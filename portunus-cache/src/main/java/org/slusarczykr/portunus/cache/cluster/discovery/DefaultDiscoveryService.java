@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class DefaultDiscoveryService extends AbstractConcurrentService implements DiscoveryService {
 
@@ -97,25 +98,35 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public boolean anyRemoteServerAvailable() {
-        return !remoteServers().isEmpty();
+        return !remoteServers(false).isEmpty();
     }
 
     @Override
     public List<RemotePortunusServer> remoteServers() {
-        return withReadLock(() -> portunusInstances.values().stream()
+        return remoteServers(false);
+    }
+
+    public List<RemotePortunusServer> remoteServers(boolean fresh) {
+        return withReadLockWrapper(fresh, () -> portunusInstances.values().stream()
                 .filter(Predicate.not(PortunusServer::isLocal).and(RemotePortunusServer.class::isInstance))
                 .map(RemotePortunusServer.class::cast)
                 .toList());
     }
 
     @Override
+    public List<PortunusServer> allServers() {
+        return allServers(false);
+    }
+
     public List<PortunusServer> allServers(boolean fresh) {
-        if (fresh) {
-            return withReadLock(() -> portunusInstances.values().stream()
-                    .toList());
+        return withReadLockWrapper(fresh, () -> portunusInstances.values().stream().toList());
+    }
+
+    private <T> T withReadLockWrapper(boolean lock, Supplier<T> operation) {
+        if (lock) {
+            return withReadLock(operation);
         }
-        return portunusInstances.values().stream()
-                .toList();
+        return operation.get();
     }
 
     @Override

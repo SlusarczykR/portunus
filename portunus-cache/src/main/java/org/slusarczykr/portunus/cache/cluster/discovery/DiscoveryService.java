@@ -23,6 +23,10 @@ public interface DiscoveryService extends Service {
 
     List<RemotePortunusServer> remoteServers();
 
+    List<RemotePortunusServer> remoteServers(boolean fresh);
+
+    List<PortunusServer> allServers();
+
     List<PortunusServer> allServers(boolean fresh);
 
     List<String> allServerAddresses(boolean fresh);

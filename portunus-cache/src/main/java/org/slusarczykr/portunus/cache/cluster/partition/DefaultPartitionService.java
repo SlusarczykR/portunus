@@ -366,7 +366,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
             Map<PortunusServer, Long> ownerToPartitionCount = partitions.values().stream()
                     .collect(Collectors.groupingBy(Partition::getOwner, Collectors.counting()));
 
-            return clusterService.getDiscoveryService().allServers(false).stream()
+            return clusterService.getDiscoveryService().allServers().stream()
                     .collect(Collectors.toMap(it -> it, it -> getOwnerPartitionCount(ownerToPartitionCount, it)));
         });
     }
