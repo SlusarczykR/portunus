@@ -270,7 +270,10 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
             if (!localPartitionsByReplicaOwner.isEmpty()) {
                 log.debug("Removing '{}' replica owner from {} local partitions",
                         remoteServerAddress, localPartitionsByReplicaOwner.size());
-                localPartitionsByReplicaOwner.forEach(it -> it.removeReplicaOwner(remoteServerAddress));
+                localPartitionsByReplicaOwner.forEach(it -> {
+                    it.removeReplicaOwner(remoteServerAddress);
+                    clusterService.getReplicaService().replicatePartition(it);
+                });
             }
         });
     }

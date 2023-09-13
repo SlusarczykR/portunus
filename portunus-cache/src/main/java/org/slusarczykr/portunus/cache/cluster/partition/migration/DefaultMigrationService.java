@@ -68,7 +68,8 @@ public class DefaultMigrationService extends AbstractService implements Migratio
 
     @Override
     public void migrateToLocalServer(CacheChunk cacheChunk, boolean replicate) {
-        log.debug("Migrating partition [{}] to local server", cacheChunk.partition().getPartitionId());
+        log.debug("Migrating partition [{}] to local server - replica: {}", cacheChunk.partition().getPartitionId(), replicate);
+        logCacheChunkDetails(cacheChunk);
         Partition partition = reassignOwner(cacheChunk.partition());
         log.debug("Reassigned partition: {}", partition);
         replicate = replicate || !partition.hasAnyReplicaOwner();
@@ -78,6 +79,16 @@ public class DefaultMigrationService extends AbstractService implements Migratio
         CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
         clusterService.getLocalServer().update(reassignedCacheChunk);
         log.debug("Successfully migrated partition: {}", partition);
+    }
+
+    private void logCacheChunkDetails(CacheChunk cacheChunk) {
+        cacheChunk.cacheEntries().forEach(cache ->
+                cache.allEntries().forEach(it -> {
+                            int partitionId = cacheChunk.getPartitionId();
+                            log.debug("Cache chunk entry '{}' from '{}' [{}]", it.getKey(), cache.getName(), partitionId);
+                        }
+                )
+        );
     }
 
     private Partition reassignOwner(Partition partition) {

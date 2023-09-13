@@ -263,6 +263,9 @@ public class LocalPortunusServer extends AbstractPortunusServer {
         log.debug("Updating cache entries: '{}'. Cache size: {}", cache.getName(), localCache.allEntries().size());
         updateLocalCache(cache.getName(), partition, cache.allEntries());
         log.debug("Successfully updated cache: '{}'. Cache size: {}", cache.getName(), localCache.allEntries().size());
+        cache.allEntries().forEach(it ->
+                log.debug("Added cache entry '{}' to '{}' from partition: {}", it.getKey(), cache.getName(), partition.getPartitionId())
+        );
     }
 
     private <K extends Serializable, V extends Serializable> void removeFromLocalCache(String name, Partition partition,
