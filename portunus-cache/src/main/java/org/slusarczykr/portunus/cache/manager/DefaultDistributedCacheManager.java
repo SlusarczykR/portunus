@@ -62,6 +62,9 @@ public class DefaultDistributedCacheManager extends DefaultCacheManager implemen
                 .map(Cache.Entry::getKey)
                 .toList();
 
+        keys.forEach(it ->
+                log.debug("Removing cache entry '{}' from '{}'", it, cache.getName())
+        );
         cache.removeAll(keys);
     }
 

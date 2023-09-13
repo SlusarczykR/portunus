@@ -57,6 +57,8 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
 
     @Override
     public void registerPartitionReplica(CacheChunk cacheChunk) {
+        log.debug("Registering partition replica: {}, cache chunk entries: {}", cacheChunk.getPartitionId(), cacheChunk.cacheEntries().size());
+        logCacheChunkDetails(cacheChunk);
         cacheChunk.partition().addReplicaOwner(clusterService.getClusterConfig().getLocalServerAddress());
         clusterService.getPartitionService().register(cacheChunk.partition());
         registerPartitionReplica(cacheChunk.partition());
@@ -74,10 +76,24 @@ public class DefaultReplicaService extends AbstractConcurrentService implements 
     }
 
     private void replicate(Partition partition, RemotePortunusServer portunusServer) {
-        log.debug("Replicating partition [{}] on server: '{}'", partition.getPartitionId(), portunusServer.getPlainAddress());
         CacheChunk cacheChunk = clusterService.getLocalServer().getCacheChunk(partition);
+        log.debug("Replicating partition [{}] on server: '{}', cache chunk entries: {}", partition.getPartitionId(),
+                portunusServer.getPlainAddress(), cacheChunk.cacheEntries().size());
+        logCacheChunkDetails(cacheChunk);
         portunusServer.replicate(cacheChunk);
         log.trace("Replicated partition: {}", partition);
+    }
+
+    private void logCacheChunkDetails(CacheChunk cacheChunk) {
+        if (log.isTraceEnabled()) {
+            cacheChunk.cacheEntries().forEach(cache ->
+                    cache.allEntries().forEach(it -> {
+                                int partitionId = cacheChunk.getPartitionId();
+                                log.trace("Cache chunk entry '{}' from '{}' [{}]", it.getKey(), cache.getName(), partitionId);
+                            }
+                    )
+            );
+        }
     }
 
     @Override

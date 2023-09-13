@@ -255,6 +255,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         Map<Boolean, List<Partition>> partitionsByReplicaOwner =
                 groupOwnerPartition(partitions, remoteServerAddress, it -> it.isReplicaOwner(localServerAddress));
         List<Partition> partitionsWithReplicaOwners = partitionsByReplicaOwner.getOrDefault(true, new ArrayList<>());
+        log.debug("Partitions with replica owners: {}, replica owner: '{}'", partitionsWithReplicaOwners.size(), remoteServerAddress);
 
         if (!partitionsWithReplicaOwners.isEmpty()) {
             migratePartitionReplicas(partitionsWithReplicaOwners, localServerAddress);
@@ -294,11 +295,13 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     private void migrateLocalPartitionReplicas(Map<Address, List<Partition>> partitionsByOwner, Address localServerAddress) {
         List<Partition> localPartitions = partitionsByOwner.getOrDefault(localServerAddress, List.of());
+        log.debug("\"Local partitions with replica owca owner: {}", localPartitions.size());
+
 
         if (!localPartitions.isEmpty()) {
             partitionsByOwner.remove(localServerAddress);
-            clusterService.getMigrationService().migratePartitionReplicas(localPartitions);
             unregisterPartitionReplicas(localPartitions);
+            clusterService.getMigrationService().migratePartitionReplicas(localPartitions);
         }
     }
 
@@ -311,9 +314,11 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     }
 
     private void migrateRemotePartitionReplicas(Map<Address, List<Partition>> partitionsByOwner) {
+        log.debug("Remote partitions with replica owner: {}", partitionsByOwner.values().stream().mapToLong(Collection::size).sum());
+
         partitionsByOwner.forEach((owner, ownerPartitions) -> {
-            migrate(owner, ownerPartitions, true);
             unregisterPartitionReplicas(ownerPartitions);
+            migrate(owner, ownerPartitions, true);
         });
     }
 

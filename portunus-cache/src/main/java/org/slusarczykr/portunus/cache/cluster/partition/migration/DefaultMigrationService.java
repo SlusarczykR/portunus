@@ -14,6 +14,7 @@ import org.slusarczykr.portunus.cache.exception.PortunusException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class DefaultMigrationService extends AbstractService implements MigrationService {
@@ -35,7 +36,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
             RemotePortunusServer remotePortunusServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServer(address);
             List<CacheChunk> cacheChunks = getCacheChunks(partitions);
 
-            remotePortunusServer.migrate(cacheChunks, replicate);
+            CompletableFuture.runAsync(() -> remotePortunusServer.migrate(cacheChunks, replicate));
 
             removeLocalCachesEntries(partitions);
         } catch (PortunusException e) {
@@ -72,23 +73,20 @@ public class DefaultMigrationService extends AbstractService implements Migratio
         logCacheChunkDetails(cacheChunk);
         Partition partition = reassignOwner(cacheChunk.partition());
         log.debug("Reassigned partition: {}", partition);
-        replicate = replicate || !partition.hasAnyReplicaOwner();
 
-        clusterService.getPartitionService().register(partition, replicate);
+        clusterService.getPartitionService().register(partition);
 
-        CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
-        clusterService.getLocalServer().update(reassignedCacheChunk);
+        updateLocalCache(partition, cacheChunk, replicate);
         log.debug("Successfully migrated partition: {}", partition);
     }
 
-    private void logCacheChunkDetails(CacheChunk cacheChunk) {
-        cacheChunk.cacheEntries().forEach(cache ->
-                cache.allEntries().forEach(it -> {
-                            int partitionId = cacheChunk.getPartitionId();
-                            log.debug("Cache chunk entry '{}' from '{}' [{}]", it.getKey(), cache.getName(), partitionId);
-                        }
-                )
-        );
+    private void updateLocalCache(Partition partition, CacheChunk cacheChunk, boolean replicate) {
+        CacheChunk reassignedCacheChunk = new CacheChunk(partition, cacheChunk.cacheEntries());
+        clusterService.getLocalServer().update(reassignedCacheChunk);
+
+        if (replicate) {
+            clusterService.getReplicaService().replicatePartition(partition);
+        }
     }
 
     private Partition reassignOwner(Partition partition) {
@@ -98,6 +96,18 @@ public class DefaultMigrationService extends AbstractService implements Migratio
                 .collect(Collectors.toSet());
 
         return new Partition(partition.getPartitionId(), localServer, replicaOwners);
+    }
+
+    private void logCacheChunkDetails(CacheChunk cacheChunk) {
+        if (log.isTraceEnabled()) {
+            cacheChunk.cacheEntries().forEach(cache ->
+                    cache.allEntries().forEach(it -> {
+                                int partitionId = cacheChunk.getPartitionId();
+                                log.trace("Cache chunk entry '{}' from '{}' [{}]", it.getKey(), cache.getName(), partitionId);
+                            }
+                    )
+            );
+        }
     }
 
     @Override
