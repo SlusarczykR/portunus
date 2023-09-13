@@ -161,7 +161,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
     @SneakyThrows
     private Partition newPartition(int partitionId) {
         Address serverAddress = getOwnerAddress(partitionId);
-        PortunusServer server = clusterService.getDiscoveryService().getServer(serverAddress, false);
+        PortunusServer server = clusterService.getDiscoveryService().getServer(serverAddress);
 
         return new Partition(partitionId, server);
     }
@@ -179,9 +179,10 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public void register(PortunusServer server) throws PortunusException {
-        withWriteLock(() -> registerAddress(server.getAddress()));
-        rebalance(getPartitionList(), server.getAddress(), true);
-
+        withWriteLock(() -> {
+            registerAddress(server.getAddress());
+            CompletableFuture.runAsync(() -> rebalance(getPartitionList(), server.getAddress(), true));
+        });
     }
 
     @SneakyThrows
@@ -195,7 +196,7 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
         Address localServerAddress = clusterService.getClusterConfig().getLocalServerAddress();
 
         if (memberJoined) {
-            CompletableFuture.runAsync(() -> rebalanceOnMemberJoined(partitions, remoteServerAddress, localServerAddress));
+            rebalanceOnMemberJoined(partitions, remoteServerAddress, localServerAddress);
         } else {
             rebalanceOnMemberLeft(partitions, remoteServerAddress, localServerAddress);
         }
@@ -315,9 +316,11 @@ public class DefaultPartitionService extends AbstractConcurrentService implement
 
     @Override
     public void unregister(Address address) throws PortunusException {
-        List<Partition> partitionList = getPartitionList();
-        withWriteLock(() -> unregisterAddress(address));
-        rebalance(partitionList, address, false);
+        withWriteLock(() -> {
+            List<Partition> partitionList = getPartitionList();
+            unregisterAddress(address);
+            CompletableFuture.runAsync(() -> rebalance(partitionList, address, false));
+        });
     }
 
     private List<Partition> getPartitionList() {

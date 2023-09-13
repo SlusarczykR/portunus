@@ -32,7 +32,7 @@ public class DefaultMigrationService extends AbstractService implements Migratio
     public void migrate(Collection<Partition> partitions, Address address, boolean replicate) {
         try {
             log.debug("Migrating {} partitions to: '{}'", partitions.size(), address);
-            RemotePortunusServer remotePortunusServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServer(address, false);
+            RemotePortunusServer remotePortunusServer = (RemotePortunusServer) clusterService.getDiscoveryService().getServer(address);
             List<CacheChunk> cacheChunks = getCacheChunks(partitions);
 
             remotePortunusServer.migrate(cacheChunks, replicate);

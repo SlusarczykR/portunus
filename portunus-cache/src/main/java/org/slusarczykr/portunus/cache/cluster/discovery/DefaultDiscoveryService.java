@@ -103,7 +103,7 @@ public class DefaultDiscoveryService extends AbstractConcurrentService implement
 
     @Override
     public List<RemotePortunusServer> remoteServers() {
-        return remoteServers(false);
+        return remoteServers(true);
     }
 
     public List<RemotePortunusServer> remoteServers(boolean fresh) {
