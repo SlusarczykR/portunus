@@ -16,7 +16,6 @@ import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.ClusterEv
 import org.slusarczykr.portunus.cache.api.event.PortunusEventApiProtos.PartitionEvent;
 import org.slusarczykr.portunus.cache.api.query.PortunusQueryApiProtos.*;
 import org.slusarczykr.portunus.cache.api.service.PortunusServiceGrpc.PortunusServiceImplBase;
-import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos;
 import org.slusarczykr.portunus.cache.api.test.PortunusTestApiProtos.*;
 import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
@@ -488,11 +487,11 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
     }
 
     @Override
-    public void putStringEntry(PortunusTestApiProtos.PutStringEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
+    public void putStringEntry(PutStringEntryCommand request, StreamObserver<PutEntryDocument> responseObserver) {
         completeWith(request.getFrom(), responseObserver, OperationType.PUT, () -> putStringEntry(request));
     }
 
-    private <K extends Serializable, V extends Serializable> PutEntryDocument putStringEntry(PortunusTestApiProtos.PutStringEntryCommand command) {
+    private <K extends Serializable, V extends Serializable> PutEntryDocument putStringEntry(PutStringEntryCommand command) {
         Cache<K, V> cache = getDistributedCache(command.getCacheName());
         StringCacheEntryDTO cacheEntryDTO = command.getCacheEntry();
         Cache.Entry<K, V> entry = (Cache.Entry<K, V>) new DefaultCache.Entry<>(cacheEntryDTO.getKey(), cacheEntryDTO.getValue());
@@ -522,7 +521,7 @@ public class PortunusGRPCService extends PortunusServiceImplBase {
 
     private List<CacheChunk> convert(List<CacheChunkDTO> cacheChunksList) {
         return cacheChunksList.stream()
-                .map(it -> clusterService.getConversionService().convert(it))
+                .map(it -> clusterService.getConversionService().convert(it, true))
                 .toList();
     }
 

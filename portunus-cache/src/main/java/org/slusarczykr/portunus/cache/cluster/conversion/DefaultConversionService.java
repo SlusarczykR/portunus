@@ -9,8 +9,10 @@ import org.slusarczykr.portunus.cache.cluster.ClusterService;
 import org.slusarczykr.portunus.cache.cluster.Distributed;
 import org.slusarczykr.portunus.cache.cluster.Distributed.DistributedWrapper;
 import org.slusarczykr.portunus.cache.cluster.chunk.CacheChunk;
+import org.slusarczykr.portunus.cache.cluster.discovery.DiscoveryService;
 import org.slusarczykr.portunus.cache.cluster.leader.api.RequestVote;
 import org.slusarczykr.portunus.cache.cluster.partition.Partition;
+import org.slusarczykr.portunus.cache.cluster.partition.PartitionReference;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.PortunusNode;
 import org.slusarczykr.portunus.cache.cluster.partition.circle.PortunusConsistentHashingCircle.VirtualPortunusNode;
 import org.slusarczykr.portunus.cache.cluster.server.PortunusServer;
@@ -41,30 +43,46 @@ public class DefaultConversionService extends AbstractService implements Convers
 
     @Override
     public Partition convert(PartitionDTO partition) {
-        Address address = convert(partition.getOwner());
-        PortunusServer owner = clusterService.getDiscoveryService().registerRemoteServer(address);
+        return convert(partition, false);
+    }
 
-        return newPartition(partition, owner);
+    @Override
+    public Partition convert(PartitionDTO partition, boolean reference) {
+        Address address = convert(partition.getOwner());
+
+        if (!reference) {
+            PortunusServer owner = clusterService.getDiscoveryService().registerRemoteServer(address);
+            return newPartition(partition, owner);
+        }
+        Set<Address> replicaOwners = getReplicaOwners(partition, false);
+        return new PartitionReference((int) partition.getKey(), replicaOwners);
     }
 
     private Partition newPartition(PartitionDTO partitionDTO, PortunusServer owner) {
-        Set<Address> replicaOwners = getReplicaOwners(partitionDTO);
+        Set<Address> replicaOwners = getReplicaOwners(partitionDTO, true);
         return new Partition((int) partitionDTO.getKey(), owner, replicaOwners);
     }
 
-    private Set<Address> getReplicaOwners(PartitionDTO partition) {
+    private Set<Address> getReplicaOwners(PartitionDTO partition, boolean register) {
         return partition.getReplicaOwnersList().stream()
                 .map(this::convert)
-                .map(this::toPortunusServer)
-                .map(PortunusServer::getAddress)
+                .map(it -> {
+                    if (register) {
+                        return register(it);
+                    }
+                    return it;
+                })
                 .collect(Collectors.toSet());
     }
 
-    private PortunusServer toPortunusServer(Address it) {
-        if (!clusterService.getDiscoveryService().isLocalAddress(it)) {
-            return clusterService.getDiscoveryService().registerRemoteServer(it);
+    private Address register(Address address) {
+        DiscoveryService discoveryService = clusterService.getDiscoveryService();
+
+        if (!discoveryService.isLocalAddress(address)) {
+            log.debug("Registering partition replica owner with address: '{}'", address);
+            return discoveryService.registerRemoteServer(address).getAddress();
         }
-        return clusterService.getLocalServer();
+        return clusterService.getLocalServer().getAddress();
     }
 
     @Override
@@ -188,7 +206,11 @@ public class DefaultConversionService extends AbstractService implements Convers
 
     @Override
     public CacheChunk convert(CacheChunkDTO cacheChunkDTO) {
-        Partition partition = convert(cacheChunkDTO.getPartition());
+        return convert(cacheChunkDTO, false);
+    }
+
+    public CacheChunk convert(CacheChunkDTO cacheChunkDTO, boolean reference) {
+        Partition partition = convert(cacheChunkDTO.getPartition(), reference);
         Set<Cache<? extends Serializable, ? extends Serializable>> cacheEntries = cacheChunkDTO.getCachesList().stream()
                 .map(this::convert)
                 .collect(Collectors.toSet());

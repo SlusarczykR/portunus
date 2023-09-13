@@ -18,6 +18,8 @@ public interface ConversionService extends Service {
 
     Partition convert(PartitionDTO partition);
 
+    Partition convert(PartitionDTO partition, boolean reference);
+
     PartitionDTO convert(Partition partition);
 
     <K extends Serializable, V extends Serializable> CacheDTO convert(Cache<K, V> cache);
@@ -43,6 +45,8 @@ public interface ConversionService extends Service {
     Map.Entry<String, VirtualPortunusNode> convert(VirtualPortunusNodeDTO virtualPortunusNode);
 
     CacheChunk convert(CacheChunkDTO cacheChunkDTO);
+
+    CacheChunk convert(CacheChunkDTO cacheChunkDTO, boolean reference);
 
     <K extends Serializable, V extends Serializable> PartitionChangeDTO convert(Partition.Change<K, V> partitionChange);
 
