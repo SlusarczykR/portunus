@@ -54,6 +54,9 @@ public abstract class AbstractClient extends AbstractManaged {
                 PortunusServiceBlockingStub portunusServiceStub = newPortunusServiceStub();
                 return executable.apply(portunusServiceStub);
             } catch (Exception e) {
+                if (e instanceof OperationFailedException) {
+                    throw e;
+                }
                 throw new OperationFailedException(String.format("Operation execution on remote server '%s' failed", address), e);
             }
         } else {

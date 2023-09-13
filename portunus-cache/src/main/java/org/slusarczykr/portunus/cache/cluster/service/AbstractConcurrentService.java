@@ -72,7 +72,7 @@ public abstract class AbstractConcurrentService extends AbstractService {
             } else {
                 throw new OperationFailedException(getLockErrorMessage());
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             throw new OperationFailedException(getLockErrorMessage(), e);
         }
     }
