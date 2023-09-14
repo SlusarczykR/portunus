@@ -15,8 +15,5 @@
         <Logger name="org.slusarczykr.portunus.cache.cluster.server" level="debug" additivity="false">
             <AppenderRef ref="console"/>
         </Logger>
-        <Logger name="org.slusarczykr.portunus.cache.manager.DefaultDistributedCacheManager" level="debug" additivity="false">
-            <AppenderRef ref="console"/>
-        </Logger>
     </Loggers>
 </Configuration>
